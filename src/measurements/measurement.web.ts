@@ -1,0 +1,77 @@
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+
+import { MeasurementController } from './measurement.controller';
+import { MeasurementService } from './measurement.service';
+
+import { RolesGuard } from 'src/auth/guards';
+import { Role } from 'src/auth/enums/role.enum';
+import { RequirePermission } from 'src/auth/decorators/role.decorator';
+
+import { GetUser } from 'src/auth/decorators';
+
+import { MeasurementDTO } from './dto';
+
+import { UserRes } from '@types';
+import type { ModifiedMeasurement } from './types';
+
+@Controller('web/measurements')
+export class MeasurementWebController extends MeasurementController {
+  constructor(measurementService: MeasurementService) {
+    super(measurementService);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.DOCTOR, Role.NURSE)
+  public async getAllPatientMeasurements(
+    @GetUser() user: UserRes,
+    @Query('type') type?: string,
+  ): Promise<ModifiedMeasurement[]> {
+    return this.getMeasurementService().getMeasurementsOfAllPatients(
+      user.id,
+      user.role,
+      type,
+    );
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/patients/:id') // :id -> patient -> user_id
+  public async getPatientMeasurements(
+    @GetUser() user: UserRes,
+    @Param('id') id: string,
+    @Query('type') type?: string,
+  ): Promise<ModifiedMeasurement[]> {
+    return this.getMeasurementService().patientMeasurements(
+      id,
+      user.id,
+      user.role,
+      type,
+    );
+  }
+
+  @HttpCode(HttpStatus.CREATED)
+  @Post('/patients/:id') // :id -> patient -> user_id
+  public async createMeasurements(
+    @GetUser() user: UserRes,
+    @Param('id') id: string,
+    @Body() data: MeasurementDTO,
+  ): Promise<ModifiedMeasurement> {
+    return this.getMeasurementService().createPatientMeasurement(
+      id,
+      user.id,
+      user.role,
+      data,
+    );
+  }
+}

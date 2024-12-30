@@ -1,0 +1,652 @@
+import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+
+import { PrismaService } from 'src/prisma/prisma.service';
+
+import { MeasurementDTO } from './dto';
+
+import type {
+  MeasurementType,
+  MeasurementMode,
+  MeasurementUnit,
+  MeasurementReadingSource,
+} from '@prisma/client';
+import type { UserRole } from '@types';
+import type { ModifiedMeasurement } from './types';
+import type { MeasurementCreatedEvent } from 'src/events/types';
+
+@Injectable()
+export class MeasurementService {
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
+
+  public async getMeasurementsOfAllPatients(
+    userId: string,
+    role: UserRole,
+    type: string,
+  ): Promise<ModifiedMeasurement[]> {
+    const patients = await this.prisma.patient.findMany({
+      where: {
+        [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
+          some: {
+            user_id: userId,
+          },
+        },
+      },
+      select: {
+        user_id: true,
+      },
+    });
+    const patientIds = patients.map((p) => p.user_id);
+
+    if (type) {
+      // Doctor and Nurse
+      // if (role === 'DOCTOR' || role === 'NURSE') {}
+      return await this.prisma.measurement.findMany({
+        where: {
+          patient: {
+            user_id: {
+              in: patientIds,
+            },
+          },
+          type: type as MeasurementType,
+        },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          mode: true,
+          type: true,
+          values: true,
+          unit: true,
+          reading_source: true,
+          created_at: true,
+          patient: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+          doctor: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+          nurse: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+      });
+    }
+
+    // Doctor and Nurse
+    // if (role === 'DOCTOR' || role === 'NURSE') {}
+    return await this.prisma.measurement.findMany({
+      where: {
+        patient: {
+          user_id: {
+            in: patientIds,
+          },
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        mode: true,
+        type: true,
+        values: true,
+        unit: true,
+        reading_source: true,
+        created_at: true,
+        patient: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+              },
+            },
+          },
+        },
+        doctor: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+              },
+            },
+          },
+        },
+        nurse: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+  }
+
+  public async patientMeasurements(
+    patientId: string,
+    userId: string,
+    role: UserRole,
+    type: string,
+  ): Promise<ModifiedMeasurement[]> {
+    if (type) {
+      // Doctor and Nurse
+      if (role === 'DOCTOR' || role === 'NURSE') {
+        return await this.prisma.patient
+          .findFirstOrThrow({
+            where: {
+              AND: [
+                {
+                  OR: [
+                    {
+                      doctors: {
+                        some: {
+                          user_id: userId,
+                        },
+                      },
+                    },
+                    {
+                      nurses: {
+                        some: {
+                          user_id: userId,
+                        },
+                      },
+                    },
+                  ],
+                },
+                {
+                  user_id: patientId,
+                },
+              ],
+            },
+          })
+          .measurements({
+            where: {
+              type: type as MeasurementType,
+            },
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              mode: true,
+              type: true,
+              values: true,
+              unit: true,
+              reading_source: true,
+              created_at: true,
+              patient: {
+                select: {
+                  user: {
+                    select: {
+                      id: true,
+                      email: true,
+                      first_name: true,
+                      middle_name: true,
+                      last_name: true,
+                    },
+                  },
+                },
+              },
+              doctor: {
+                select: {
+                  user: {
+                    select: {
+                      id: true,
+                      email: true,
+                      first_name: true,
+                      middle_name: true,
+                      last_name: true,
+                    },
+                  },
+                },
+              },
+              nurse: {
+                select: {
+                  user: {
+                    select: {
+                      id: true,
+                      email: true,
+                      first_name: true,
+                      middle_name: true,
+                      last_name: true,
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: {
+              created_at: 'desc',
+            },
+          });
+      } else {
+        // Patient
+        return await this.prisma.patient
+          .findFirstOrThrow({
+            where: {
+              user_id: userId,
+            },
+          })
+          .measurements({
+            where: {
+              type: type as MeasurementType,
+            },
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              mode: true,
+              type: true,
+              values: true,
+              unit: true,
+              reading_source: true,
+              created_at: true,
+              patient: {
+                select: {
+                  user: {
+                    select: {
+                      id: true,
+                      email: true,
+                      first_name: true,
+                      middle_name: true,
+                      last_name: true,
+                    },
+                  },
+                },
+              },
+              doctor: {
+                select: {
+                  user: {
+                    select: {
+                      id: true,
+                      email: true,
+                      first_name: true,
+                      middle_name: true,
+                      last_name: true,
+                    },
+                  },
+                },
+              },
+              nurse: {
+                select: {
+                  user: {
+                    select: {
+                      id: true,
+                      email: true,
+                      first_name: true,
+                      middle_name: true,
+                      last_name: true,
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: {
+              created_at: 'desc',
+            },
+          });
+      }
+    }
+
+    // Doctor and Nurse
+    if (role === 'DOCTOR' || role === 'NURSE') {
+      return await this.prisma.patient
+        .findFirstOrThrow({
+          where: {
+            AND: [
+              {
+                OR: [
+                  {
+                    doctors: {
+                      some: {
+                        user_id: userId,
+                      },
+                    },
+                  },
+                  {
+                    nurses: {
+                      some: {
+                        user_id: userId,
+                      },
+                    },
+                  },
+                ],
+              },
+              {
+                user_id: patientId,
+              },
+            ],
+          },
+        })
+        .measurements({
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            mode: true,
+            type: true,
+            values: true,
+            unit: true,
+            reading_source: true,
+            created_at: true,
+            patient: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    email: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                  },
+                },
+              },
+            },
+            doctor: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    email: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                  },
+                },
+              },
+            },
+            nurse: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    email: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: {
+            created_at: 'desc',
+          },
+        });
+    } else {
+      // Patient
+      return await this.prisma.patient
+        .findFirstOrThrow({
+          where: {
+            user_id: userId,
+          },
+        })
+        .measurements({
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            mode: true,
+            type: true,
+            values: true,
+            unit: true,
+            reading_source: true,
+            created_at: true,
+            patient: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    email: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                  },
+                },
+              },
+            },
+            doctor: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    email: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                  },
+                },
+              },
+            },
+            nurse: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    email: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: {
+            created_at: 'desc',
+          },
+        });
+    }
+  }
+
+  public async createPatientMeasurement(
+    patientId: string,
+    userId: string,
+    role: UserRole,
+    data: MeasurementDTO,
+  ): Promise<ModifiedMeasurement> {
+    let measurement = null;
+
+    // Doctor and Nurse
+    if (role === 'DOCTOR' || 'Nurse') {
+      measurement = await this.prisma.measurement.create({
+        data: {
+          title: data.title,
+          mode: data.mode as MeasurementMode,
+          type: data.type as MeasurementType,
+          unit: data.unit as MeasurementUnit,
+          reading_source: data.reading_source as MeasurementReadingSource,
+          values: data.values,
+          [role.toLocaleLowerCase()]: {
+            connect: {
+              user_id: userId,
+            },
+          },
+          patient: {
+            connect: {
+              user_id: patientId,
+            },
+          },
+        },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          mode: true,
+          type: true,
+          values: true,
+          unit: true,
+          reading_source: true,
+          created_at: true,
+          patient: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+          doctor: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+          nurse: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    } else {
+      // Patient
+      measurement = await this.prisma.measurement.create({
+        data: {
+          title: data.title,
+          mode: data.mode as MeasurementMode,
+          type: data.type as MeasurementType,
+          unit: data.unit as MeasurementUnit,
+          reading_source: data.reading_source as MeasurementReadingSource,
+          values: data.values,
+          patient: {
+            connect: {
+              user_id: userId,
+            },
+          },
+        },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          mode: true,
+          type: true,
+          values: true,
+          unit: true,
+          reading_source: true,
+          created_at: true,
+          patient: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+          doctor: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+          nurse: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    process.nextTick(() => {
+      const payload: MeasurementCreatedEvent = {
+        patientId,
+        measurement,
+      };
+      this.eventEmitter.emitAsync('measurement.created', payload);
+    });
+
+    return measurement;
+  }
+}
