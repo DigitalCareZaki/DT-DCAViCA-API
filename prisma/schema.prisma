@@ -1,0 +1,807 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model UserMetaData {
+  id String @id @default(uuid())
+
+  ip_address  String?
+  device_info String?
+  os          String?
+  last_access DateTime?
+  timezone    String?
+
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model EmailTemplate {
+  id  String @id @default(uuid())
+  key String
+
+  active  Boolean @default(true)
+  subject String
+  html    String  @db.Text
+
+  created_at DateTime @default(now())
+}
+
+model Emails {
+  id String @id @default(uuid())
+
+  subject String
+  to      String
+  sended  Boolean
+  error   String?
+  html    String  @db.Text
+
+  user User? @relation(name: "emailRecievers", fields: [to], references: [email])
+
+  created_at DateTime @default(now())
+}
+
+model Contacts {
+  id           String  @id @default(uuid())
+  name         String
+  email        String?
+  number       String
+  relationship String
+
+  user    User   @relation(name: "userContacts", fields: [user_id], references: [id])
+  user_id String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model User {
+  id String @id @default(uuid())
+
+  first_name  String
+  middle_name String?
+  last_name   String
+
+  dob    DateTime
+  uri    String?
+  role   Role
+  gender Gender
+  title  Title
+  active Boolean  @default(true)
+
+  email        String  @unique
+  phone_number String  @unique
+  username     String  @unique
+  password     String
+  pincode      String?
+
+  location    Location @relation(fields: [location_id], references: [id], onDelete: Cascade)
+  location_id String
+
+  organization    Organization? @relation(name: "userOrganization", fields: [organization_id], references: [id])
+  organization_id String?
+
+  user_meta_data      UserMetaData[]
+  associated_branches Branch[]
+
+  contacts Contacts[] @relation("userContacts")
+
+  likes          Likes[]    @relation("userLikes")
+  comments       Comments[] @relation("userComments")
+  postViews      Views[]    @relation("userViewPost")
+  postAuthor     Post[]     @relation("postAuthor")
+  logs           Logs[]     @relation("userLogs")
+  otp            OTP[]      @relation("userOTP")
+  recievedEmails Emails[]   @relation("emailRecievers")
+
+  appointment_oganizer     Appointment[]             @relation("appointmentOrganizer")
+  appointment_participants AppointmentParticipants[] @relation("appointmentParticipant")
+  appointment_joined       JoinedParticipants[]      @relation("joinedParticipant")
+
+  messageSender   Message[] @relation("messageSender")
+  messageReciever Message[] @relation("messageReciever")
+
+  notificationSender    Notification[] @relation("notificationSender")
+  notificcationReciever Notification[] @relation("notificationReciever")
+
+  rooms Room[] @relation("roomUsers")
+  chats Chat[] @relation("userChats")
+
+  doctor  Doctor?
+  patient Patient?
+  nurse   Nurse?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  devices_created Device[]
+  devices_issued  PatientDevice[]
+  reading_ranges  PatientReadingRange?
+
+  @@index([first_name, created_at(sort: Desc)])
+  @@index([email], type: Hash)
+  @@index([username], type: Hash)
+}
+
+model Department {
+  id String @id @default(uuid())
+
+  title       String
+  description String?
+
+  location    Location @relation(name: "departmentLocation", references: [id], fields: [location_id])
+  location_id String
+
+  doctor Doctor[] @relation("doctorDepartment")
+  nurse  Nurse[]  @relation("nurseDepartment")
+
+  branch    Branch @relation(name: "branchDepartments", references: [id], fields: [barnch_id])
+  barnch_id String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Specialization {
+  id String @id @default(uuid())
+
+  title           String
+  institute_name  String?
+  graduation_date DateTime?
+  working_from    DateTime?
+  uri             String[]
+
+  doctor Doctor[] @relation(name: "doctorSpecilization")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Doctor {
+  id String @id @default(uuid())
+
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id String @unique
+
+  specialities Specialization[] @relation(name: "doctorSpecilization")
+  departments  Department[]     @relation(name: "doctorDepartment")
+  patients     Patient[]        @relation(name: "patientDoctors")
+  measurements Measurement[]    @relation(name: "doctorMeasurements")
+  doctor       Medication[]     @relation(name: "doctorMedication")
+
+  npi_number  String  @unique
+  pmdc_number String? @unique
+  employee_id String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([npi_number], type: Hash)
+}
+
+model Nurse {
+  id String @id @default(uuid())
+
+  user        User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id     String @unique
+  npi_number  String @unique
+  employee_id String
+
+  department    Department @relation(name: "nurseDepartment", fields: [department_id], references: [id])
+  department_id String
+
+  patients     Patient[]     @relation("patientNurses")
+  measurements Measurement[] @relation("nurseMeasurements")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Device {
+  id String @id @default(uuid())
+
+  title       String
+  description String?
+
+  serial_number String @unique
+
+  uri String?
+
+  patient_devices PatientDevice[] @relation("patientDevices")
+
+  category MeasurementType
+
+  created_by User   @relation(references: [id], fields: [user_id], onDelete: Cascade)
+  user_id    String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([serial_number], type: Hash)
+}
+
+model PatientDevice {
+  id String @id @default(uuid())
+
+  device    Device @relation(name: "patientDevices", references: [id], fields: [device_id], onDelete: Cascade)
+  device_id String
+
+  patient         Patient @relation(name: "patientDevices", references: [user_id], fields: [patient_user_id], onDelete: Cascade)
+  patient_user_id String
+
+  issued_by         User   @relation(fields: [issued_by_user_id], references: [id])
+  issued_by_user_id String
+
+  issued_at DateTime @default(now())
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model PatientReadingRange {
+  id String @id @default(uuid())
+
+  spo2          Float[] // low, high
+  bloodpressure Float[] // systolic low, systolic high, diastolic low, diastolic high 
+  bloodglucose  Float[] // low, high
+  temperature   Float[] // low, high
+
+  patient    Patient @relation(name: "patientReadingRange", fields: [patient_id], references: [id], onDelete: Cascade)
+  patient_id String
+
+  send_sms   Boolean @default(false)
+  send_email Boolean @default(false)
+
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id String @unique
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model OTP {
+  id String @id @default(uuid())
+
+  otp      String
+  used     Boolean @default(false)
+  attempts Int     @default(0)
+  expired  Boolean @default(false)
+
+  user_id String
+  user    User   @relation(name: "userOTP", fields: [user_id], references: [id], onDelete: Cascade)
+
+  life       DateTime
+  created_at DateTime @default(now())
+}
+
+model Patient {
+  id String @id @default(uuid())
+
+  emr String @unique @default(nanoid(10))
+
+  weight Float?
+  height Float?
+
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id String @unique
+
+  doctors Doctor[] @relation("patientDoctors")
+  nurses  Nurse[]  @relation("patientNurses")
+
+  measurements      Measurement[]             @relation("patientMeasurement")
+  medication        Medication[]              @relation("patientMedication")
+  electronicReports ElectronicMedicalReport[] @relation("patientElectronicMedicalReport")
+
+  devices PatientDevice[] @relation("patientDevices")
+
+  patient_reading_range PatientReadingRange[] @relation("patientReadingRange")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model ElectronicMedicalReport {
+  id String @id @default(uuid())
+
+  patient_id String
+  patient    Patient @relation(name: "patientElectronicMedicalReport", fields: [patient_id], references: [id])
+
+  family_history String?
+  uri            String
+  title          String
+
+  created DateTime @default(now())
+  updated DateTime @updatedAt
+}
+
+model Measurement {
+  id    String @id @default(uuid())
+  title String
+
+  status MeasurementStatus?
+  mode   MeasurementMode    @default(METRIC)
+  type   MeasurementType
+
+  values Float[]
+
+  patient    Patient @relation(name: "patientMeasurement", fields: [patient_id], references: [id])
+  patient_id String
+
+  nurse    Nurse?  @relation(name: "nurseMeasurements", fields: [nurse_id], references: [id])
+  nurse_id String?
+
+  doctor    Doctor? @relation(name: "doctorMeasurements", fields: [doctor_id], references: [id])
+  doctor_id String?
+
+  unit MeasurementUnit
+
+  reading_source MeasurementReadingSource @default(MANUAL)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Medication {
+  id String @id @default(uuid())
+
+  name String
+
+  start_date DateTime // YYYY-MM-DDT00:00:00Z
+  end_date   DateTime // YYYY-MM-DDT00:00:00Z
+  time       DateTime // only the time part HH:MM:SS is to be used
+
+  dosage    String
+  frequency Int
+
+  unit MedicationUnit
+
+  patient    Patient @relation(name: "patientMedication", fields: [patient_id], references: [id])
+  patient_id String
+
+  doctor    Doctor @relation(name: "doctorMedication", fields: [doctor_id], references: [id])
+  doctor_id String
+
+  appointment    Appointment? @relation(name: "appointmentMedication", fields: [appointment_id], references: [id])
+  appointment_id String?
+
+  patient_medication_alerts PatientMedicationAlerts[] @relation("patientMedicationAlerts")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([name], type: Hash)
+  @@index([start_date])
+  @@index([end_date])
+}
+
+model PatientMedicationAlerts {
+  id String @id @default(uuid())
+
+  alert_time DateTime
+
+  taken MedicationTaken @default(PENDING)
+
+  medication_id String
+  medication    Medication @relation(name: "patientMedicationAlerts", fields: [medication_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+}
+
+model OrganizationMedication {
+  id String @id @default(uuid())
+
+  name String // programatically control unique per organization
+
+  organization    Organization @relation(name: "organizationMedication", fields: [organization_id], references: [id])
+  organization_id String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([name], type: Hash)
+}
+
+model Organization {
+  id           String  @id @default(uuid())
+  name         String
+  email        String  @unique
+  phone_number String  @unique
+  website      String?
+  active       Boolean @default(true)
+  uri          String?
+
+  branches Branch[]
+
+  location    Location @relation(fields: [location_id], references: [id], onDelete: Cascade)
+  location_id String
+
+  user   User[] @relation("userOrganization")
+  userId String
+
+  organization_medication OrganizationMedication[] @relation("organizationMedication")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Branch {
+  id           String  @id @default(uuid())
+  name         String
+  email        String? @unique
+  phone_number String? @unique
+
+  location    Location @relation(fields: [location_id], references: [id], onDelete: Cascade)
+  location_id String
+
+  orgnatization   Organization @relation(fields: [organization_id], references: [id])
+  organization_id String
+
+  created_by String
+
+  users       User[]       @relation()
+  departments Department[] @relation("branchDepartments")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([name], type: Hash)
+}
+
+model Location {
+  id      String  @id @default(uuid())
+  lat     Float?
+  long    Float?
+  address String?
+  zipcode String?
+
+  organization Organization[]
+  branch       Branch[]
+  User         User[]
+  Department   Department[]   @relation(name: "departmentLocation")
+
+  city    City   @relation(fields: [city_id], references: [id])
+  city_id String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Country {
+  id           String  @id @default(uuid())
+  name         String
+  code         String?
+  country_code String?
+
+  City City[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([name], type: Hash)
+}
+
+model City {
+  id   String @id @default(uuid())
+  name String
+
+  country    Country @relation(fields: [country_id], references: [id])
+  country_id String
+
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  Location   Location[]
+
+  @@index([name], type: Hash)
+}
+
+model Likes {
+  id String @id @default(uuid())
+
+  user    User   @relation(name: "userLikes", fields: [user_id], references: [id])
+  user_id String
+
+  post    Post   @relation(name: "postLikes", fields: [post_id], references: [id])
+  post_id String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Comments {
+  id String @id @default(uuid())
+
+  user    User   @relation(name: "userComments", fields: [user_id], references: [id])
+  user_id String
+
+  post    Post   @relation(name: "postComment", fields: [post_id], references: [id])
+  post_id String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Views {
+  id String @id @default(uuid())
+
+  user    User   @relation(name: "userViewPost", fields: [user_id], references: [id])
+  user_id String
+
+  post    Post   @relation(name: "postView", fields: [post_id], references: [id])
+  post_id String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Post {
+  id String @id @default(uuid())
+
+  title          String
+  content        String
+  uri            String
+  additional_uri String[]
+  refrence       String[]
+
+  active Boolean @default(true)
+
+  likes_count    Int @default(0)
+  comments_count Int @default(0)
+  views_count    Int @default(0)
+
+  likes    Likes[]    @relation("postLikes")
+  comments Comments[] @relation("postComment")
+  views    Views[]    @relation("postView")
+
+  author    User   @relation("postAuthor", fields: [author_id], references: [id])
+  author_id String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model AppointmentParticipants {
+  id String @id @default(uuid())
+
+  status AppointmentStatus?
+
+  user_id String
+  user    User   @relation(name: "appointmentParticipant", fields: [user_id], references: [id])
+
+  appointment_id String
+  appointment    Appointment @relation(name: "appointmentParticipantsBridge", fields: [appointment_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model JoinedParticipants {
+  id String @id @default(uuid())
+
+  user_id String
+  user    User   @relation(name: "joinedParticipant", fields: [user_id], references: [id])
+
+  appointment_id String
+  appointment    Appointment @relation(name: "joinedAppointment", fields: [appointment_id], references: [id])
+
+  left_at   DateTime?
+  joined_at DateTime  @default(now())
+
+  left Boolean @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Appointment {
+  id String @id @default(uuid())
+
+  title       String
+  description String?
+
+  type   AppointmentType   @default(ONLINE)
+  about  AppointmentAbout  @default(CASUAL)
+  status AppointmentStatus @default(ACTIVE)
+
+  start_date DateTime
+  end_date   DateTime
+
+  notes String[]
+
+  organizer    User   @relation(name: "appointmentOrganizer", fields: [organizer_id], references: [id])
+  organizer_id String
+
+  room_id String?
+
+  room Room? @relation("appointmentRoom")
+
+  participants       AppointmentParticipants[] @relation("appointmentParticipantsBridge")
+  medication         Medication[]              @relation("appointmentMedication")
+  joinedAppointments JoinedParticipants[]      @relation("joinedAppointment")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Message {
+  id String @id @default(uuid())
+
+  subject     String
+  content     String
+  attachments String[]
+
+  starred Boolean @default(false)
+  deleted Boolean @default(false)
+
+  sender_id   String
+  sender      User   @relation(name: "messageSender", fields: [sender_id], references: [id])
+  reciever_id String
+  reciever    User   @relation(name: "messageReciever", fields: [reciever_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Chat {
+  id String @id @default(uuid())
+
+  message String
+  media   String?
+  read    Boolean? @default(false)
+
+  user_id String
+  auhor   User   @relation("userChats", fields: [user_id], references: [id])
+
+  room_id String
+  room    Room   @relation("roomChat", fields: [room_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Room {
+  id String @id @default(uuid())
+
+  users User[] @relation("roomUsers")
+
+  chats Chat[] @relation("roomChat")
+
+  appointment_id String?      @unique
+  appointment    Appointment? @relation("appointmentRoom", fields: [appointment_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Logs {
+  id String @id @default(uuid())
+
+  method   String
+  endpoint String
+  platform RolePlatform @default(WEB)
+  module   String
+
+  user_id String?
+  user    User?   @relation(name: "userLogs", fields: [user_id], references: [id])
+
+  created_at DateTime @default(now())
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  sender_id String
+  sender    User   @relation(name: "notificationSender", fields: [sender_id], references: [id])
+
+  reciever_id String
+  reciever    User   @relation(name: "notificationReciever", fields: [reciever_id], references: [id])
+
+  title       String
+  description String?
+
+  created_at DateTime @default(now())
+}
+
+enum RolePlatform {
+  WEB
+  MOBILE
+}
+
+enum Role {
+  MASTER
+  SUPERADMIN
+  ADMIN
+  DOCTOR
+  NURSE
+  PATIENT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  TRANS
+  UNKNOWN
+}
+
+enum Title {
+  MR
+  MS
+  MRS
+  MISS
+  MASTER
+  MADAM
+}
+
+enum MeasurementStatus {
+  HIGH
+  LOW
+  NORMAL
+}
+
+enum MeasurementMode {
+  METRIC
+}
+
+enum MeasurementType {
+  ECG
+  SPO2
+  BLOODPRESSURE
+  BLOODGLUCOSE
+  TEMPERATURE
+}
+
+enum MeasurementUnit {
+  VOLTAGE
+  PERCENTAGE
+  MMHG
+  MGDL
+  DEGREE
+  FAHRENHEIT
+}
+
+enum MeasurementReadingSource {
+  MANUAL
+  AUTOMATIC
+}
+
+enum MedicationUnit {
+  TABLET
+  CAPSULE
+  SOFTGEL
+  TEASPOON
+  TABLESPOON
+}
+
+enum MedicationTaken {
+  TAKEN
+  NOT_TAKEN
+  PENDING
+  MISSED
+}
+
+enum AppointmentType {
+  OFFLINE
+  ONLINE
+}
+
+enum AppointmentStatus {
+  HOLD
+  CANCELLED
+  ONGOING
+  ACTIVE
+  COMPLETED
+  PENDING
+}
+
+enum AppointmentAbout {
+  EMERGENCY
+  CONSULTANCY
+  CHECKUP
+  CASUAL
+}
