@@ -22,5 +22,5 @@
       "@types": ["src/types/index.d.ts"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "prisma/seed.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts"]
 }

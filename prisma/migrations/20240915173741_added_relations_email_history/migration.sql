@@ -1,0 +1,2 @@
+-- AddForeignKey
+ALTER TABLE "Emails" ADD CONSTRAINT "Emails_to_fkey" FOREIGN KEY ("to") REFERENCES "User"("email") ON DELETE RESTRICT ON UPDATE CASCADE;

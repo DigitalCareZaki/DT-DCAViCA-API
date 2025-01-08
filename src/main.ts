@@ -10,6 +10,12 @@ import type {} from './global';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // app.enableCors({
+  //   origin: '*',
+  // });
+
+  // Enable CORS for all origins
+
   app.enableCors({
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -37,7 +43,9 @@ async function bootstrap() {
   const server = app.getHttpServer();
   const router = server._events.request._router;
 
-  const routes: Array<{ path: string; method: string; module: string }> = router?.stack.map((layer) => {
+  const routes: Array<{ path: string; method: string; module: string }> =
+    router?.stack
+      .map((layer) => {
         if (layer.route) {
           return {
             path: layer.route?.path,
@@ -45,7 +53,8 @@ async function bootstrap() {
             module: layer?.route?.path?.replace('/api/v1/', '')?.split('/')[1],
           };
         }
-      }).filter((item) => item !== undefined);
+      })
+      .filter((item) => item !== undefined);
 
   const obj = {};
 

@@ -31,9 +31,16 @@ export class ComplianceService {
 
     const patientMedications = await queryEntity
       .findFirstOrThrow({
-        where: { user: { id: userId}},
-        select: { id: true },
-      }).patients({
+        where: {
+          user: {
+            id: userId,
+          },
+        },
+        select: {
+          id: true,
+        },
+      })
+      .patients({
         select: {
           medication: {
             where: {

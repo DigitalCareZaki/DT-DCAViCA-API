@@ -536,39 +536,38 @@ async function main() {
   await connectPatientToNurse();
   await patientMeasurements();
   await createMedication();
-  // await createMaster();
-  // const res = await prisma.post.update({
-  //   where: {
-  //     id: 'c16dab1e-2f1b-4aeb-afc2-65867b6610d7',
-  //   },
-  //   data: {
-  //     uri: 'https://mobility-health-backend-production.up.railway.app/uploads/1719772760096-GettyImages-1215709172.webp',
-  //   },
-  // });
-  // const res = await prisma.post.findMany();
-  // console.log(res);
-  // const res = await prisma.user.findUnique({
-  //   where: {
-  //     email: 'ali@avica.com',
-  //   },
-  // });
-  // const doctor = await prisma.user.findUnique({
-  //   where: {
-  //     email: 'saad@avica.com',
-  //   },
-  // });
-  // await prisma.patient.update({
-  //   where: {
-  //     user_id: res?.id,
-  //   },
-  //   data: {
-  //     doctors: {
-  //       connect: {
-  //         user_id: doctor?.id,
-  //       },
-  //     },
-  //   },
-  // });
+  await createMaster();
+  // // const res = await prisma.post.update({
+  // //   where: {
+  // //     id: 'c16dab1e-2f1b-4aeb-afc2-65867b6610d7',
+  // //   },
+  // //   data: {
+  // //     uri: 'https://mobility-health-backend-production.up.railway.app/uploads/1719772760096-GettyImages-1215709172.webp',
+  // //   },
+  // // });
+  // // const res = await prisma.post.findMany();
+  // // const res = await prisma.user.findUnique({
+  // //   where: {
+  // //     email: 'ali@avica.com',
+  // //   },
+  // // });
+  // // const doctor = await prisma.user.findUnique({
+  // //   where: {
+  // //     email: 'saad@avica.com',
+  // //   },
+  // // });
+  // // await prisma.patient.update({
+  // //   where: {
+  // //     user_id: res?.id,
+  // //   },
+  // //   data: {
+  // //     doctors: {
+  // //       connect: {
+  // //         user_id: doctor?.id,
+  // //       },
+  // //     },
+  // //   },
+  // // });
   // await prisma.emailTemplate.create({
   //   data: {
   //     subject: 'Welcome to avica | Avica',
@@ -576,111 +575,109 @@ async function main() {
   //     key: 'template:onboarding',
   //   },
   // });
-
-  await prisma.emailTemplate.create({
-    data: {
-      subject: "Welcome to Avica! We're Glad to Have You Onboard",
-      key: 'template:onboarding',
-      active: false,
-      html: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Welcome to Avica</title>
-  </head>
-
-  <body
-    style="
-      font-family: Helvetica, Arial, sans-serif;
-      margin: 0px;
-      padding: 0px;
-      background-color: #ffffff;
-    "
-  >
-    <table
-      role="presentation"
-      style="
-        width: 100%;
-        border-collapse: collapse;
-        border: 0px;
-        border-spacing: 0px;
-        font-family: Arial, Helvetica, sans-serif;
-        background-color: rgb(239, 239, 239);
-      "
-    >
-      <tbody>
-        <tr>
-          <td
-            align="center"
-            style="padding: 1rem 2rem; vertical-align: top; width: 100%"
-          >
-            <table
-              role="presentation"
-              style="
-                max-width: 600px;
-                border-collapse: collapse;
-                border: 0px;
-                border-spacing: 0px;
-                text-align: left;
-              "
-            >
-              <tbody>
-                <tr>
-                  <td style="padding: 40px 0px 0px">
-                    <div style="text-align: left">
-                      <div style="padding-bottom: 20px">
-                        <img
-                          src="https://firebasestorage.googleapis.com/v0/b/vstyling-bfbb1.appspot.com/o/Avica%20logo%20blue.png?alt=media&amp;amp;amp;token=0a3532b5-4ac9-4869-9a21-1f68a01fbc5d"
-                          alt="Company"
-                          style="width: 135px"
-                        />
-                      </div>
-                    </div>
-                    <div
-                      style="
-                        padding: 20px;
-                        background-color: rgb(255, 255, 255);
-                      "
-                    >
-                      <div style="color: rgb(0, 0, 0); text-align: left">
-                        <p style="padding-bottom: 16px">Hi USERNAME,</p>
-                        <p style="padding-bottom: 16px">
-                          Thank you for signing up with Avica! 🎉 We're excited
-                          to have you as part of our community.
-                        </p>
-                        <p style="padding-bottom: 16px">
-                          At Avica, we are committed to delivering the best
-                          medical facility. Your journey with us starts now, and
-                          we’re here to ensure you get the most out of your
-                          experience.
-                        </p>
-                        <p style="padding-bottom: 16px">
-                          Best regards,<br />Dr. Zakiuddin Ahmed<br />CEO and
-                          Founder
-                        </p>
-                      </div>
-                    </div>
-                    <div
-                      style="
-                        padding-top: 20px;
-                        color: rgb(153, 153, 153);
-                        text-align: center;
-                      "
-                    ></div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </body>
-</html>
-`,
-    },
-  });
+  // await prisma.emailTemplate.create({
+  //   data: {
+  //     subject: "Welcome to Avica! We're Glad to Have You Onboard",
+  //     key: 'template:onboarding',
+  //     active: false,
+  //     html: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+  //   <html xmlns="http://www.w3.org/1999/xhtml">
+  //     <head>
+  //       <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  //       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  //       <title>Welcome to Avica</title>
+  //     </head>
+  //     <body
+  //       style="
+  //         font-family: Helvetica, Arial, sans-serif;
+  //         margin: 0px;
+  //         padding: 0px;
+  //         background-color: #ffffff;
+  //       "
+  //     >
+  //       <table
+  //         role="presentation"
+  //         style="
+  //           width: 100%;
+  //           border-collapse: collapse;
+  //           border: 0px;
+  //           border-spacing: 0px;
+  //           font-family: Arial, Helvetica, sans-serif;
+  //           background-color: rgb(239, 239, 239);
+  //         "
+  //       >
+  //         <tbody>
+  //           <tr>
+  //             <td
+  //               align="center"
+  //               style="padding: 1rem 2rem; vertical-align: top; width: 100%"
+  //             >
+  //               <table
+  //                 role="presentation"
+  //                 style="
+  //                   max-width: 600px;
+  //                   border-collapse: collapse;
+  //                   border: 0px;
+  //                   border-spacing: 0px;
+  //                   text-align: left;
+  //                 "
+  //               >
+  //                 <tbody>
+  //                   <tr>
+  //                     <td style="padding: 40px 0px 0px">
+  //                       <div style="text-align: left">
+  //                         <div style="padding-bottom: 20px">
+  //                           <img
+  //                             src="https://firebasestorage.googleapis.com/v0/b/vstyling-bfbb1.appspot.com/o/Avica%20logo%20blue.png?alt=media&amp;amp;amp;token=0a3532b5-4ac9-4869-9a21-1f68a01fbc5d"
+  //                             alt="Company"
+  //                             style="width: 135px"
+  //                           />
+  //                         </div>
+  //                       </div>
+  //                       <div
+  //                         style="
+  //                           padding: 20px;
+  //                           background-color: rgb(255, 255, 255);
+  //                         "
+  //                       >
+  //                         <div style="color: rgb(0, 0, 0); text-align: left">
+  //                           <p style="padding-bottom: 16px">Hi USERNAME,</p>
+  //                           <p style="padding-bottom: 16px">
+  //                             Thank you for signing up with Avica! 🎉 We're excited
+  //                             to have you as part of our community.
+  //                           </p>
+  //                           <p style="padding-bottom: 16px">
+  //                             At Avica, we are committed to delivering the best
+  //                             medical facility. Your journey with us starts now, and
+  //                             we’re here to ensure you get the most out of your
+  //                             experience.
+  //                           </p>
+  //                           <p style="padding-bottom: 16px">
+  //                             Best regards,<br />Dr. Zakiuddin Ahmed<br />CEO and
+  //                             Founder
+  //                           </p>
+  //                         </div>
+  //                       </div>
+  //                       <div
+  //                         style="
+  //                           padding-top: 20px;
+  //                           color: rgb(153, 153, 153);
+  //                           text-align: center;
+  //                         "
+  //                       ></div>
+  //                     </td>
+  //                   </tr>
+  //                 </tbody>
+  //               </table>
+  //             </td>
+  //           </tr>
+  //         </tbody>
+  //       </table>
+  //     </body>
+  //   </html>
+  //   `,
+  //   },
+  // });
 }
 
 main()
