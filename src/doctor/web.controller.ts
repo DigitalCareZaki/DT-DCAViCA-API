@@ -31,11 +31,18 @@ import {
 
 import { DoctorPatientGuard } from 'src/auth/guards';
 import { LinkNurseDTO } from 'src/common/dto/linkNurse.dto';
+import { ElectronicmedicalreportService } from 'src/electronicmedicalreport/electronicmedicalreport.service';
 
 @Controller('web/doctor')
 export class DoctorWebController extends DoctorController {
-  constructor(doctorService: DoctorService) {
+  constructor(doctorService: DoctorService, private emrService: ElectronicmedicalreportService) {
     super(doctorService);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/all-reports')
+  public fetchReports() {
+    return this.emrService.getAllPatientReports();
   }
 
   @HttpCode(HttpStatus.OK)
