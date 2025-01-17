@@ -245,6 +245,69 @@ model PatientDevice {
   updated_at DateTime @updatedAt
 }
 
+model Tablet {
+  id String @id @default(uuid())
+
+  title String
+
+  serial_number String @unique
+
+  uri String?
+
+  patient_tablets PatientTablet[] @relation("patientTablets")
+
+  category MeasurementType
+
+  created_by User   @relation(references: [id], fields: [user_id], onDelete: Cascade)
+  user_id    String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([serial_number], type: Hash)
+}
+
+model PatientTablet {
+  id String @id @default(uuid())
+
+  tablet    Tablet @relation(name: "patientTablets", references: [id], fields: [tablet_id], onDelete: Cascade)
+  tablet_id String
+
+  issued_to         Patient @relation(name: "patientTablets", references: [user_id], fields: [issued_to_user_id], onDelete: Cascade)
+  issued_to_user_id String
+
+  issued_by         User   @relation(fields: [issued_by_user_id], references: [id])
+  issued_by_user_id String
+
+  issued_at DateTime @default(now())
+
+  // will not have created_at and updated_at
+  // this is a bridge table
+}
+
+model PatientMeasurementRange {
+  id String @id @default(uuid())
+
+  type MeasurementType
+
+  // For spo2, blood_glucose, and temperature - [low, high]
+  // For blood_pressure - [systolic low, systolic high, diastolic low, diastolic high]
+  // ecg - currently not supported
+  range Float[]
+
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id String
+
+  patient    Patient @relation(name: "patientMeasurementRange", fields: [patient_id], references: [id], onDelete: Cascade)
+  patient_id String
+
+  send_sms   Boolean @default(false)
+  send_email Boolean @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
 model PatientReadingRange {
   id String @id @default(uuid())
 
@@ -707,6 +770,23 @@ model Notification {
 
   created_at DateTime @default(now())
 }
+
+model VideosMetaData {
+  id String @id @default(uuid())
+
+  title       String
+  description String
+
+  uri String
+
+  thumbnail String?
+
+  author_id String
+  author    User   @relation(name: "userVideos", fields: [author_id], references: [id])
+
+  created_at DateTime @default(now())
+}
+
 
 enum RolePlatform {
   WEB
