@@ -93,14 +93,13 @@ model User {
 
   contacts Contacts[] @relation("userContacts")
 
-  likes          Likes[]          @relation("userLikes")
-  comments       Comments[]       @relation("userComments")
-  postViews      Views[]          @relation("userViewPost")
-  postAuthor     Post[]           @relation("postAuthor")
-  logs           Logs[]           @relation("userLogs")
-  otp            OTP[]            @relation("userOTP")
-  recievedEmails Emails[]         @relation("emailRecievers")
-  videos         VideosMetaData[] @relation("userVideos")
+  likes          Likes[]    @relation("userLikes")
+  comments       Comments[] @relation("userComments")
+  postViews      Views[]    @relation("userViewPost")
+  postAuthor     Post[]     @relation("postAuthor")
+  logs           Logs[]     @relation("userLogs")
+  otp            OTP[]      @relation("userOTP")
+  recievedEmails Emails[]   @relation("emailRecievers")
 
   appointment_oganizer     Appointment[]             @relation("appointmentOrganizer")
   appointment_participants AppointmentParticipants[] @relation("appointmentParticipant")
@@ -122,13 +121,9 @@ model User {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  measurement_ranges PatientMeasurementRange[]
-
   devices_created Device[]
   devices_issued  PatientDevice[]
-
-  tablets_created Tablet[]
-  tablets_issued  PatientTablet[]
+  reading_ranges  PatientReadingRange?
 
   @@index([first_name, created_at(sort: Desc)])
   @@index([email], type: Hash)
@@ -238,16 +233,16 @@ model PatientDevice {
   device    Device @relation(name: "patientDevices", references: [id], fields: [device_id], onDelete: Cascade)
   device_id String
 
-  issued_to         Patient @relation(name: "patientDevices", references: [user_id], fields: [issued_to_user_id], onDelete: Cascade)
-  issued_to_user_id String
+  patient         Patient @relation(name: "patientDevices", references: [user_id], fields: [patient_user_id], onDelete: Cascade)
+  patient_user_id String
 
   issued_by         User   @relation(fields: [issued_by_user_id], references: [id])
   issued_by_user_id String
 
   issued_at DateTime @default(now())
 
-  // will not have created_at and updated_at
-  // this is a bridge table
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 model Tablet {
@@ -313,6 +308,27 @@ model PatientMeasurementRange {
   updated_at DateTime @updatedAt
 }
 
+model PatientReadingRange {
+  id String @id @default(uuid())
+
+  spo2          Float[] // low, high
+  bloodpressure Float[] // systolic low, systolic high, diastolic low, diastolic high 
+  bloodglucose  Float[] // low, high
+  temperature   Float[] // low, high
+
+  patient    Patient @relation(name: "patientReadingRange", fields: [patient_id], references: [id], onDelete: Cascade)
+  patient_id String
+
+  send_sms   Boolean @default(false)
+  send_email Boolean @default(false)
+
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id String @unique
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
 model OTP {
   id String @id @default(uuid())
 
@@ -347,9 +363,8 @@ model Patient {
   electronicReports ElectronicMedicalReport[] @relation("patientElectronicMedicalReport")
 
   devices PatientDevice[] @relation("patientDevices")
-  tablets PatientTablet[] @relation("patientTablets")
 
-  measurement_ranges PatientMeasurementRange[] @relation("patientMeasurementRange")
+  patient_reading_range PatientReadingRange[] @relation("patientReadingRange")
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -772,6 +787,7 @@ model VideosMetaData {
   created_at DateTime @default(now())
 }
 
+
 enum RolePlatform {
   WEB
   MOBILE
@@ -825,6 +841,7 @@ enum MeasurementUnit {
   PERCENTAGE
   MMHG
   MGDL
+  DEGREE
   FAHRENHEIT
 }
 
