@@ -6,6 +6,5 @@ import { EMRWebController } from './web.controller';
 @Module({
   controllers: [ElectronicmedicalreportController, EMRWebController],
   providers: [ElectronicmedicalreportService],
-  exports: [ElectronicmedicalreportService],
 })
 export class ElectronicmedicalreportModule {}

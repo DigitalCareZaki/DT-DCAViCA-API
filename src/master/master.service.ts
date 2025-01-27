@@ -16,7 +16,6 @@ export class MasterService {
       where: {
         id,
       },
-
       data: {
         title: data.title,
         first_name: data.first_name,

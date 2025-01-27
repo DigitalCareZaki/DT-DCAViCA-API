@@ -32,4 +32,5 @@ export type OrganizationUsers = {
   associated_branches: {
     name: string;
   }[];
+  active?: boolean;
 };

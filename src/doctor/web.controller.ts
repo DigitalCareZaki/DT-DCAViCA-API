@@ -27,22 +27,16 @@ import {
   PatientProfile,
   GetNurses,
   OrganizationMedication,
+  DoctorStats,
 } from './types';
 
 import { DoctorPatientGuard } from 'src/auth/guards';
 import { LinkNurseDTO } from 'src/common/dto/linkNurse.dto';
-import { ElectronicmedicalreportService } from 'src/electronicmedicalreport/electronicmedicalreport.service';
 
 @Controller('web/doctor')
 export class DoctorWebController extends DoctorController {
-  constructor(doctorService: DoctorService, private emrService: ElectronicmedicalreportService) {
+  constructor(doctorService: DoctorService) {
     super(doctorService);
-  }
-
-  @HttpCode(HttpStatus.OK)
-  @Get('/all-reports')
-  public fetchReports() {
-    return this.emrService.getAllPatientReports();
   }
 
   @HttpCode(HttpStatus.OK)
@@ -133,5 +127,11 @@ export class DoctorWebController extends DoctorController {
     @Query('search') search: string,
   ): Promise<PatientNurses[]> {
     return this.getDoctorService().getPatientsNurses(id, user.id, search || '');
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/stats')
+  public async getDoctorStats(@GetUser() user: UserRes): Promise<DoctorStats> {
+    return this.getDoctorService().getStats(user.id);
   }
 }

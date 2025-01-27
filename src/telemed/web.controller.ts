@@ -31,6 +31,7 @@ import type {
   GetMeetingParticipantsProps,
   LeftMeetingProps,
   GetMeetingChatsProps,
+  SlotParent,
 } from './types';
 import type { UserRes } from '@types';
 import { TelemedActionDTO } from './dto/action.dto';
@@ -86,6 +87,29 @@ export class TelemedWebController extends TelemedController {
     @GetUser() user: UserRes,
   ): Promise<RequestedAppointmentProps[]> {
     return this.getTelemedService().requested(user);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/calendar')
+  public async calendar(
+    @GetUser() user: UserRes, // Authenticated user
+    @Query('userId') userId?: string, // Optional userId query parameter
+  ): Promise<SlotParent> {
+    const calendarUserId = userId || user.id; // Use the provided userId or fallback to authenticated user
+    // console.log(`Fetching calendar for user: ${calendarUserId}`);
+
+    return this.getTelemedService().calendar(calendarUserId);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('/calendar')
+  public async updateCalendar(
+    @GetUser() user: UserRes,
+    @Body() data: SlotParent, // Accepting SlotParent as input data
+  ): Promise<SlotParent> {
+    // console.log(`Updating calendar for user: ${user.id}`);
+    // console.log('Data: ', data);
+    return this.getTelemedService().updateCalendar(user, data);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -177,8 +201,6 @@ export class TelemedWebController extends TelemedController {
   public async recentMeasurement(@Param('id') telemed_id: string) {
     const patient =
       await this.getTelemedService().getTelemedPatient(telemed_id);
-
-    console.log('patient: ', patient);
 
     return this.getTelemedService().gePatientRecentMeasurement(patient);
   }

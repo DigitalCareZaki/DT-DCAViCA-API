@@ -23,6 +23,27 @@ export type GetAppointmentsType = {
   created_at: Date;
 };
 
+export type Slot = {
+  id: number;
+  startTime: Date;
+  endTime: Date;
+  slotWrapperId?: number;
+};
+
+export type SlotWrapper = {
+  id: number;
+  day: number;
+  slots: Slot[];
+  slotParentId?: string; // Note the string type here
+};
+
+export type SlotParent = {
+  id: string;
+  slots: SlotWrapper[];
+  startTime?: Date;
+  endTime?: Date;
+};
+
 export type AppointmentStatus =
   | 'ACTIVE'
   | 'CANCELLED'

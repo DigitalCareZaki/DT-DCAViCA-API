@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
 }
 
 model UserMetaData {
@@ -21,6 +21,31 @@ model UserMetaData {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+}
+
+model Slot {
+  id            Int          @id @default(autoincrement())
+  startTime     DateTime
+  endTime       DateTime
+  slotWrapper   SlotWrapper? @relation("SlotToWrapper", fields: [slotWrapperId], references: [id])
+  slotWrapperId Int?
+}
+
+model SlotWrapper {
+  id    Int    @id @default(autoincrement())
+  day   Int
+  slots Slot[] @relation("SlotToWrapper")
+
+  // Reverse relation to SlotParent
+  slotParent   SlotParent? @relation(fields: [slotParentId], references: [id])
+  slotParentId String?
+}
+
+model SlotParent {
+  id        String        @id @default(cuid())
+  slots     SlotWrapper[]
+  startTime DateTime?
+  endTime   DateTime?
 }
 
 model EmailTemplate {
@@ -93,14 +118,14 @@ model User {
 
   contacts Contacts[] @relation("userContacts")
 
-  likes          Likes[]          @relation("userLikes")
-  comments       Comments[]       @relation("userComments")
-  postViews      Views[]          @relation("userViewPost")
-  postAuthor     Post[]           @relation("postAuthor")
-  logs           Logs[]           @relation("userLogs")
-  otp            OTP[]            @relation("userOTP")
-  recievedEmails Emails[]         @relation("emailRecievers")
-  videos         VideosMetaData[] @relation("userVideos")
+  likes          Likes[]    @relation("userLikes")
+  comments       Comments[] @relation("userComments")
+  postViews      Views[]    @relation("userViewPost")
+  postAuthor     Post[]     @relation("postAuthor")
+  logs           Logs[]     @relation("userLogs")
+  otp            OTP[]      @relation("userOTP")
+  recievedEmails Emails[]   @relation("emailRecievers")
+  videos         Videos[]   @relation("userVideos")
 
   appointment_oganizer     Appointment[]             @relation("appointmentOrganizer")
   appointment_participants AppointmentParticipants[] @relation("appointmentParticipant")
@@ -376,6 +401,10 @@ model Measurement {
   status MeasurementStatus?
   mode   MeasurementMode    @default(METRIC)
   type   MeasurementType
+
+  updated_status Int?
+  updated_status_by String?
+  updated_status_at DateTime?
 
   values Float[]
 
@@ -756,7 +785,7 @@ model Notification {
   created_at DateTime @default(now())
 }
 
-model VideosMetaData {
+model Videos {
   id String @id @default(uuid())
 
   title       String
@@ -764,7 +793,8 @@ model VideosMetaData {
 
   uri String
 
-  thumbnail String?
+  category VideoCategory
+  priority VideoPriority @default(UNDEFINED)
 
   author_id String
   author    User   @relation(name: "userVideos", fields: [author_id], references: [id])
@@ -867,4 +897,15 @@ enum AppointmentAbout {
   CONSULTANCY
   CHECKUP
   CASUAL
+}
+
+enum VideoPriority {
+  HIGH
+  LOW
+  UNDEFINED
+}
+
+enum VideoCategory {
+  INFORMATIONAL
+  MARKETING
 }

@@ -18,6 +18,7 @@ import type {
   LeftMeetingProps,
   GetMeetingParticipantsProps,
   GetMeetingChatsProps,
+  SlotParent,
 } from './types';
 
 @Injectable()
@@ -219,6 +220,193 @@ export class TelemedService {
     });
   }
 
+  public async calendar(userId: string): Promise<SlotParent> {
+    // console.log(`Fetching calendar for user: ${userId}`);
+    const existingSlotParent = await this.prisma.slotParent.findUnique({
+      where: { id: userId },
+      include: {
+        slots: {
+          include: {
+            slots: true,
+          },
+        },
+      },
+    });
+
+    if (existingSlotParent) {
+      return existingSlotParent;
+    }
+    // console.log(`creating new`);
+
+    await this.prisma.slotParent.create({
+      data: {
+        id: userId,
+      },
+    });
+
+    // Separately create SlotWrappers
+    await Promise.all(
+      [0, 1, 2, 3, 4, 5, 6].map((day) =>
+        this.prisma.slotWrapper.create({
+          data: {
+            day: day,
+            slotParentId: userId,
+          },
+        }),
+      ),
+    );
+
+    // If you want to fetch the complete data afterwards
+    const completeSlotParent = await this.prisma.slotParent.findUnique({
+      where: { id: userId },
+      include: {
+        slots: {
+          include: {
+            slots: true,
+          },
+        },
+      },
+    });
+
+    // console.log(`New SlotParent created for user ${userId}`);
+    return completeSlotParent;
+  }
+
+  public async updateCalendar(
+    user: UserRes,
+    data: SlotParent,
+  ): Promise<SlotParent> {
+    // console.log(`Updating calendar 100% for user: ${user.id}`);
+
+    // Fetch existing SlotParent with all nested relations
+    const existingSlotParent = await this.prisma.slotParent.findUnique({
+      where: { id: user.id },
+      include: {
+        slots: {
+          include: {
+            slots: true,
+          },
+        },
+      },
+    });
+
+    // If SlotParent doesn't exist, throw an error
+    if (!existingSlotParent) {
+      throw new Error(`SlotParent for user ${user.id} does not exist.`);
+    }
+
+    // Update the SlotParent fields
+    await this.prisma.slotParent.update({
+      where: { id: user.id },
+      data: {
+        startTime: data.startTime,
+        endTime: data.endTime,
+      },
+    });
+
+    // Get list of current SlotWrapper IDs and Slot IDs from the existing data
+    const existingWrapperIds = existingSlotParent.slots.map(
+      (wrapper) => wrapper.id,
+    );
+
+    const newWrapperIds = data.slots.map((wrapper) => wrapper.id);
+
+    // Identify and delete SlotWrappers that are missing in the incoming data
+    const wrappersToDelete = existingWrapperIds.filter(
+      (id) => !newWrapperIds.includes(id),
+    );
+
+    for (const wrapperId of wrappersToDelete) {
+      await this.prisma.slotWrapper.delete({
+        where: { id: wrapperId },
+      });
+    }
+
+    // Process SlotWrappers: Update existing or create new ones
+    for (const incomingWrapper of data.slots) {
+      if (incomingWrapper.id) {
+        // Update existing SlotWrapper
+        await this.prisma.slotWrapper.update({
+          where: { id: incomingWrapper.id },
+          data: { day: incomingWrapper.day },
+        });
+
+        // Handle Slots within the SlotWrapper
+        const existingSlotIds =
+          existingSlotParent.slots
+            .find((wrapper) => wrapper.id === incomingWrapper.id)
+            ?.slots.map((slot) => slot.id) || [];
+        const incomingSlotIds = incomingWrapper.slots.map((slot) => slot.id);
+
+        // Delete slots that are missing in the incoming data
+        const slotsToDelete = existingSlotIds.filter(
+          (id) => !incomingSlotIds.includes(id),
+        );
+
+        for (const slotId of slotsToDelete) {
+          await this.prisma.slot.delete({ where: { id: slotId } });
+        }
+
+        // Update existing slots and create new ones
+        for (const incomingSlot of incomingWrapper.slots) {
+          if (incomingSlot.id) {
+            // Update existing slot
+            await this.prisma.slot.update({
+              where: { id: incomingSlot.id },
+              data: {
+                startTime: incomingSlot.startTime,
+                endTime: incomingSlot.endTime,
+              },
+            });
+          } else {
+            // Create new slot
+            await this.prisma.slot.create({
+              data: {
+                startTime: incomingSlot.startTime,
+                endTime: incomingSlot.endTime,
+                slotWrapperId: incomingWrapper.id,
+              },
+            });
+          }
+        }
+      } else {
+        // Create new SlotWrapper if it doesn't exist
+        const newWrapper = await this.prisma.slotWrapper.create({
+          data: {
+            day: incomingWrapper.day,
+            slotParentId: user.id,
+          },
+        });
+
+        // Create new slots for this new SlotWrapper
+        for (const newSlot of incomingWrapper.slots) {
+          await this.prisma.slot.create({
+            data: {
+              startTime: newSlot.startTime,
+              endTime: newSlot.endTime,
+              slotWrapperId: newWrapper.id,
+            },
+          });
+        }
+      }
+    }
+
+    // Fetch and return the fully updated SlotParent with all nested data
+    const updatedSlotParent = await this.prisma.slotParent.findUnique({
+      where: { id: user.id },
+      include: {
+        slots: {
+          include: {
+            slots: true,
+          },
+        },
+      },
+    });
+
+    // console.log(`Calendar fully updated for user ${user.id}`);
+    return updatedSlotParent;
+  }
+
   public async action(
     user: UserRes,
     data: TelemedActionDTO,
@@ -261,7 +449,6 @@ export class TelemedService {
       where: {
         id,
       },
-
       select: {
         participants: {
           select: {
@@ -277,7 +464,6 @@ export class TelemedService {
             },
           },
         },
-
         id: true,
         start_date: true,
         end_date: true,
@@ -323,7 +509,6 @@ export class TelemedService {
           },
         ],
       },
-
       select: {
         id: true,
       },
@@ -337,7 +522,6 @@ export class TelemedService {
       where: {
         id,
       },
-
       select: {
         title: true,
         description: true,
@@ -365,7 +549,6 @@ export class TelemedService {
           },
         ],
       },
-
       select: {
         id: true,
       },
@@ -406,7 +589,6 @@ export class TelemedService {
       where: {
         appointment_id: id,
       },
-
       select: {
         user: {
           select: {
@@ -418,7 +600,6 @@ export class TelemedService {
             role: true,
           },
         },
-
         left: true,
       },
     });
@@ -439,7 +620,6 @@ export class TelemedService {
           },
         ],
       },
-
       select: {
         id: true,
       },
@@ -450,7 +630,6 @@ export class TelemedService {
         where: {
           id: data.id,
         },
-
         data: {
           left: true,
           left_at: new Date(),
@@ -489,7 +668,6 @@ export class TelemedService {
       where: {
         id,
       },
-
       data: {
         status: status as any,
       },
@@ -524,7 +702,6 @@ export class TelemedService {
           },
         ],
       },
-
       select: {
         id: true,
       },
@@ -534,7 +711,6 @@ export class TelemedService {
       where: {
         appointment_id: appointmentId,
       },
-
       select: {
         chats: {
           select: {
@@ -568,7 +744,6 @@ export class TelemedService {
       where: {
         user_id: patientId,
       },
-
       select: {
         measurements: {
           select: {
@@ -596,7 +771,6 @@ export class TelemedService {
       where: {
         id: telemedId,
       },
-
       select: {
         participants: {
           select: {

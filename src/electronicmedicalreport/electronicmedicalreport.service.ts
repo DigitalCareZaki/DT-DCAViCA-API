@@ -74,28 +74,4 @@ export class ElectronicmedicalreportService {
       },
     });
   }
-
-  public async getAllPatientReports() {
-    return await this.prisma.electronicMedicalReport.findMany({
-      select: {
-        title: true,
-        uri: true,
-        created: true,
-        family_history: true,
-        patient: {
-          select: {
-            user: {
-              select: {
-                first_name: true,
-                last_name: true,
-                middle_name: true,
-                uri: true,
-                id: true,
-              },
-            },
-          },
-        },
-      },
-    });
-  }
 }

@@ -1,0 +1,20 @@
+# Connect to Supabase via connection pooling with Supavisor.
+# DATABASE_URL"postgres://postgres.[PROJECT_REF]:[DB_PASSWORD]@[DB_HOST]:[DB_PORT - 6543]/[DB_NAME]?pgbouncer=true"
+# Used for migrations
+# DIRECT_URL="postgres://postgres.[PROJECT_REF]:[DB_PASSWORD]@[DB_HOST]:[DB_PORT - 5432]/[DB_NAME]?connect_timeout=300"
+
+JWT_SECRET=
+JWT_EXPIRESIN="1h"
+
+VL_BASE_URL=
+VL_TENANT_ID=
+VL_PROCESS_KEY=
+
+OTP_SECRET=
+
+SMTP_HOST=
+SMTP_PASS=
+SMTP_USER=
+
+SENDGRID_API_KEY=
+SENDGRID_EMAIL=

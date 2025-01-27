@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { GetUser } from 'src/auth/decorators';
+import { NursePatientGuard } from 'src/auth/guards';
 
 import { NurseController } from './nurse.controller';
 import { NurseService } from './nurse.service';
@@ -23,8 +24,8 @@ import {
   PatientDoctors,
   PatientNurses,
   PatientProfile,
+  NurseStats,
 } from './types';
-import { NursePatientGuard } from 'src/auth/guards';
 
 @Controller('web/nurse')
 export class NurseWebController extends NurseController {
@@ -100,5 +101,11 @@ export class NurseWebController extends NurseController {
     @Query('search') search: string,
   ): Promise<PatientNurses[]> {
     return this.getNurseService().getPatientsNurses(id, user.id, search || '');
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/stats')
+  public async getNurseStats(@GetUser() user: UserRes): Promise<NurseStats> {
+    return this.getNurseService().getStats(user.id);
   }
 }

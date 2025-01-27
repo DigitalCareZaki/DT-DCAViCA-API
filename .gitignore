@@ -2,7 +2,8 @@
 /dist
 /node_modules
 
-/prisma/migrations
+.env
+*.env
 
 # Logs
 *.log

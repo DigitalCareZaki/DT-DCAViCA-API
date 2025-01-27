@@ -122,3 +122,12 @@ export type OrganizationMedication = {
   };
   created_at: Date;
 };
+
+export type DoctorStats = {
+  hold: number;
+  cancelled: number;
+  ongoing: number;
+  active: number;
+  completed: number;
+  pending: number;
+};

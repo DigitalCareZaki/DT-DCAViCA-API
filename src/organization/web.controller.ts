@@ -32,6 +32,7 @@ import { DoctorService } from 'src/doctor/doctor.service';
 import { AddAdminDTO } from './dto/addAdmin.dto';
 import { AdminService } from 'src/admin/admin.service';
 import { AddSuperadminDTO } from './dto/addSuperadmin.dto';
+import { AddMedicinesDTO } from './dto/addMedicines.dto';
 
 @Controller('web/organization')
 export class OrganizationWebController extends OrganizationController {
@@ -301,5 +302,35 @@ export class OrganizationWebController extends OrganizationController {
       throw new BadRequestException('User id is required');
     }
     return this.getOrganizationService().disableUser(id);
+  }
+
+  @HttpCode(HttpStatus.CREATED)
+  @Post('/medicines')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.SUPERADMIN, Role.ADMIN)
+  public async createOrganizationMedicine(
+    @Body() data: AddMedicinesDTO,
+    @GetUser() user: UserRes,
+  ) {
+    const organizationId =
+      await this.getOrganizationService().getOrganizationId(user.id);
+
+    return this.getOrganizationService().addOrganizationMedicines(
+      organizationId,
+      data.names,
+    );
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/medicines')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.SUPERADMIN, Role.ADMIN)
+  public async getOrganizationMedicine(@GetUser() user: UserRes) {
+    const organizationId =
+      await this.getOrganizationService().getOrganizationId(user.id);
+
+    return this.getOrganizationService().getOrganizationMedicines(
+      organizationId,
+    );
   }
 }

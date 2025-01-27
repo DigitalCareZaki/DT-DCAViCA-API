@@ -65,6 +65,10 @@ import { VideosModule } from './videos/videos.module';
 
 import { TabletModule } from './tablets/tablet.module';
 
+import { SupportModule } from './technicalSupport/support.module';
+
+import { SendgridModule } from './sendGrid/sendgrid.module';
+
 @Module({
   providers: [
     {
@@ -120,6 +124,9 @@ import { TabletModule } from './tablets/tablet.module';
     ScheduleModule.forRoot(),
     VideosModule,
     TabletModule,
+    SupportModule,
+
+    SendgridModule,
   ],
 })
 export class AppModule implements NestModule {

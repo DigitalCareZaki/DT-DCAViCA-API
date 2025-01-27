@@ -73,11 +73,10 @@ export class PatientService {
         where: {
           id: patient.id,
         },
-
         data: {
           nurses: {
             connect: {
-              id: data.nurse_id,
+              user_id: data.nurse_id,
             },
           },
         },

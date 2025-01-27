@@ -105,3 +105,12 @@ export type Patients = {
   };
   emr: string;
 }[];
+
+export type NurseStats = {
+  hold: number;
+  cancelled: number;
+  ongoing: number;
+  active: number;
+  completed: number;
+  pending: number;
+};

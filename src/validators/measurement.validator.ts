@@ -152,7 +152,9 @@ export class ValidateMeasurementReadingRange
 
     if (!range?.length) return false;
 
-    if (type === 'BLOODPRESSURE' && range?.length !== 4) return false;
+    if (type === 'BLOODPRESSURE') {
+      return range?.length === 4;
+    }
 
     return range?.length === 2;
   }

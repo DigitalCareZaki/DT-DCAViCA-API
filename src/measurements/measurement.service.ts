@@ -22,6 +22,23 @@ export class MeasurementService {
     private eventEmitter: EventEmitter2,
   ) {}
 
+  public async updateMeasurementStatus(
+    measurementId: string,
+    new_status: number,
+    updated_status_by: string,
+  ) {
+    return await this.prisma.measurement.update({
+      where: {
+        id: measurementId,
+      },
+      data: {
+        updated_status: new_status,
+        updated_status_by: updated_status_by,
+        updated_status_at: new Date(),
+      },
+    });
+  }
+
   public async getMeasurementsOfAllPatients(
     userId: string,
     role: UserRole,
@@ -60,9 +77,12 @@ export class MeasurementService {
           mode: true,
           type: true,
           values: true,
+          updated_status_at: true,
+          updated_status_by: true,
           unit: true,
           reading_source: true,
           created_at: true,
+          updated_status: true,
           patient: {
             select: {
               user: {
@@ -126,9 +146,12 @@ export class MeasurementService {
         mode: true,
         type: true,
         values: true,
+        updated_status_at: true,
+        updated_status_by: true,
         unit: true,
         reading_source: true,
         created_at: true,
+        updated_status: true,
         patient: {
           select: {
             user: {
@@ -220,7 +243,10 @@ export class MeasurementService {
               id: true,
               title: true,
               status: true,
+              updated_status: true,
               mode: true,
+              updated_status_at: true,
+              updated_status_by: true,
               type: true,
               values: true,
               unit: true,
@@ -286,8 +312,11 @@ export class MeasurementService {
               id: true,
               title: true,
               status: true,
+              updated_status: true,
               mode: true,
               type: true,
+              updated_status_at: true,
+              updated_status_by: true,
               values: true,
               unit: true,
               reading_source: true,
@@ -376,6 +405,9 @@ export class MeasurementService {
             status: true,
             mode: true,
             type: true,
+            updated_status: true,
+            updated_status_at: true,
+            updated_status_by: true,
             values: true,
             unit: true,
             reading_source: true,
@@ -435,9 +467,12 @@ export class MeasurementService {
         .measurements({
           select: {
             id: true,
+            updated_status: true,
             title: true,
             status: true,
             mode: true,
+            updated_status_at: true,
+            updated_status_by: true,
             type: true,
             values: true,
             unit: true,

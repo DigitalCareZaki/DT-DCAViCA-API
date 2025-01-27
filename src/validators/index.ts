@@ -5,3 +5,4 @@ export * from './telemed.validator';
 export * from './branch.validator';
 export * from './measurement.validator';
 export * from './medication.validator';
+export * from './video.validator';

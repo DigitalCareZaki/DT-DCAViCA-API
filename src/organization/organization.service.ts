@@ -152,7 +152,6 @@ export class OrganizationService {
       where: {
         AND: filter,
       },
-
       select: {
         id: true,
         first_name: true,
@@ -168,6 +167,7 @@ export class OrganizationService {
             name: true,
           },
         },
+        active: true,
       },
     });
   }
@@ -180,8 +180,6 @@ export class OrganizationService {
     if (user.role === 'ADMIN') {
       return this.getBranchUsers(user, search, role);
     }
-
-    console.log('im here superadmin ');
 
     const organization = await this.validateOrganization(user.id);
 
@@ -241,7 +239,6 @@ export class OrganizationService {
       where: {
         AND: filter,
       },
-
       select: {
         id: true,
         first_name: true,
@@ -257,6 +254,7 @@ export class OrganizationService {
             name: true,
           },
         },
+        active: true,
       },
     });
   }
@@ -421,6 +419,43 @@ export class OrganizationService {
       data: {
         active: !status.active,
       },
+    });
+  }
+
+  public async addOrganizationMedicines(
+    organizationId: string,
+    names: string[],
+  ) {
+    await this.prisma.organizationMedication.createMany({
+      data: names.map((name) => ({
+        name,
+        organization_id: organizationId,
+      })),
+    });
+
+    return 'Success';
+  }
+
+  public async getOrganizationMedicines(organizationId: string) {
+    return await this.prisma.organizationMedication.findMany({
+      where: {
+        organization_id: organizationId,
+      },
+      select: {
+        id: true,
+        name: true,
+        organization: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        created_at: true,
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+      take: 10,
     });
   }
 

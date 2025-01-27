@@ -21,6 +21,7 @@ import type {
   PatientContact,
   PatientDoctors,
   PatientNurses,
+  NurseStats,
 } from './types';
 import type { JsonRes } from '@types';
 
@@ -514,5 +515,54 @@ export class NurseService {
         },
       },
     });
+  }
+
+  public async getStats(userId: string): Promise<NurseStats> {
+    const todayAppointments = await this.prisma.appointment.groupBy({
+      by: ['status'],
+      where: {
+        OR: [
+          {
+            organizer: {
+              id: userId,
+            },
+          },
+          {
+            participants: {
+              some: {
+                user_id: userId,
+              },
+            },
+          },
+        ],
+        AND: {
+          start_date: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          },
+          end_date: {
+            lte: new Date(new Date().setHours(23, 59, 59, 999)),
+          },
+        },
+      },
+      _count: {
+        status: true,
+      },
+    });
+
+    const statusCounts = {
+      hold: 0,
+      cancelled: 0,
+      ongoing: 0,
+      active: 0,
+      completed: 0,
+      pending: 0,
+    };
+
+    todayAppointments.forEach((item) => {
+      const status = item.status.toLowerCase();
+      statusCounts[status] = item._count.status;
+    });
+
+    return statusCounts;
   }
 }

@@ -46,7 +46,6 @@ export class EmailsListener {
             },
           ],
         },
-
         orderBy: {
           created_at: 'desc',
         },

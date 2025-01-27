@@ -18,7 +18,6 @@ export class EmailsService {
   public async getEmailHistory(user: UserRes) {
     if (user.role === 'SUPERADMIN') return this.getSuperAdminEmailHistory(user);
     if (user.role === 'ADMIN') return this.getAdminEmailHistory(user);
-
     if (user.role === 'MASTER') return this.getMasterEmailHistory();
   }
 

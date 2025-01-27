@@ -24,8 +24,8 @@ export class WebVideosController extends VideosController {
 
   @Get('/')
   @HttpCode(HttpStatus.OK)
-  public async getVideos() {
-    return [];
+  public async getVideos(@GetUser() user: UserRes) {
+    return this.getVideosService().getVideos(user.organization_id);
   }
 
   @Post('/')
