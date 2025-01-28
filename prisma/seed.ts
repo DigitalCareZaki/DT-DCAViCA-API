@@ -521,22 +521,22 @@ async function createMedication() {
 }
 
 async function main() {
-  // await createCountry();
-  // await createCity();
-  // await createLocation();
-  // await createOrganization();
-  // await createBranch();
-  // await addDepartment();
-  // await createSuperAdmin();
-  // await createDoctor();
-  // await createPatient();
-  // await connectPatientToDoctors();
-  // await createPatientContacts();
-  // await createNurse();
-  // await connectPatientToNurse();
-  // await patientMeasurements();
-  // await createMedication();
-  // await createMaster();
+  await createCountry();
+  await createCity();
+  await createLocation();
+  await createOrganization();
+  await createBranch();
+  await addDepartment();
+  await createSuperAdmin();
+  await createDoctor();
+  await createPatient();
+  await connectPatientToDoctors();
+  await createPatientContacts();
+  await createNurse();
+  await connectPatientToNurse();
+  await patientMeasurements();
+  await createMedication();
+  await createMaster();
   // // const res = await prisma.post.update({
   // //   where: {
   // //     id: 'c16dab1e-2f1b-4aeb-afc2-65867b6610d7',
