@@ -75,21 +75,21 @@ export class MeasurementWebController extends MeasurementController {
     );
   }
 
-  @HttpCode(HttpStatus.OK)
-  @Post('/:measurement_id')
-  public async updateMeasurementStatus(
-    @GetUser() user: UserRes,
-    @Param('measurement_id') measurement_id: string,
-    @Query('status') status: string,
-    @Query('updated_by') updated_by: string,
-  ) {
-    console.log('measurement_id', measurement_id);
-    console.log('status', status);
-    console.log('updated_by', updated_by);
-    return this.getMeasurementService().updateMeasurementStatus(
-      measurement_id,
-      parseInt(status),
-      updated_by,
-    );
-  }
+  // @HttpCode(HttpStatus.OK)
+  // @Post('/:measurement_id')
+  // public async updateMeasurementStatus(
+  //   @GetUser() user: UserRes,
+  //   @Param('measurement_id') measurement_id: string,
+  //   @Query('status') status: string,
+  //   @Query('updated_by') updated_by: string,
+  // ) {
+  //   console.log('measurement_id', measurement_id);
+  //   console.log('status', status);
+  //   console.log('updated_by', updated_by);
+  //   return this.getMeasurementService().updateMeasurementStatus(
+  //     measurement_id,
+  //     parseInt(status),
+  //     updated_by,
+  //   );
+  // }
 }
