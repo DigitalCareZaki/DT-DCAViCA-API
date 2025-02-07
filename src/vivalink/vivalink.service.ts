@@ -123,6 +123,8 @@ export class VivalinkService {
     }
     const result = await res.json();
 
+    console.log('result >>>>>>>> ', result);
+
     // const modifiedPatchSn = patchSn.replace(/\//g, '_');
     // const filePath = path.join(__dirname, `${modifiedPatchSn}.json`);
     // // Convert the result to JSON string
@@ -139,6 +141,7 @@ export class VivalinkService {
 
     // old code
     const ecgData = result?.data?.list.map((v) => v.vitals.ecg);
+    console.log('ecgData >>>>>>>> ', ecgData);
 
     const magnification = result?.data?.list[0]?.vitals?.magnification || 1000;
     const samplingFrequency = result?.data?.list[0]?.vitals?.sf || 128;
