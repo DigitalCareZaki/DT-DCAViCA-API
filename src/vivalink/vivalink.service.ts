@@ -81,6 +81,8 @@ export class VivalinkService {
 
     const result = await res.json();
 
+    console.log('getPatients from VL -> result >>>>>>>> ', result);
+
     // VL sends a response of 200 even on bad response
     // Need to check inside result for code
     if (result?.code !== 200) {
