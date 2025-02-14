@@ -10,7 +10,9 @@ import type { VLAllPatients, VLSinglePatientECGData } from './types';
 
 @Injectable()
 export class VivalinkService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) {
+    this.cronFetchToken();
+  }
 
   private vlCredentails = {
     baseUrl: process.env.VL_BASE_URL ?? 'https://vcloud2.vivalink.com',
@@ -40,32 +42,34 @@ export class VivalinkService {
   })
   handleCron() {
     (async () => {
-      try {
-        const res = await fetch(this.vlCredentails.baseUrl + '/auth', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: this.vlCredentails.tenantId,
-            key: this.vlCredentails.apiKey,
-          }),
-        });
-
-        const result = await res.json();
-
-        if (result.data.token) {
-          console.log('result.data.token >>>>>>>> ', result.data.token);
-          this.updateToken(result.data.token);
-        } else {
-          console.log('Error fetching token');
-        }
-
-        // if (res.status === 200 && result?.code === 200) {
-        //   this.updateToken(result.data.token);
-        // }
-      } catch (err) {}
+      await this.cronFetchToken();
     })();
+  }
+
+  private async cronFetchToken() {
+    try {
+      const res = await fetch(this.vlCredentails.baseUrl + '/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: this.vlCredentails.tenantId,
+          key: this.vlCredentails.apiKey,
+        }),
+      }); 
+
+      const result = await res.json();
+
+      if (result.data.token) {
+        console.log('result.data.token >>>>>>>> ', result.data.token);
+        this.updateToken(result.data.token);
+      } else {
+        console.log('Error fetching token');
+      }
+    } catch (err) {
+      console.log('cronFetchToken -> Error fetching token', err);
+    }
   }
 
   public async getPatients(): Promise<VLAllPatients> {
