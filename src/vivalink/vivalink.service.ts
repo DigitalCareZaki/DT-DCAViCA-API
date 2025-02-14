@@ -54,7 +54,7 @@ export class VivalinkService {
 
         const result = await res.json();
 
-        console.log('result.data.token handleCron >>>>>>>> ', result?.data?.token);
+        console.log('result handleCron >>>>>>>> ', result);
 
         if (res.status === 200 && result?.code === 200) {
           this.updateToken(result.data.token);
