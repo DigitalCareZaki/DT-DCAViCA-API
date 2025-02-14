@@ -54,6 +54,7 @@ export class VivalinkService {
 
         const result = await res.json();
 
+        console.log('res handleCron >>>>>>>> ', res);
         console.log('result handleCron >>>>>>>> ', result);
 
         if (res.status === 200 && result?.code === 200) {
