@@ -34,7 +34,7 @@ export class VivalinkService {
 
   // Cron to fetch token from the API
   // Runs every day at 00:00 UTC - Token expiry time is 72 hours
-  @Cron('*/1 * * * *', {
+  @Cron('0 0 * * *', {
     name: 'fetchToken',
     timeZone: 'UTC',
   })
@@ -54,12 +54,16 @@ export class VivalinkService {
 
         const result = await res.json();
 
-        console.log('res handleCron >>>>>>>> ', res);
-        console.log('result handleCron >>>>>>>> ', result);
-
-        if (res.status === 200 && result?.code === 200) {
+        if (result.data.token) {
+          console.log('result.data.token >>>>>>>> ', result.data.token);
           this.updateToken(result.data.token);
+        } else {
+          console.log('Error fetching token');
         }
+
+        // if (res.status === 200 && result?.code === 200) {
+        //   this.updateToken(result.data.token);
+        // }
       } catch (err) {}
     })();
   }
