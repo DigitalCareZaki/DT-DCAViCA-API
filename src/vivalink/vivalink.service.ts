@@ -10,22 +10,20 @@ import type { VLAllPatients, VLSinglePatientECGData } from './types';
 
 @Injectable()
 export class VivalinkService {
-  constructor(private prisma: PrismaService) {
-    this.cronFetchToken();
-  }
+  constructor(private prisma: PrismaService) {}
 
   private vlCredentails = {
     baseUrl: process.env.VL_BASE_URL ?? 'https://vcloud2.vivalink.com',
     tenantId: process.env.VL_TENANT_ID,
     apiKey: process.env.VL_PROCESS_KEY,
-    token: this.readToken(),
+    token: this.cronFetchToken(),
   };
 
-  private readToken(): string {
-    const tokenData = JSON.parse(readFileSync('vlToken.json', 'utf-8'));
+  // private readToken(): string {
+  //   const tokenData = JSON.parse(readFileSync('vlToken.json', 'utf-8'));
 
-    return tokenData?.token ?? '';
-  }
+  //   return tokenData?.token ?? '';
+  // }
 
   private updateToken(newToken: string): void {
     const tokenData = { token: newToken };
@@ -60,13 +58,14 @@ export class VivalinkService {
       }); 
 
       const result = await res.json();
+      return result?.data?.token;
 
-      if (result.data.token) {
+      // if (result.data.token) {
         console.log('result.data.token >>>>>>>> ', result.data.token);
-        this.updateToken(result.data.token);
-      } else {
-        console.log('Error fetching token');
-      }
+        // this.updateToken(result.data.token);
+      // } else {
+      //   console.log('Error fetching token');
+      // }
     } catch (err) {
       console.log('cronFetchToken -> Error fetching token', err);
     }
@@ -106,24 +105,27 @@ export class VivalinkService {
   public async getPatientData(
     patchSn: string,
   ): Promise<VLSinglePatientECGData> {
-    const mainRes = await fetch(
-      this.vlCredentails.baseUrl +
-        `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&topOne=true&order=descending`,
-      {
-        headers: {
-          Authorization: this.vlCredentails.token,
-          'Access-Control-Allow-Origin': '*',
-        },
-      },
-    );
-    if (mainRes.status !== 200) {
-      throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
-    }
-    const mainResult = await mainRes.json();
+    // const mainRes = await fetch(
+    //   this.vlCredentails.baseUrl +
+    //     `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&topOne=true&order=descending`,
+    //   {
+    //     headers: {
+    //       Authorization: this.vlCredentails.token,
+    //       'Access-Control-Allow-Origin': '*',
+    //     },
+    //   },
+    // );
+    // if (mainRes.status !== 200) {
+    //   throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
+    // }
+    // const mainResult = await mainRes.json();
+
+    const startTime = 1738294516229 - 60000;
+    const endTime = 1738294516229;
 
     const res = await fetch(
       this.vlCredentails.baseUrl +
-        `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&startTime=${mainResult.data.start - 60000}&endTime=${mainResult.data.start}&denoise=true`,
+        `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&startTime=${startTime}&endTime=${endTime}&denoise=true`,
       {
         headers: {
           Authorization: this.vlCredentails.token,
@@ -154,7 +156,8 @@ export class VivalinkService {
 
     // old code
     const ecgData = result?.data?.list.map((v) => v.vitals.ecg);
-    console.log('ecgData >>>>>>>> ', ecgData);
+
+    
 
     const magnification = result?.data?.list[0]?.vitals?.magnification || 1000;
     const samplingFrequency = result?.data?.list[0]?.vitals?.sf || 128;
