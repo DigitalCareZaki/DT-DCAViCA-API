@@ -58,6 +58,7 @@ export class VivalinkService {
       }); 
 
       const result = await res.json();
+      console.log('result?.data?.token >>>>>>>> ', result?.data?.token);
       return result?.data?.token;
 
       // if (result.data.token) {
