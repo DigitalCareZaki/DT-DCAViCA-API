@@ -10,14 +10,22 @@ import type { VLAllPatients, VLSinglePatientECGData } from './types';
 
 @Injectable()
 export class VivalinkService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) {
+    this.loadVlToken();
+  }
 
   private vlCredentails = {
     baseUrl: process.env.VL_BASE_URL ?? 'https://vcloud2.vivalink.com',
     tenantId: process.env.VL_TENANT_ID,
     apiKey: process.env.VL_PROCESS_KEY,
-    token: this.cronFetchToken(),
+    token: "",
   };
+
+  loadVlToken() {
+    (async () => {
+      await this.cronFetchToken();
+    })();
+  }
 
   // private readToken(): string {
   //   const tokenData = JSON.parse(readFileSync('vlToken.json', 'utf-8'));
@@ -25,12 +33,12 @@ export class VivalinkService {
   //   return tokenData?.token ?? '';
   // }
 
-  private updateToken(newToken: string): void {
-    const tokenData = { token: newToken };
+  // private updateToken(newToken: string): void {
+  //   const tokenData = { token: newToken };
 
-    writeFileSync('vlToken.json', JSON.stringify(tokenData, null, 2));
-    this.vlCredentails.token = newToken;
-  }
+  //   writeFileSync('vlToken.json', JSON.stringify(tokenData, null, 2));
+  //   this.vlCredentails.token = newToken;
+  // }
 
   // Cron to fetch token from the API
   // Runs every day at 00:00 UTC - Token expiry time is 72 hours
@@ -58,6 +66,7 @@ export class VivalinkService {
       }); 
 
       const result = await res.json();
+      this.vlCredentails.token = result?.data?.token;
       console.log('result?.data?.token >>>>>>>> ', result?.data?.token);
       return result?.data?.token;
 
