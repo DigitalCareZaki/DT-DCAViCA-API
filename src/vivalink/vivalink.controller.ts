@@ -31,7 +31,7 @@ export class VivalinkController {
   @Get('patients/:patchSn')
   public async getPatientData(
     @Param('patchSn') patchSn: string,
-    @Param('duration') duration: string = '2 minute',
+    @Param('duration') duration: string = '1 minute',
   ): Promise<VLSinglePatientECGData> {
     return this.vivalinkService.getPatientData(patchSn, duration);
   }
