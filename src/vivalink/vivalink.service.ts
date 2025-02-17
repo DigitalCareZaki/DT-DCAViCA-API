@@ -1,5 +1,3 @@
-import { readFileSync, writeFileSync } from 'fs';
-
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
@@ -114,28 +112,29 @@ export class VivalinkService {
 
   public async getPatientData(
     patchSn: string,
+    duration: string,
   ): Promise<VLSinglePatientECGData> {
-    // const mainRes = await fetch(
-    //   this.vlCredentails.baseUrl +
-    //     `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&topOne=true&order=descending`,
-    //   {
-    //     headers: {
-    //       Authorization: this.vlCredentails.token,
-    //       'Access-Control-Allow-Origin': '*',
-    //     },
-    //   },
-    // );
-    // if (mainRes.status !== 200) {
-    //   throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
-    // }
-    // const mainResult = await mainRes.json();
+    const durationInMinutes = parseInt(duration.split(' ')[0]);
+    const durationInMs = (durationInMinutes * 60 * 1000) - 1000;  // 1000 ms is subtracted to avoid fetching data from the next minute
 
-    const startTime = 1738294516229 - 60000;
-    const endTime = 1738294516229;
+    const mainRes = await fetch(
+      this.vlCredentails.baseUrl +
+        `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&topOne=true&order=descending`,
+      {
+        headers: {
+          Authorization: this.vlCredentails.token,
+          'Access-Control-Allow-Origin': '*',
+        },
+      },
+    );
+    if (mainRes.status !== 200) {
+      throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    const mainResult = await mainRes.json();
 
     const res = await fetch(
       this.vlCredentails.baseUrl +
-        `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&startTime=${startTime}&endTime=${endTime}&denoise=true`,
+        `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&startTime=${mainResult.data.start - durationInMs}&endTime=${mainResult.data.start}&denoise=true`,
       {
         headers: {
           Authorization: this.vlCredentails.token,
@@ -150,24 +149,8 @@ export class VivalinkService {
 
     console.log('result >>>>>>>> ', result);
 
-    // const modifiedPatchSn = patchSn.replace(/\//g, '_');
-    // const filePath = path.join(__dirname, `${modifiedPatchSn}.json`);
-    // // Convert the result to JSON string
-    // const jsonData = JSON.stringify(result, null, 2);
-
-    // // Write the data to a file
-    // fs.writeFile(filePath, jsonData, (err) => {
-    //   if (err) {
-    //     console.error('Error writing file:', err);
-    //   } else {
-    //     console.log('File saved successfully at', filePath);
-    //   }
-    // });
-
     // old code
     const ecgData = result?.data?.list.map((v) => v.vitals.ecg);
-
-    
 
     const magnification = result?.data?.list[0]?.vitals?.magnification || 1000;
     const samplingFrequency = result?.data?.list[0]?.vitals?.sf || 128;
