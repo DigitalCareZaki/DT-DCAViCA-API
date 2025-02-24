@@ -8,6 +8,7 @@ type Req = Express.Request & {
 export const GetUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): UserRes => {
     const request: Req = ctx.switchToHttp().getRequest();
+    console.log(request.user, '======>>request.user');
     return request.user as UserRes;
   },
 );

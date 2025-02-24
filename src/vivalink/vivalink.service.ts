@@ -16,7 +16,7 @@ export class VivalinkService {
     baseUrl: process.env.VL_BASE_URL ?? 'https://vcloud2.vivalink.com',
     tenantId: process.env.VL_TENANT_ID,
     apiKey: process.env.VL_PROCESS_KEY,
-    token: "",
+    token: '',
   };
 
   loadVlToken() {
@@ -61,7 +61,7 @@ export class VivalinkService {
           id: this.vlCredentails.tenantId,
           key: this.vlCredentails.apiKey,
         }),
-      }); 
+      });
 
       const result = await res.json();
       this.vlCredentails.token = result?.data?.token;
@@ -69,8 +69,8 @@ export class VivalinkService {
       return result?.data?.token;
 
       // if (result.data.token) {
-        console.log('result.data.token >>>>>>>> ', result.data.token);
-        // this.updateToken(result.data.token);
+      console.log('result.data.token >>>>>>>> ', result.data.token);
+      // this.updateToken(result.data.token);
       // } else {
       //   console.log('Error fetching token');
       // }
@@ -114,8 +114,10 @@ export class VivalinkService {
     patchSn: string,
     duration: string,
   ): Promise<VLSinglePatientECGData> {
+    console.log('duration >>>>>>>> ', duration);
+    console.log('patchSn >>>>>>>> ', patchSn);
     const durationInMinutes = parseInt(duration.split(' ')[0]);
-    const durationInMs = (durationInMinutes * 60 * 1000) - 1000;  // 1000 ms is subtracted to avoid fetching data from the next minute
+    const durationInMs = durationInMinutes * 60 * 1000 - 1000; // 1000 ms is subtracted to avoid fetching data from the next minute
 
     const mainRes = await fetch(
       this.vlCredentails.baseUrl +

@@ -84,7 +84,7 @@ export class AdminService {
     if (!currentOrganization.associated_branches[0]?.id)
       throw new Error('No branch is associated with this user');
 
-    return this.prisma.user.findMany({
+    const patients = this.prisma.user.findMany({
       where: {
         AND: [
           {
@@ -120,6 +120,8 @@ export class AdminService {
         created_at: 'desc',
       },
     });
+    console.log(patients, 'patients>>>>>>>>>>>>>>');
+    return patients;
   }
 
   public async getPatientProfile(id: string) {

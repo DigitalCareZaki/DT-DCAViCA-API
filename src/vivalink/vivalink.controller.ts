@@ -5,6 +5,7 @@ import {
   Get,
   UseGuards,
   Param,
+  Query,
 } from '@nestjs/common';
 
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
@@ -14,6 +15,7 @@ import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { Role } from 'src/auth/enums/role.enum';
 
 import type { VLAllPatients, VLSinglePatientECGData } from './types';
+import { query } from 'express';
 
 @Controller('vl')
 @UseGuards(JwtGuard, RolesGuard)
@@ -31,7 +33,7 @@ export class VivalinkController {
   @Get('patients/:patchSn')
   public async getPatientData(
     @Param('patchSn') patchSn: string,
-    @Param('duration') duration: string = '1 minute',
+    @Query('duration') duration: string = '1 minute',
   ): Promise<VLSinglePatientECGData> {
     return this.vivalinkService.getPatientData(patchSn, duration);
   }

@@ -129,13 +129,16 @@ export class DoctorService {
   }
 
   public async patients(id: string): Promise<Patients> {
-    return await this.prisma.doctor
+    const pateintlist = await this.prisma.doctor
       .findUniqueOrThrow({
         where: {
           user_id: id,
         },
       })
       .patients({
+        orderBy: {
+          created_at: 'desc',
+        },
         select: {
           emr: true,
           user: {
@@ -151,12 +154,15 @@ export class DoctorService {
           },
         },
       });
+    console.log(pateintlist, 'pateintlist');
+    return pateintlist;
   }
 
   public async patientProfile(
     id: string,
     doctorId: string,
   ): Promise<PatientProfile> {
+    console.log(id, '=======>>id');
     const patient = await this.prisma.patient.findFirstOrThrow({
       where: {
         AND: [
@@ -643,6 +649,7 @@ export class DoctorService {
   }
 
   public async getStats(userId: string): Promise<DoctorStats> {
+    console.log(userId, '=======>>userId');
     const todayAppointments = await this.prisma.appointment.groupBy({
       by: ['status'],
       where: {
