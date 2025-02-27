@@ -28,6 +28,11 @@ export class VivalinkController {
   public async getPatients(): Promise<VLAllPatients> {
     return this.vivalinkService.getPatients();
   }
+  @HttpCode(HttpStatus.OK)
+  @Get('appPatients')
+  public async getAppPatients(): Promise<VLAllPatients> {
+    return this.vivalinkService.getAppPatients();
+  }
 
   @HttpCode(HttpStatus.OK)
   @Get('patients/:patchSn')

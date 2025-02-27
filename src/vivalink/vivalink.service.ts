@@ -109,6 +109,45 @@ export class VivalinkService {
 
     return result?.data?.mappings ?? {};
   }
+  public async getAppPatients(): Promise<VLAllPatients> {
+    const request = new Request(
+      this.vlCredentails.baseUrl + `/tenants/${this.vlCredentails.tenantId}`,
+      {
+        headers: {
+          Authorization: this.vlCredentails.token,
+          Accept: '*/*',
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    const res = await fetch(request);
+
+    if (res.status !== 200) {
+      throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    const result = await res.json();
+
+    console.log('getPatients from VL -> result >>>>>>>> ', result);
+
+    // VL sends a response of 200 even on bad response
+    // Need to check inside result for code
+    if (result?.code !== 200) {
+      throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    const responseData = {
+      data: Object.entries(result?.data?.mappings).flatMap(([name, records]) =>
+        (records as any[]).map((record) => ({
+          name,
+          Record: record.replace(/\//g, '%2F'),
+        })),
+      ),
+    };
+    console.log(responseData, '>>>> app patiens>>>>');
+    return responseData;
+    // return result?.data?.mappings ?? {};
+  }
 
   public async getPatientData(
     patchSn: string,
