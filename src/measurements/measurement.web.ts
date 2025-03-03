@@ -46,6 +46,19 @@ export class MeasurementWebController extends MeasurementController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @Get('latestReadings')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.DOCTOR, Role.NURSE)
+  public async getPatientListWithLatestReadings(
+    @GetUser() user: UserRes,
+  ): Promise<ModifiedMeasurement[]> {
+    return this.getMeasurementService().getPatientListWithLatestReadings(
+      user.id,
+      user.role,
+    );
+  }
+
+  @HttpCode(HttpStatus.OK)
   @Get('/patients/:id') // :id -> patient -> user_id
   public async getPatientMeasurements(
     @GetUser() user: UserRes,

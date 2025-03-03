@@ -684,4 +684,107 @@ export class MeasurementService {
 
     return measurement;
   }
+
+  public async getPatientListWithLatestReadings(
+    userId: string,
+    role: UserRole,
+  ): Promise<any[]> {
+    // First get all patients associated with this doctor/nurse
+    const patients = await this.prisma.patient.findMany({
+      where: {
+        [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
+          some: {
+            user_id: userId,
+          },
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            first_name: true,
+            middle_name: true,
+            last_name: true,
+          },
+        },
+      },
+    });
+
+    const patientIds = patients.map((p) => p.user_id);
+
+    // Get all measurements for these patients, ordered by creation date
+    const allMeasurements = await this.prisma.measurement.findMany({
+      where: {
+        patient: {
+          user_id: {
+            in: patientIds,
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+      include: {
+        doctor: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+              },
+            },
+          },
+        },
+        nurse: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Group measurements by patient and get latest of each type
+    const patientMeasurements = {};
+
+    for (const measurement of allMeasurements) {
+      const patientId = measurement.patient_id;
+      const measurementType = measurement.type;
+
+      // Initialize patient entry if it doesn't exist
+      if (!patientMeasurements[patientId]) {
+        patientMeasurements[patientId] = {
+          measurements: {},
+        };
+      }
+
+      // Only add if this type doesn't exist yet (since we ordered by date desc)
+      if (!patientMeasurements[patientId].measurements[measurementType]) {
+        patientMeasurements[patientId].measurements[measurementType] =
+          measurement;
+      }
+    }
+
+    // Format the response
+    const result = patients.map((patient) => {
+      console.log(JSON.stringify(patient), 'patient===========>');
+      return {
+        patient: patient.user,
+        measurements: patientMeasurements[patient.id]?.measurements || {},
+      };
+    });
+
+    return result;
+  }
 }
