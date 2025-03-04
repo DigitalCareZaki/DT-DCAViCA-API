@@ -63,15 +63,37 @@ export class MeasurementWebController extends MeasurementController {
   public async getPatientMeasurements(
     @GetUser() user: UserRes,
     @Param('id') id: string,
+    @Query('page') page?: number,
+    @Query('pageSize') pageSize?: number,
     @Query('type') type?: string,
-  ): Promise<ModifiedMeasurement[]> {
+  ): Promise<{
+    data: ModifiedMeasurement[];
+    // meta: { total: number; page: number; pageSize: number; pageCount: number };
+  }> {
     return this.getMeasurementService().patientMeasurements(
       id,
       user.id,
       user.role,
       type,
+      page,
+      pageSize,
     );
   }
+
+  // @HttpCode(HttpStatus.OK)
+  // @Get('/patients/:id') // :id -> patient -> user_id
+  // public async getPatientMeasurements(
+  //   @GetUser() user: UserRes,
+  //   @Param('id') id: string,
+  //   @Query('type') type?: string,
+  // ): Promise<ModifiedMeasurement[]> {
+  //   return this.getMeasurementService().patientMeasurements(
+  //     id,
+  //     user.id,
+  //     user.role,
+  //     type,
+  //   );
+  // }
 
   @HttpCode(HttpStatus.CREATED)
   @Post('/patients/:id') // :id -> patient -> user_id

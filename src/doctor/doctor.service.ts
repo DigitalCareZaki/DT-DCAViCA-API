@@ -158,11 +158,77 @@ export class DoctorService {
     return pateintlist;
   }
 
+  // public async patients(
+  //   id: string,
+  //   page: number = 1,
+  //   pageSize: number = 10
+  // ): Promise<{ data: Patients; meta: { total: number; page: number; pageSize: number; pageCount: number } }> {
+  //   // Calculate skip value based on page and pageSize
+  //   const skip = (page - 1) * pageSize;
+
+  //   // Get patients with pagination
+  //   const pateintlist = await this.prisma.doctor
+  //     .findUniqueOrThrow({
+  //       where: {
+  //         user_id: id,
+  //       },
+  //     })
+  //     .patients({
+  //       orderBy: {
+  //         created_at: 'desc',
+  //       },
+  //       skip,
+  //       take: pageSize,
+  //       select: {
+  //         emr: true,
+  //         user: {
+  //           select: {
+  //             id: true,
+  //             first_name: true,
+  //             middle_name: true,
+  //             last_name: true,
+  //             email: true,
+  //             uri: true,
+  //             phone_number: true,
+  //           },
+  //         },
+  //       },
+  //     });
+
+  //   // Get total count for pagination metadata
+  //   const totalPatients = await this.prisma.doctor
+  //     .findUniqueOrThrow({
+  //       where: {
+  //         user_id: id,
+  //       },
+  //     })
+  //     .patients({
+  //       select: {
+  //         id: true,
+  //       },
+  //     });
+
+  //   const total = totalPatients.length;
+  //   const pageCount = Math.ceil(total / pageSize);
+
+  //   console.log(pateintlist, 'pateintlist');
+
+  //   // Return data with pagination metadata
+  //   return {
+  //     data: pateintlist,
+  //     meta: {
+  //       total,
+  //       page,
+  //       pageSize,
+  //       pageCount,
+  //     },
+  //   };
+  // }
+
   public async patientProfile(
     id: string,
     doctorId: string,
   ): Promise<PatientProfile> {
-    console.log(id, '=======>>id');
     const patient = await this.prisma.patient.findFirstOrThrow({
       where: {
         AND: [
