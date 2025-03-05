@@ -149,10 +149,7 @@ export class VivalinkService {
     // return result?.data?.mappings ?? {};
   }
 
-  public async getPatientData(
-    patchSn: string,
-    duration: string,
-  ): Promise<VLSinglePatientECGData> {
+  public async getPatientData(patchSn: string, duration: string) {
     console.log('duration >>>>>>>> ', duration);
     console.log('patchSn >>>>>>>> ', patchSn);
     const durationInMinutes = parseInt(duration.split(' ')[0]);
@@ -213,6 +210,7 @@ export class VivalinkService {
       ecg: processedEcg,
       samplingFrequency,
       timePerPoint,
+      otherAttributes: result?.data?.list[0]
     };
   }
 }
