@@ -21,7 +21,7 @@ import { GetUser } from 'src/auth/decorators';
 
 import { MeasurementDTO } from './dto';
 
-import { UserRes } from '@types';
+import { PaginatedResult, UserRes } from '@types';
 import type { ModifiedMeasurement } from './types';
 
 @Controller('web/measurements')
@@ -66,15 +66,7 @@ export class MeasurementWebController extends MeasurementController {
     @Query('page') page?: number,
     @Query('pageSize') pageSize?: number,
     @Query('type') type?: string,
-  ): Promise<{
-    data: ModifiedMeasurement[];
-    pagination: {
-      total: number;
-      page: number;
-      pageSize: number;
-      pageCount: number;
-    };
-  }> {
+  ): Promise<PaginatedResult<ModifiedMeasurement>> {
     return this.getMeasurementService().patientMeasurements(
       id,
       user.id,

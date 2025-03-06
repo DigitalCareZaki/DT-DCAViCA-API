@@ -11,7 +11,7 @@ import type {
   MeasurementUnit,
   MeasurementReadingSource,
 } from '@prisma/client';
-import type { UserRole } from '@types';
+import type { PaginatedResult, UserRole } from '@types';
 import type { ModifiedMeasurement } from './types';
 import type { MeasurementCreatedEvent } from 'src/events/types';
 
@@ -795,15 +795,7 @@ export class MeasurementService {
     type: string,
     page: number,
     pageSize: number,
-  ): Promise<{
-    data: ModifiedMeasurement[];
-    pagination: {
-      total: number;
-      page: number;
-      pageSize: number;
-      pageCount: number;
-    };
-  }> {
+  ): Promise<PaginatedResult<ModifiedMeasurement>> {
     // Calculate pagination parameters
     console.log(page, pageSize, '==========>  page');
     const skip = (page - 1) * pageSize;
@@ -1014,16 +1006,26 @@ export class MeasurementService {
     }
 
     // Calculate page count
-    const pageCount = Math.ceil(totalItems / pageSize);
+    const totalPages = Math.ceil(totalItems / pageSize);
+    
+    // Calculate nextPage and prevPage
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+    const nextPage = hasNextPage ? page + 1 : null;
+    const prevPage = hasPrevPage ? page - 1 : null;
 
     // Return data with pagination metadata
     return {
       data: measurements,
       pagination: {
-        total: totalItems,
-        page,
-        pageSize,
-        pageCount,
+        totalItems,
+        perPage: pageSize,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage,
+        prevPage
       },
     };
   }

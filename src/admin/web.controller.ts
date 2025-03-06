@@ -27,7 +27,7 @@ export class WebAdminController extends AdminController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Get('/patients/profile/:id') // :id -> patient -> user_id
+  @Get('/patients/profile/:id')
   public async patientProfile(
     @GetUser() user: UserRes,
     @Param('id') id: string,
