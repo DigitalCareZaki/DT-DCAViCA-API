@@ -794,11 +794,11 @@ export class MeasurementService {
     role: UserRole,
     type: string,
     page: number,
-    pageSize: number,
+    limit: number,
   ): Promise<PaginatedResult<ModifiedMeasurement>> {
     // Calculate pagination parameters
-    console.log(page, pageSize, '==========>  page');
-    const skip = (page - 1) * pageSize;
+    console.log(page, limit, '==========>  page');
+    const skip = (page - 1) * limit;
 
     let measurements: ModifiedMeasurement[] = [];
     let totalItems = 0;
@@ -909,7 +909,7 @@ export class MeasurementService {
               created_at: 'desc',
             },
             skip,
-            take: pageSize,
+            take: limit,
           });
 
         // Get total count for pagination metadata
@@ -939,7 +939,7 @@ export class MeasurementService {
               created_at: 'desc',
             },
             skip,
-            take: pageSize,
+            take: limit,
           });
 
         // Get total count
@@ -968,7 +968,7 @@ export class MeasurementService {
               created_at: 'desc',
             },
             skip,
-            take: pageSize,
+            take: limit,
           });
 
         // Get total count
@@ -990,7 +990,7 @@ export class MeasurementService {
               created_at: 'desc',
             },
             skip,
-            take: pageSize,
+            take: limit,
           });
         console.log(measurements, 'measurements=========>>>>>');
         // Get total count
@@ -1006,7 +1006,7 @@ export class MeasurementService {
     }
 
     // Calculate page count
-    const totalPages = Math.ceil(totalItems / pageSize);
+    const totalPages = Math.ceil(totalItems / limit);
     
     // Calculate nextPage and prevPage
     const hasNextPage = page < totalPages;
@@ -1019,7 +1019,7 @@ export class MeasurementService {
       data: measurements,
       pagination: {
         totalItems,
-        perPage: pageSize,
+        perPage: limit,
         currentPage: page,
         totalPages,
         hasNextPage,

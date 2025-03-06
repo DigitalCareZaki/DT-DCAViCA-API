@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Post,
   Query,
   UseGuards,
@@ -64,33 +65,18 @@ export class MeasurementWebController extends MeasurementController {
     @GetUser() user: UserRes,
     @Param('id') id: string,
     @Query('page') page?: number,
-    @Query('pageSize') pageSize?: number,
+    @Query('limit') limit?: number,
     @Query('type') type?: string,
   ): Promise<PaginatedResult<ModifiedMeasurement>> {
     return this.getMeasurementService().patientMeasurements(
       id,
       user.id,
       user.role,
-      type,
-      page,
-      pageSize,
+      type || '',
+      page || 1,
+      limit || 10,
     );
   }
-
-  // @HttpCode(HttpStatus.OK)
-  // @Get('/patients/:id') // :id -> patient -> user_id
-  // public async getPatientMeasurements(
-  //   @GetUser() user: UserRes,
-  //   @Param('id') id: string,
-  //   @Query('type') type?: string,
-  // ): Promise<ModifiedMeasurement[]> {
-  //   return this.getMeasurementService().patientMeasurements(
-  //     id,
-  //     user.id,
-  //     user.role,
-  //     type,
-  //   );
-  // }
 
   @HttpCode(HttpStatus.CREATED)
   @Post('/patients/:id') // :id -> patient -> user_id
@@ -106,22 +92,4 @@ export class MeasurementWebController extends MeasurementController {
       data,
     );
   }
-
-  // @HttpCode(HttpStatus.OK)
-  // @Post('/:measurement_id')
-  // public async updateMeasurementStatus(
-  //   @GetUser() user: UserRes,
-  //   @Param('measurement_id') measurement_id: string,
-  //   @Query('status') status: string,
-  //   @Query('updated_by') updated_by: string,
-  // ) {
-  //   console.log('measurement_id', measurement_id);
-  //   console.log('status', status);
-  //   console.log('updated_by', updated_by);
-  //   return this.getMeasurementService().updateMeasurementStatus(
-  //     measurement_id,
-  //     parseInt(status),
-  //     updated_by,
-  //   );
-  // }
 }
