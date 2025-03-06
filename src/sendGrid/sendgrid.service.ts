@@ -13,28 +13,46 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 export class SendgridService {
   constructor() {}
 
-  public async sendSgMail(userId: string, data: MailDTO): Promise<MailRes> {
-    const message = {
-      to: data.to,
-      cc: [],
-      bcc: [],
+  public async sendSgMail(data: any): Promise<MailRes> {
+    console.log(data, '========>>>payload');
+
+    const msg = {
+      to: data.patientEmail, // Change to your recipient
       from: {
-        name: 'Avica',
         email: process.env.SENDGRID_EMAIL,
+        name: 'AViCA Team',
       },
-      replyTo: null,
-      subject: data.subject,
-      html: data.content,
-      attachments: [],
+      templateId: 'd-615ec8b40a3d4ed18d8090cb02b98aee',
+      dynamicTemplateData: {
+        'patient-name': data.patientName,
+        'android-link': 'https://avica-frontend.vercel.app',
+        'ios-link': 'https://avica-frontend.vercel.app',
+        'patient-email': data.patientEmail,
+        'patient-password': data.patientPassword,
+      },
     };
 
-    try {
-      await sgMail.send(message);
+    // const message = {
+    //   to: data.to,
+    //   cc: [],
+    //   bcc: [],
+    //   from: {
+    //     name: 'Avica',
+    //     email: process.env.SENDGRID_EMAIL,
+    //   },
+    //   replyTo: process.env.SENDGRID_EMAIL,
+    //   subject: data.subject,
+    //   html: data.content,
+    //   attachments: [],
+    // };
 
+    try {
+      const res = await sgMail.send(msg);
       return {
         sent: true,
       };
     } catch (err) {
+      console.log(err, '=======>>>err');
       return {
         sent: false,
       };

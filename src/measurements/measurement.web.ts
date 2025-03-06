@@ -68,7 +68,12 @@ export class MeasurementWebController extends MeasurementController {
     @Query('type') type?: string,
   ): Promise<{
     data: ModifiedMeasurement[];
-    // meta: { total: number; page: number; pageSize: number; pageCount: number };
+    pagination: {
+      total: number;
+      page: number;
+      pageSize: number;
+      pageCount: number;
+    };
   }> {
     return this.getMeasurementService().patientMeasurements(
       id,

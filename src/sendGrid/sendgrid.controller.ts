@@ -8,7 +8,7 @@ import { Role } from 'src/auth/enums/role.enum';
 
 @Controller()
 @UseGuards(JwtGuard, RolesGuard)
-@RequirePermission(Role.SUPERADMIN, Role.ADMIN)
+@RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.DOCTOR)
 export class SendgridController {
   constructor(private sendGridService: SendgridService) {}
 

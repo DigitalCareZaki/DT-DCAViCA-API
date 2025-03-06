@@ -797,7 +797,12 @@ export class MeasurementService {
     pageSize: number,
   ): Promise<{
     data: ModifiedMeasurement[];
-    // meta: { total: number; page: number; pageSize: number; pageCount: number };
+    pagination: {
+      total: number;
+      page: number;
+      pageSize: number;
+      pageCount: number;
+    };
   }> {
     // Calculate pagination parameters
     console.log(page, pageSize, '==========>  page');
@@ -1014,12 +1019,12 @@ export class MeasurementService {
     // Return data with pagination metadata
     return {
       data: measurements,
-      // meta: {
-      //   total: totalItems,
-      //   page,
-      //   pageSize,
-      //   pageCount,
-      // },
+      pagination: {
+        total: totalItems,
+        page,
+        pageSize,
+        pageCount,
+      },
     };
   }
 }

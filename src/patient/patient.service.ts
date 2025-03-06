@@ -9,10 +9,14 @@ import { AddPatientDTO } from 'src/organization/dto/addPatient.dto';
 
 import type { MedicationTaken } from '@prisma/client';
 import type { ProfileProps } from './types';
+import { SendgridService } from 'src/sendGrid/sendgrid.service';
 
 @Injectable()
 export class PatientService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mail: SendgridService,
+  ) {}
 
   public async addPatient(
     data: AddPatientDTO,
@@ -50,6 +54,7 @@ export class PatientService {
       },
       select: {
         id: true,
+        user: true,
       },
     });
 
@@ -82,7 +87,16 @@ export class PatientService {
         },
       });
     }
-
+    console.log(patient, '=========>>>patient');
+    if (patient) {
+      await this.mail.sendSgMail({
+        to: [patient.user.email],
+        subject: 'Patient Account Created',
+        patientName: patient.user.username,
+        patientEmail: patient.user.email,
+        patientPassword: data.password,
+      });
+    }
     return true;
   }
 

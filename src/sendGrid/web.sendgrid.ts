@@ -10,18 +10,15 @@ import { MailDTO } from './dto';
 import type { UserRes } from '@types';
 import type { MailRes } from './types';
 
-@Controller('web/sg-mail')
+@Controller('web/mail')
 export class SendgridWebController extends SendgridController {
   constructor(sendGridService: SendgridService) {
     super(sendGridService);
   }
 
   @HttpCode(HttpStatus.CREATED)
-  @Post()
-  public async sendMail(
-    @GetUser() user: UserRes,
-    @Body() data: MailDTO,
-  ): Promise<MailRes> {
-    return this.getSendGridService().sendSgMail(user.id, data);
+  @Post('/send')
+  public async sendMail(@Body() data: MailDTO): Promise<MailRes> {
+    return this.getSendGridService().sendSgMail(data);
   }
 }
