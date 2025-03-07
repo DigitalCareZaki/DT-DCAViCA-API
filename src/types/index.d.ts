@@ -6,3 +6,9 @@ export interface HealthRes {
 }
 
 export * from './pagination';
+
+export interface SendMailPayload {
+  to: string[];
+  data: any;
+  templateId: string;
+};

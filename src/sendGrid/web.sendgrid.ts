@@ -18,7 +18,7 @@ export class SendgridWebController extends SendgridController {
 
   @HttpCode(HttpStatus.CREATED)
   @Post('/send')
-  public async sendMail(@Body() data: MailDTO): Promise<MailRes> {
-    return this.getSendGridService().sendSgMail(data);
+  public async sendMail(@Body() data) {
+    return this.getSendGridService().sendSgMail(data.to, data.data, data.templateId);
   }
 }
