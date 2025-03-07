@@ -64,30 +64,42 @@ export class TelemedService {
     await this.prisma.room.create({
       data: {
         appointment_id: appointment.id,
-        users: {
-          connect: dto.users.map((user) => ({ id: user })),
-        },
+        users: { connect: dto.users.map((user) => ({ id: user })) },
       },
     });
 
-
-
     // const doctor = dto.users.find((user) => user.role === 'DOCTOR');
-    // const mailPayload = {
-    //   to: [doctor.email],
-    //   data: {
-    //     subject: 'Appointment Invitation',
-    //     doctorName: doctor ? doctor.username : 'N/A',
-    //     patientName: user.username,
-    //     patientEmail: user.email,
-    //     patientPhone: user.phone_number,
-    //     patientComment: dto.description,
-    //     link: `https://avica-frontend.vercel.app/patient/telemed/meetings/view/${appointment.id}`
-    //   },
-    //   templateId: SENDGRID_TEMPLATE.APPOINTMENT_INVITATION,
-    // } satisfies SendMailPayload;
 
-    // await this.mail.sendSgMail(mailPayload);
+    const doctors = await this.prisma.user.findMany({
+      where: {
+        id: { in: dto.users },
+        role: 'DOCTOR',
+      },
+      select: { email: true, username: true },
+    });
+
+    if (doctors.length > 0) {
+      const emailPromises = doctors.map((doctor) => {
+        const mailPayload = {
+          to: [doctor.email],
+          data: {
+            subject: 'Appointment Invitation',
+            doctorName: doctor.username,
+            patientName: user.username,
+            patientEmail: user.email,
+            patientPhone: user.phone_number,
+            patientComment: dto.description,
+            link: `https://avica-frontend.vercel.app/patient/telemed/meetings/view/${appointment.id}`
+          },
+          templateId: SENDGRID_TEMPLATE.APPOINTMENT_INVITATION,
+        } satisfies SendMailPayload;
+
+        this.mail.sendSgMail(mailPayload);
+      });
+
+      await Promise.all(emailPromises);
+    }
+
     return appointment;
   }
 
