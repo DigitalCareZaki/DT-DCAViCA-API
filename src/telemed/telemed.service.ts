@@ -22,7 +22,7 @@ import type {
   SlotParent,
 } from './types';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
-import { SENDGRID_TEMPLATE } from 'src/constant';
+import { SENDGRID_TEMPLATES } from 'src/constant';
 
 @Injectable()
 export class TelemedService {
@@ -68,8 +68,6 @@ export class TelemedService {
       },
     });
 
-    // const doctor = dto.users.find((user) => user.role === 'DOCTOR');
-
     const doctors = await this.prisma.user.findMany({
       where: {
         id: { in: dto.users },
@@ -78,8 +76,10 @@ export class TelemedService {
       select: { email: true, username: true },
     });
 
+    console.log('doctor >>>>>>>>>>>', doctors);
+
     if (doctors.length > 0) {
-      const emailPromises = doctors.map((doctor) => {
+      doctors.forEach(async (doctor) => {
         const mailPayload = {
           to: [doctor.email],
           data: {
@@ -91,13 +91,11 @@ export class TelemedService {
             patientComment: dto.description,
             link: `https://avica-frontend.vercel.app/patient/telemed/meetings/view/${appointment.id}`
           },
-          templateId: SENDGRID_TEMPLATE.APPOINTMENT_INVITATION,
+          templateId: SENDGRID_TEMPLATES.APPOINTMENT_INVITATION,
         } satisfies SendMailPayload;
 
-        this.mail.sendSgMail(mailPayload);
+        await this.mail.sendSgMail(mailPayload);
       });
-
-      await Promise.all(emailPromises);
     }
 
     return appointment;

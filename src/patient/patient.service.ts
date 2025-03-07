@@ -11,7 +11,7 @@ import type { MedicationTaken } from '@prisma/client';
 import type { ProfileProps } from './types';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
 import { SendMailPayload } from '@types';
-import { SENDGRID_TEMPLATE } from 'src/constant';
+import { SENDGRID_TEMPLATES } from 'src/constant';
 
 @Injectable()
 export class PatientService {
@@ -98,7 +98,7 @@ export class PatientService {
         patientEmail: patient.user.email,
         patientPassword: data.password,
       },
-      templateId: SENDGRID_TEMPLATE.PATIENT_REGISTRATION,
+      templateId: SENDGRID_TEMPLATES.PATIENT_REGISTRATION,
     } satisfies SendMailPayload;
 
     await this.mail.sendSgMail(mailPayload);
