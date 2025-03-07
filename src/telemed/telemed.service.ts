@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { HelpersService } from 'src/helpers/helpers.service';
 import { TelemedCreateDTO } from './dto';
 import { TelemedActionDTO } from './dto/action.dto';
+import { SendMailPayload } from '@types';
 
 import type { UserRes } from '@types';
 import type {
@@ -20,13 +21,17 @@ import type {
   GetMeetingChatsProps,
   SlotParent,
 } from './types';
+import { SendgridService } from 'src/sendGrid/sendgrid.service';
+import { SENDGRID_TEMPLATE } from 'src/constant';
 
 @Injectable()
 export class TelemedService {
   constructor(
     private prisma: PrismaService,
     private helperService: HelpersService,
-  ) {}
+    private mail: SendgridService,
+
+  ) { }
 
   public async createAppointment(
     user: UserRes,
@@ -65,8 +70,28 @@ export class TelemedService {
       },
     });
 
+
+
+    // const doctor = dto.users.find((user) => user.role === 'DOCTOR');
+    // const mailPayload = {
+    //   to: [doctor.email],
+    //   data: {
+    //     subject: 'Appointment Invitation',
+    //     doctorName: doctor ? doctor.username : 'N/A',
+    //     patientName: user.username,
+    //     patientEmail: user.email,
+    //     patientPhone: user.phone_number,
+    //     patientComment: dto.description,
+    //     link: `https://avica-frontend.vercel.app/patient/telemed/meetings/view/${appointment.id}`
+    //   },
+    //   templateId: SENDGRID_TEMPLATE.APPOINTMENT_INVITATION,
+    // } satisfies SendMailPayload;
+
+    // await this.mail.sendSgMail(mailPayload);
     return appointment;
   }
+
+
 
   public async getAppointments(id: string): Promise<GetAppointmentsType[]> {
     return this.prisma.appointment.findMany({
