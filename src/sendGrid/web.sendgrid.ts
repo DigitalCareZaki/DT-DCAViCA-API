@@ -7,7 +7,7 @@ import { GetUser } from 'src/auth/decorators';
 
 import { MailDTO } from './dto';
 
-import type { UserRes } from '@types';
+import type { SendMailPayload, UserRes } from '@types';
 import type { MailRes } from './types';
 
 @Controller('web/mail')
@@ -18,7 +18,7 @@ export class SendgridWebController extends SendgridController {
 
   @HttpCode(HttpStatus.CREATED)
   @Post('/send')
-  public async sendMail(@Body() data) {
-    return this.getSendGridService().sendSgMail(data.to, data.data, data.templateId);
+  public async sendMail(@Body() data: SendMailPayload) {
+    return this.getSendGridService().sendSgMail(data);
   }
 }

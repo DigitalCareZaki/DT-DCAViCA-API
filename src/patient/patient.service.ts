@@ -11,6 +11,7 @@ import type { MedicationTaken } from '@prisma/client';
 import type { ProfileProps } from './types';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
 import { SendMailPayload } from '@types';
+import { SENDGRID_TEMPLATE } from 'src/constant';
 
 @Injectable()
 export class PatientService {
@@ -88,21 +89,20 @@ export class PatientService {
         },
       });
     }
-    console.log(patient, '=========>>>patient');
-    if (patient) {
-      const mailPayload = {
-        to: [patient.user.email],
-        data: {
-          subject: 'Patient Account Created',
-          patientName: patient.user.username,
-          patientEmail: patient.user.email,
-          patientPassword: data.password,
-        },
-        templateId: 'd-615ec8b40a3d4ed18d8090cb02b98aee',
-      } satisfies SendMailPayload;
 
-      await this.mail.sendSgMail(mailPayload);
-    }
+    const mailPayload = {
+      to: [patient.user.email],
+      data: {
+        subject: 'Patient Account Created',
+        patientName: patient.user.username,
+        patientEmail: patient.user.email,
+        patientPassword: data.password,
+      },
+      templateId: SENDGRID_TEMPLATE.PATIENT_REGISTRATION,
+    } satisfies SendMailPayload;
+
+    await this.mail.sendSgMail(mailPayload);
+
     return true;
   }
 
