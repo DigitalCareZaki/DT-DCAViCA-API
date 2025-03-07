@@ -93,7 +93,7 @@ export class PatientService {
     const mailPayload = {
       to: [patient.user.email],
       data: {
-        subject: 'Patient Account Created',
+        subject: 'Welcome to AViCA',
         patientName: patient.user.username,
         patientEmail: patient.user.email,
         patientPassword: data.password,
