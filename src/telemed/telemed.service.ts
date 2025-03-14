@@ -82,6 +82,7 @@ export class TelemedService {
       doctors.forEach(async (doctor) => {
         const mailPayload = {
           to: [doctor.email],
+          // to: [doctor.email],
           data: {
             subject: 'Appointment Invitation',
             doctorName: doctor.username,

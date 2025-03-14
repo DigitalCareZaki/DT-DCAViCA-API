@@ -8,15 +8,18 @@ import { ReadingRangeDTO } from './dto';
 
 import type { PatientReadingRangeAlert } from './types';
 import type { MeasurementType } from '@prisma/client';
+import { TwilioService } from 'src/twilio/twilio.service';
+import { UserRes } from '@types';
 
 @Injectable()
 export class ReadingRangeService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private sms: TwilioService) { }
 
   public async getAlertForPatient(
     patientId: string,
     userId: string,
   ): Promise<PatientReadingRangeAlert[]> {
+
     return await this.prisma.patientMeasurementRange.findMany({
       where: {
         patient: {
@@ -62,9 +65,10 @@ export class ReadingRangeService {
   }
 
   public async createOrUpdateAlertForPatient(
-    userId: string,
+    user: UserRes,
     data: ReadingRangeDTO,
   ): Promise<PatientReadingRangeAlert> {
+
     const doesPatientExistAndIsAssignedToUser =
       await this.prisma.patient.findFirst({
         where: {
@@ -77,14 +81,14 @@ export class ReadingRangeService {
                 {
                   doctors: {
                     some: {
-                      user_id: userId,
+                      user_id: user.id,
                     },
                   },
                 },
                 {
                   nurses: {
                     some: {
-                      user_id: userId,
+                      user_id: user.id,
                     },
                   },
                 },
@@ -110,7 +114,7 @@ export class ReadingRangeService {
           patient: {
             user_id: data.patient_id,
           },
-          user_id: userId,
+          user_id: user.id,
           type: data.type as MeasurementType,
         },
         select: {
@@ -119,7 +123,7 @@ export class ReadingRangeService {
       });
 
     if (!alertAlreadyExists) {
-      return await this.prisma.patientMeasurementRange.create({
+      const alt = await this.prisma.patientMeasurementRange.create({
         data: {
           type: data.type as MeasurementType,
           range: data.range,
@@ -132,7 +136,7 @@ export class ReadingRangeService {
           },
           user: {
             connect: {
-              id: userId,
+              id: user.id,
             },
           },
         },
@@ -168,8 +172,32 @@ export class ReadingRangeService {
           updated_at: true,
         },
       });
+      if (alt.send_sms) {
+        await this.sms.sendSMS(user.email, `Your patient ${alt.patient.user.first_name} has an alert for ${alt.type} of ${alt.range[0]}/${alt.range[1]}`);
+      } else {
+        const contacts = await this.prisma.contacts.findMany({
+          where: {
+            user: {
+              id: data.patient_id,
+            }
+          },
+          select: {
+            id: true,
+            number: true
+          },
+        });
+
+        if (contacts.length > 0) {
+          contacts.forEach(async (contact) => {
+            await this.sms.sendSMS(contact.number, `Your patient ${alt.patient.user.first_name} has an alert for ${alt.type} of ${alt.range[0]}/${alt.range[1]}`);
+
+          });
+        }
+      }
+
+      return alt;
     } else {
-      return await this.prisma.patientMeasurementRange.update({
+      const alert = await this.prisma.patientMeasurementRange.update({
         where: {
           id: alertAlreadyExists.id,
         },
@@ -211,6 +239,32 @@ export class ReadingRangeService {
           updated_at: true,
         },
       });
+      if (data.send_sms) {
+        await this.sms.sendSMS(user.email, `Your patient ${alert.patient.user.first_name} has an alert for ${alert.type} of ${alert.range[0]}/${alert.range[1]}`);
+      } else {
+        const contacts = await this.prisma.contacts.findMany({
+          where: {
+            user: {
+              id: data.patient_id,
+            }
+          },
+          select: {
+            id: true,
+            number: true
+          },
+        });
+
+        if (contacts.length > 0) {
+          contacts.forEach(async (contact) => {
+            await this.sms.sendSMS(contact.number, `Your patient ${alert.patient.user.first_name} has an alert for ${alert.type} of ${alert.range[0]}/${alert.range[1]}`);
+
+          });
+        }
+      }
+
+      return alert
     }
+
   }
+
 }

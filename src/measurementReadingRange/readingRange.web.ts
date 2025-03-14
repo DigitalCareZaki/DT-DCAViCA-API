@@ -48,8 +48,9 @@ export class ReadingRangeWebController extends ReadingRangeController {
     @Body() data: ReadingRangeDTO,
   ): Promise<PatientReadingRangeAlert> {
     return this.getReadingRangeService().createOrUpdateAlertForPatient(
-      user.id,
+      user,
       data,
     );
+
   }
 }

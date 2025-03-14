@@ -68,6 +68,7 @@ import { TabletModule } from './tablets/tablet.module';
 import { SupportModule } from './technicalSupport/support.module';
 
 import { SendgridModule } from './sendGrid/sendgrid.module';
+import { TwilioModule } from './twilio/twilio.module';
 
 @Module({
   providers: [
@@ -112,6 +113,7 @@ import { SendgridModule } from './sendGrid/sendgrid.module';
     MedicationModule,
     ComplianceModule,
     DeviceModule,
+    TwilioModule,
 
     // For Measurement and Medication
     EventEmitterModule.forRoot({
