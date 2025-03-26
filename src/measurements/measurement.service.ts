@@ -20,7 +20,7 @@ export class MeasurementService {
   constructor(
     private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   // public async updateMeasurementStatus(
   //   measurementId: string,
@@ -39,11 +39,17 @@ export class MeasurementService {
   //   });
   // }
 
+  // this is the new one for pagination implementation
   public async getMeasurementsOfAllPatients(
     userId: string,
     role: UserRole,
     type: string,
-  ): Promise<ModifiedMeasurement[]> {
+    page: number,
+    limit: number
+  ): Promise<PaginatedResult<ModifiedMeasurement>> {
+    // Calculate pagination parameters
+    const skip = (page - 1) * limit;
+
     const patients = await this.prisma.patient.findMany({
       where: {
         [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
@@ -56,147 +62,272 @@ export class MeasurementService {
         user_id: true,
       },
     });
+
     const patientIds = patients.map((p) => p.user_id);
 
-    if (type) {
-      // Doctor and Nurse
-      // if (role === 'DOCTOR' || role === 'NURSE') {}
-      return await this.prisma.measurement.findMany({
-        where: {
-          patient: {
-            user_id: {
-              in: patientIds,
-            },
-          },
-          type: type as MeasurementType,
-        },
+    // Common select object
+    const selectObject = {
+      id: true,
+      title: true,
+      status: true,
+      mode: true,
+      type: true,
+      values: true,
+      updated_status_at: true,
+      updated_status_by: true,
+      unit: true,
+      reading_source: true,
+      created_at: true,
+      updated_status: true,
+      patient: {
         select: {
-          id: true,
-          title: true,
-          status: true,
-          mode: true,
-          type: true,
-          values: true,
-          updated_status_at: true,
-          updated_status_by: true,
-          unit: true,
-          reading_source: true,
-          created_at: true,
-          updated_status: true,
-          patient: {
+          user: {
             select: {
-              user: {
-                select: {
-                  id: true,
-                  email: true,
-                  first_name: true,
-                  middle_name: true,
-                  last_name: true,
-                },
-              },
-            },
-          },
-          doctor: {
-            select: {
-              user: {
-                select: {
-                  id: true,
-                  email: true,
-                  first_name: true,
-                  middle_name: true,
-                  last_name: true,
-                },
-              },
-            },
-          },
-          nurse: {
-            select: {
-              user: {
-                select: {
-                  id: true,
-                  email: true,
-                  first_name: true,
-                  middle_name: true,
-                  last_name: true,
-                },
-              },
+              id: true,
+              email: true,
+              first_name: true,
+              middle_name: true,
+              last_name: true,
             },
           },
         },
-        orderBy: {
-          created_at: 'desc',
+      },
+      doctor: {
+        select: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              first_name: true,
+              middle_name: true,
+              last_name: true,
+            },
+          },
         },
-      });
-    }
+      },
+      nurse: {
+        select: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              first_name: true,
+              middle_name: true,
+              last_name: true,
+            },
+          },
+        },
+      },
+    };
 
-    // Doctor and Nurse
-    // if (role === 'DOCTOR' || role === 'NURSE') {}
-    return await this.prisma.measurement.findMany({
-      where: {
-        patient: {
-          user_id: {
-            in: patientIds,
-          },
+    // Query conditions
+    const whereCondition = {
+      patient: {
+        user_id: {
+          in: patientIds,
         },
       },
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        mode: true,
-        type: true,
-        values: true,
-        updated_status_at: true,
-        updated_status_by: true,
-        unit: true,
-        reading_source: true,
-        created_at: true,
-        updated_status: true,
-        patient: {
-          select: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                first_name: true,
-                middle_name: true,
-                last_name: true,
-              },
-            },
-          },
-        },
-        doctor: {
-          select: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                first_name: true,
-                middle_name: true,
-                last_name: true,
-              },
-            },
-          },
-        },
-        nurse: {
-          select: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                first_name: true,
-                middle_name: true,
-                last_name: true,
-              },
-            },
-          },
-        },
-      },
+      ...(type && { type: type as MeasurementType }),
+    };
+
+    // Fetch paginated measurements
+    const measurements = await this.prisma.measurement.findMany({
+      where: whereCondition,
+      select: selectObject,
       orderBy: {
         created_at: 'desc',
       },
+      skip,
+      take: limit,
     });
+
+    // Get total count for pagination
+    const totalItems = await this.prisma.measurement.count({
+      where: whereCondition,
+    });
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+    const nextPage = hasNextPage ? page + 1 : null;
+    const prevPage = hasPrevPage ? page - 1 : null;
+
+    return {
+      data: measurements,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage,
+        prevPage,
+      },
+    };
   }
+
+
+  // old one comment from abdullah and new one for pagination 
+  // public async getMeasurementsOfAllPatients(
+  //   userId: string,
+  //   role: UserRole,
+  //   type: string,
+  // ): Promise<ModifiedMeasurement[]> {
+  //   const patients = await this.prisma.patient.findMany({
+  //     where: {
+  //       [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
+  //         some: {
+  //           user_id: userId,
+  //         },
+  //       },
+  //     },
+  //     select: {
+  //       user_id: true,
+  //     },
+  //   });
+  //   const patientIds = patients.map((p) => p.user_id);
+
+  //   if (type) {
+  //     // Doctor and Nurse
+  //     // if (role === 'DOCTOR' || role === 'NURSE') {}
+  //     return await this.prisma.measurement.findMany({
+  //       where: {
+  //         patient: {
+  //           user_id: {
+  //             in: patientIds,
+  //           },
+  //         },
+  //         type: type as MeasurementType,
+  //       },
+  //       select: {
+  //         id: true,
+  //         title: true,
+  //         status: true,
+  //         mode: true,
+  //         type: true,
+  //         values: true,
+  //         updated_status_at: true,
+  //         updated_status_by: true,
+  //         unit: true,
+  //         reading_source: true,
+  //         created_at: true,
+  //         updated_status: true,
+  //         patient: {
+  //           select: {
+  //             user: {
+  //               select: {
+  //                 id: true,
+  //                 email: true,
+  //                 first_name: true,
+  //                 middle_name: true,
+  //                 last_name: true,
+  //               },
+  //             },
+  //           },
+  //         },
+  //         doctor: {
+  //           select: {
+  //             user: {
+  //               select: {
+  //                 id: true,
+  //                 email: true,
+  //                 first_name: true,
+  //                 middle_name: true,
+  //                 last_name: true,
+  //               },
+  //             },
+  //           },
+  //         },
+  //         nurse: {
+  //           select: {
+  //             user: {
+  //               select: {
+  //                 id: true,
+  //                 email: true,
+  //                 first_name: true,
+  //                 middle_name: true,
+  //                 last_name: true,
+  //               },
+  //             },
+  //           },
+  //         },
+  //       },
+  //       orderBy: {
+  //         created_at: 'desc',
+  //       },
+  //     });
+  //   }
+
+  //   // Doctor and Nurse
+  //   // if (role === 'DOCTOR' || role === 'NURSE') {}
+  //   return await this.prisma.measurement.findMany({
+  //     where: {
+  //       patient: {
+  //         user_id: {
+  //           in: patientIds,
+  //         },
+  //       },
+  //     },
+  //     select: {
+  //       id: true,
+  //       title: true,
+  //       status: true,
+  //       mode: true,
+  //       type: true,
+  //       values: true,
+  //       updated_status_at: true,
+  //       updated_status_by: true,
+  //       unit: true,
+  //       reading_source: true,
+  //       created_at: true,
+  //       updated_status: true,
+  //       patient: {
+  //         select: {
+  //           user: {
+  //             select: {
+  //               id: true,
+  //               email: true,
+  //               first_name: true,
+  //               middle_name: true,
+  //               last_name: true,
+  //             },
+  //           },
+  //         },
+  //       },
+  //       doctor: {
+  //         select: {
+  //           user: {
+  //             select: {
+  //               id: true,
+  //               email: true,
+  //               first_name: true,
+  //               middle_name: true,
+  //               last_name: true,
+  //             },
+  //           },
+  //         },
+  //       },
+  //       nurse: {
+  //         select: {
+  //           user: {
+  //             select: {
+  //               id: true,
+  //               email: true,
+  //               first_name: true,
+  //               middle_name: true,
+  //               last_name: true,
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //     orderBy: {
+  //       created_at: 'desc',
+  //     },
+  //   });
+  // }
 
   // public async patientMeasurements(
   //   patientId: string,
@@ -1007,7 +1138,7 @@ export class MeasurementService {
 
     // Calculate page count
     const totalPages = Math.ceil(totalItems / limit);
-    
+
     // Calculate nextPage and prevPage
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;

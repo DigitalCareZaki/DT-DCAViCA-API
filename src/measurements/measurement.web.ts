@@ -32,16 +32,21 @@ export class MeasurementWebController extends MeasurementController {
 
   @HttpCode(HttpStatus.OK)
   @Get('')
+
   @UseGuards(RolesGuard)
   @RequirePermission(Role.DOCTOR, Role.NURSE)
   public async getAllPatientMeasurements(
     @GetUser() user: UserRes,
     @Query('type') type?: string,
-  ): Promise<ModifiedMeasurement[]> {
+    @Query('page') page?: number,
+    @Query('limit') limit?: number
+  ): Promise<PaginatedResult<ModifiedMeasurement>> {
     return this.getMeasurementService().getMeasurementsOfAllPatients(
       user.id,
       user.role,
-      type,
+      type || '',
+      page || 1,
+      limit || 10,
     );
   }
 
