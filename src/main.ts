@@ -5,10 +5,13 @@ import { ValidationPipe } from '@nestjs/common';
 import * as express from 'express';
 import { join } from 'path';
 
-import type {} from './global';
+import type { } from './global';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Enable CORS to allow all origins
+  app.enableCors();
 
   // app.enableCors({
   //   origin: '*',
@@ -16,12 +19,12 @@ async function bootstrap() {
 
   // Enable CORS for all origins
 
-  app.enableCors({
-    origin: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-  });
+  // app.enableCors({
+  //   origin: true,
+  //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  //   preflightContinue: false,
+  //   optionsSuccessStatus: 204,
+  // });
 
   app.useGlobalPipes(
     new ValidationPipe({

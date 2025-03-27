@@ -8,11 +8,12 @@ import { ReadingRangeDTO } from './dto';
 
 import type { PatientReadingRangeAlert } from './types';
 import type { MeasurementType } from '@prisma/client';
+import { TwilioService } from 'src/twilio/twilio.service';
 import { UserRes } from '@types';
 
 @Injectable()
 export class ReadingRangeService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService, private sms: TwilioService) { }
 
   public async getAlertForPatient(
     patientId: string,
@@ -172,8 +173,7 @@ export class ReadingRangeService {
         },
       });
       if (alt.send_sms) {
-        console.log('sending sms');
-        // await this.sms.sendSMS(user.email, `Your patient ${alt.patient.user.first_name} has an alert for ${alt.type} of ${alt.range[0]}/${alt.range[1]}`);
+        await this.sms.sendSMS(user.email, `Your patient ${alt.patient.user.first_name} has an alert for ${alt.type} of ${alt.range[0]}/${alt.range[1]}`);
       } else {
         const contacts = await this.prisma.contacts.findMany({
           where: {
@@ -189,8 +189,7 @@ export class ReadingRangeService {
 
         if (contacts.length > 0) {
           contacts.forEach(async (contact) => {
-            console.log('sending sms');
-            // await this.sms.sendSMS(contact.number, `Your patient ${alt.patient.user.first_name} has an alert for ${alt.type} of ${alt.range[0]}/${alt.range[1]}`);
+            await this.sms.sendSMS(contact.number, `Your patient ${alt.patient.user.first_name} has an alert for ${alt.type} of ${alt.range[0]}/${alt.range[1]}`);
 
           });
         }
@@ -241,8 +240,7 @@ export class ReadingRangeService {
         },
       });
       if (data.send_sms) {
-        console.log('sending sms');
-        // await this.sms.sendSMS(user.email, `Your patient ${alert.patient.user.first_name} has an alert for ${alert.type} of ${alert.range[0]}/${alert.range[1]}`);
+        await this.sms.sendSMS(user.email, `Your patient ${alert.patient.user.first_name} has an alert for ${alert.type} of ${alert.range[0]}/${alert.range[1]}`);
       } else {
         const contacts = await this.prisma.contacts.findMany({
           where: {
@@ -258,8 +256,7 @@ export class ReadingRangeService {
 
         if (contacts.length > 0) {
           contacts.forEach(async (contact) => {
-            console.log('sending sms');
-            // await this.sms.sendSMS(contact.number, `Your patient ${alert.patient.user.first_name} has an alert for ${alert.type} of ${alert.range[0]}/${alert.range[1]}`);
+            await this.sms.sendSMS(contact.number, `Your patient ${alert.patient.user.first_name} has an alert for ${alert.type} of ${alert.range[0]}/${alert.range[1]}`);
 
           });
         }
