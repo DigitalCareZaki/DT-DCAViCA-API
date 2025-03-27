@@ -1,19 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import * as serviceAccount from '../../serviceAccountKey.json';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Cron } from '@nestjs/schedule';
+import * as path from 'path';
 
 @Injectable()
-export class FirebaseService {
+export class FirebaseService implements OnModuleInit {
     private firebaseApp: admin.app.App;
 
-    constructor(private prisma: PrismaService) {
-        this.firebaseApp = admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-        });
+    onModuleInit() {
+        if (!admin.apps.length) {
+            try {
+                this.firebaseApp = admin.initializeApp({
+                    credential: admin.credential.cert(path.resolve('./firebase-service-account.json') as admin.ServiceAccount),
+                });
+
+                console.log('Firebase Admin Initialized');
+            } catch (error) {
+                console.error('Firebase Admin Initialization Error', error.stack);
+            }
+        }
     }
+
+    constructor(private readonly prisma: PrismaService) { }
 
     @Cron('0 0 * * *', {
         name: 'MedicationReminders',
