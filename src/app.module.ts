@@ -69,6 +69,7 @@ import { SupportModule } from './technicalSupport/support.module';
 
 import { SendgridModule } from './sendGrid/sendgrid.module';
 import { TwilioModule } from './twilio/twilio.module';
+import { FirebaseModule } from './firebaseNotification/firebase.module';
 
 @Module({
   providers: [
@@ -82,6 +83,7 @@ import { TwilioModule } from './twilio/twilio.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    FirebaseModule,
     AuthModule,
     PrismaModule,
     DoctorModule,

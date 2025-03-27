@@ -20,7 +20,8 @@
     "paths": {
       "@errors": ["src/errors/index.ts"],
       "@types": ["src/types/index.d.ts"]
-    }
+    },
+    "resolveJsonModule": true
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts"]
 }

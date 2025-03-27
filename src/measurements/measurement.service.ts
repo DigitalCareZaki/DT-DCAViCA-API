@@ -20,7 +20,7 @@ export class MeasurementService {
   constructor(
     private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   // public async updateMeasurementStatus(
   //   measurementId: string,
@@ -44,6 +44,8 @@ export class MeasurementService {
     role: UserRole,
     type: string,
   ): Promise<ModifiedMeasurement[]> {
+
+    // console.log(type, '=========>type')
     const patients = await this.prisma.patient.findMany({
       where: {
         [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
@@ -61,7 +63,7 @@ export class MeasurementService {
     if (type) {
       // Doctor and Nurse
       // if (role === 'DOCTOR' || role === 'NURSE') {}
-      return await this.prisma.measurement.findMany({
+      const measurement = await this.prisma.measurement.findMany({
         where: {
           patient: {
             user_id: {
@@ -127,11 +129,12 @@ export class MeasurementService {
           created_at: 'desc',
         },
       });
+
     }
 
     // Doctor and Nurse
     // if (role === 'DOCTOR' || role === 'NURSE') {}
-    return await this.prisma.measurement.findMany({
+    const measurement = await this.prisma.measurement.findMany({
       where: {
         patient: {
           user_id: {
@@ -196,6 +199,8 @@ export class MeasurementService {
         created_at: 'desc',
       },
     });
+
+    return measurement
   }
 
   // public async patientMeasurements(
@@ -1007,7 +1012,7 @@ export class MeasurementService {
 
     // Calculate page count
     const totalPages = Math.ceil(totalItems / limit);
-    
+
     // Calculate nextPage and prevPage
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;

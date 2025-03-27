@@ -65,15 +65,7 @@ export class VivalinkService {
 
       const result = await res.json();
       this.vlCredentails.token = result?.data?.token;
-      console.log('result?.data?.token >>>>>>>> ', result?.data?.token);
       return result?.data?.token;
-
-      // if (result.data.token) {
-      console.log('result.data.token >>>>>>>> ', result.data.token);
-      // this.updateToken(result.data.token);
-      // } else {
-      //   console.log('Error fetching token');
-      // }
     } catch (err) {
       console.log('cronFetchToken -> Error fetching token', err);
     }
@@ -157,7 +149,7 @@ export class VivalinkService {
 
     const mainRes = await fetch(
       this.vlCredentails.baseUrl +
-        `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&topOne=true&order=descending`,
+      `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&topOne=true&order=descending`,
       {
         headers: {
           Authorization: this.vlCredentails.token,
@@ -172,7 +164,7 @@ export class VivalinkService {
 
     const res = await fetch(
       this.vlCredentails.baseUrl +
-        `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&startTime=${mainResult.data.start - durationInMs}&endTime=${mainResult.data.start}&denoise=true`,
+      `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&startTime=${mainResult.data.start - durationInMs}&endTime=${mainResult.data.start}&denoise=true`,
       {
         headers: {
           Authorization: this.vlCredentails.token,

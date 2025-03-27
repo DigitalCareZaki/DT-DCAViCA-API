@@ -40,6 +40,7 @@ export class PatientService {
         title: data.title,
         role: 'PATIENT',
         location_id,
+        // fcmToken: data.fcmToken,
         associated_branches: {
           connect: {
             id: data.branch_id,

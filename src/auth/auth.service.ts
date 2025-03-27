@@ -25,7 +25,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly otpService: OtpService,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   public async login(dto: LoginDTO): Promise<UserRes & { token: string }> {
     const user = await this.prisma.user.findFirstOrThrow({
@@ -66,6 +66,13 @@ export class AuthService {
     delete user.password;
     delete user.pincode;
 
+    // if (!user.fcmToken) {
+    //   await this.prisma.user.update({
+    //     where: { id: user.id }, 
+    //     data: { fcmToken: dto.fcmToken }, 
+    //   });
+    // }
+
     return {
       ...user,
       isPincode,
@@ -86,7 +93,7 @@ export class AuthService {
     };
   }
 
-  public register(): void {}
+  public register(): void { }
 
   private signToken(
     username: string,
