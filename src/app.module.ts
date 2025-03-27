@@ -68,8 +68,8 @@ import { TabletModule } from './tablets/tablet.module';
 import { SupportModule } from './technicalSupport/support.module';
 
 import { SendgridModule } from './sendGrid/sendgrid.module';
-import { TwilioModule } from './twilio/twilio.module';
-import { FirebaseModule } from './firebaseNotification/firebase.module';
+// import { TwilioModule } from './twilio/twilio.module';
+// import { FirebaseModule } from './firebaseNotification/firebase.module';
 
 @Module({
   providers: [
@@ -83,7 +83,7 @@ import { FirebaseModule } from './firebaseNotification/firebase.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    FirebaseModule,
+    // FirebaseModule,
     AuthModule,
     PrismaModule,
     DoctorModule,
@@ -115,7 +115,7 @@ import { FirebaseModule } from './firebaseNotification/firebase.module';
     MedicationModule,
     ComplianceModule,
     DeviceModule,
-    TwilioModule,
+    // TwilioModule,
 
     // For Measurement and Medication
     EventEmitterModule.forRoot({

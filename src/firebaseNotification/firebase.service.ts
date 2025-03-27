@@ -25,7 +25,7 @@ export class FirebaseService {
         })();
     }
 
-    public async sendMedicationReminders() {
+    private async sendMedicationReminders() {
         const now = new Date();
         const fifteenMinutesLater = new Date(now.getTime() + 15 * 60 * 1000); // Current time + 15 min
 
