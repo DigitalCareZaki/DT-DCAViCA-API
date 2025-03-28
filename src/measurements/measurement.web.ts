@@ -56,10 +56,14 @@ export class MeasurementWebController extends MeasurementController {
   @RequirePermission(Role.DOCTOR, Role.NURSE)
   public async getPatientListWithLatestReadings(
     @GetUser() user: UserRes,
-  ): Promise<ModifiedMeasurement[]> {
+    @Query('page') page?: number,
+    @Query('limit') limit?: number
+  ): Promise<PaginatedResult<ModifiedMeasurement>> {
     return this.getMeasurementService().getPatientListWithLatestReadings(
       user.id,
       user.role,
+      page || 1,
+      limit || 10,
     );
   }
 
