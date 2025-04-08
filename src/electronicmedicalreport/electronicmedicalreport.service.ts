@@ -5,7 +5,7 @@ import { EMRDto } from './dto/emr.dto';
 
 @Injectable()
 export class ElectronicmedicalreportService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   public async create(user: UserRes, data: EMRDto) {
     const patient = await this.prisma.patient.findFirstOrThrow({
@@ -75,27 +75,81 @@ export class ElectronicmedicalreportService {
     });
   }
 
-  public async getAllPatientReports() {
-    return await this.prisma.electronicMedicalReport.findMany({
-      select: {
-        title: true,
-        uri: true,
-        created: true,
-        family_history: true,
-        patient: {
-          select: {
-            user: {
-              select: {
-                first_name: true,
-                last_name: true,
-                middle_name: true,
-                uri: true,
-                id: true,
+  public async getAllPatientReports(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const [reports, totalItems] = await this.prisma.$transaction([
+      this.prisma.electronicMedicalReport.findMany({
+        skip,
+        take: limit,
+        orderBy: {
+          created: 'desc',
+        },
+        select: {
+          title: true,
+          uri: true,
+          created: true,
+          family_history: true,
+          patient: {
+            select: {
+              user: {
+                select: {
+                  first_name: true,
+                  last_name: true,
+                  middle_name: true,
+                  uri: true,
+                  id: true,
+                },
               },
             },
           },
         },
+      }),
+      this.prisma.electronicMedicalReport.count(),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return {
+      data: reports,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
       },
-    });
+    };
   }
+
+
+  // before pagination old code
+  // public async getAllPatientReports() {
+  //   return await this.prisma.electronicMedicalReport.findMany({
+  //     select: {
+  //       title: true,
+  //       uri: true,
+  //       created: true,
+  //       family_history: true,
+  //       patient: {
+  //         select: {
+  //           user: {
+  //             select: {
+  //               first_name: true,
+  //               last_name: true,
+  //               middle_name: true,
+  //               uri: true,
+  //               id: true,
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   });
+  // }
 }

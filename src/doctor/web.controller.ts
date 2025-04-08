@@ -42,8 +42,11 @@ export class DoctorWebController extends DoctorController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/all-reports')
-  public fetchReports() {
-    return this.emrService.getAllPatientReports();
+  public fetchReports(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    return this.emrService.getAllPatientReports(+page, +limit);
   }
 
   @HttpCode(HttpStatus.OK)
