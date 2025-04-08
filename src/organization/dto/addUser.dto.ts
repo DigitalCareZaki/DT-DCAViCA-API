@@ -83,6 +83,6 @@ export class AddUserBaseDTO {
   address: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   fcmToken: string;
 }
