@@ -9,7 +9,7 @@ import type { PatientRag } from './types';
 
 @Injectable()
 export class RagService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   public async getAllPatientRag(
     userId: string,
@@ -21,7 +21,8 @@ export class RagService {
       throw new AppError('You can not access this route', HttpStatus.FORBIDDEN);
     }
 
-    [start_date, end_date] = await this.validateDates(start_date, end_date);
+    // last week query by default
+    // [start_date, end_date] = await this.validateDates(start_date, end_date);
 
     const result = await this.prisma.measurement.groupBy({
       by: ['type', 'status'],
@@ -33,10 +34,10 @@ export class RagService {
             },
           },
         },
-        created_at: {
-          gte: new Date(start_date),
-          lte: new Date(end_date),
-        },
+        // created_at: {
+        //   gte: new Date(start_date),
+        //   lte: new Date(end_date),
+        // },
       },
       _count: {
         _all: true,
@@ -129,50 +130,25 @@ export class RagService {
     return await this.formatResults(start_date, end_date, result);
   }
 
-  private async validateDates(
-    start_date?: string,
-    end_date?: string,
-  ): Promise<[string, string]> {
+  private validateDates(start_date: string, end_date: string): [string, string] {
     // start_date not provided and end_date provided
-    if (!start_date && end_date) {
-      throw new AppError(
-        'Please provide a start_date if an end_date is specified',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    if (!start_date && end_date) throw new AppError('Please provide a start_date if an end_date is specified', HttpStatus.BAD_REQUEST);
 
     // if start_date, check it's validity
-    if (start_date && isNaN(new Date(start_date).getTime())) {
-      throw new AppError(
-        'The start_date is not a valid date',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    if (start_date && isNaN(new Date(start_date).getTime())) throw new AppError('The start_date is not a valid date', HttpStatus.BAD_REQUEST);
 
     // if end_date, check it's validity
-    if (end_date && isNaN(new Date(end_date).getTime())) {
-      throw new AppError(
-        'The end_date is not a valid date',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    if (end_date && isNaN(new Date(end_date).getTime())) throw new AppError('The end_date is not a valid date', HttpStatus.BAD_REQUEST);
 
     // if either not provided
     if (!start_date || !end_date) {
       const now = new Date();
 
-      start_date =
-        start_date ??
-        new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      start_date = start_date ?? new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
       end_date = end_date ?? now.toISOString();
     }
 
-    if (new Date(start_date) > new Date(end_date)) {
-      throw new AppError(
-        'The start_date cannot be greater than the end_date',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    if (new Date(start_date) > new Date(end_date)) throw new AppError('The start_date cannot be greater than the end_date', HttpStatus.BAD_REQUEST);
 
     return [start_date, end_date];
   }
