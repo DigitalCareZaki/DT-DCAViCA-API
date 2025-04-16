@@ -88,6 +88,13 @@ export class TelemedWebController extends TelemedController {
   ): Promise<RequestedAppointmentProps[]> {
     return this.getTelemedService().requested(user);
   }
+  @HttpCode(HttpStatus.OK)
+  @Get('/today-appointments')
+  public async todayappointments(
+    @GetUser() user: UserRes,
+  ): Promise<{ count: number; appointments: RequestedAppointmentProps[] }> {
+    return this.getTelemedService().todayappointments(user);
+  }
 
   @HttpCode(HttpStatus.OK)
   @Get('/calendar')

@@ -218,6 +218,9 @@ export class TelemedService {
     return this.prisma.appointmentParticipants.findMany({
       where: {
         user_id: user.id,
+        appointment: {
+          status: 'ACTIVE',
+        },
       },
 
       select: {
@@ -254,6 +257,61 @@ export class TelemedService {
         },
       },
     });
+  }
+  public async todayappointments(user: UserRes): Promise<{ count: number; appointments: RequestedAppointmentProps[] }> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const activeAppointments = await this.prisma.appointmentParticipants.findMany({
+      where: {
+        user_id: user.id,
+        status: 'ACTIVE',
+        appointment: {
+          start_date: {
+            gte: today,
+          },
+          end_date: {
+            lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+          },
+        },
+      },
+      select: {
+        status: true,
+        id: true,
+        appointment: {
+          select: {
+            id: true,
+            about: true,
+            type: true,
+            title: true,
+            start_date: true,
+            end_date: true,
+            description: true,
+            organizer: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                middle_name: true,
+                uri: true,
+                role: true,
+              },
+            },
+            participants: {
+              select: {
+                id: true,
+              },
+            },
+            created_at: true,
+          },
+        },
+      },
+    });
+
+    return {
+      count: activeAppointments.length,
+      appointments: activeAppointments,
+    };
   }
 
   public async calendar(userId: string): Promise<SlotParent> {
