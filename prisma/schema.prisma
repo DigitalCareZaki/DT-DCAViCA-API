@@ -803,8 +803,9 @@ model Videos {
 }
 
 enum RolePlatform {
-  WEB
+  APP
   MOBILE
+  WEB
 }
 
 enum Role {

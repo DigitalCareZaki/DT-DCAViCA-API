@@ -2,18 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { RolePlatform } from '@prisma/client';
 
 @Injectable()
 export class LogsListener {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   @OnEvent('create_log')
   public async handleCreateLogEvent(payload: any) {
     try {
-      let user_id: string | undefined = undefined;
+      let user_id: string | undefined | null = null;
       if (payload.token) {
         const token = payload.token.split('Bearer ').at(-1);
         const decodedToken = this.jwtService.verify(token);
@@ -25,7 +26,7 @@ export class LogsListener {
           user_id: user_id,
           method: payload.method ?? 'unknown',
           endpoint: payload.endpoint ?? 'unknown',
-          platform: payload.platform ?? 'WEB',
+          platform: payload.platform ?? RolePlatform.WEB,
           module: payload.module ?? 'default',
         },
       });
