@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MinLength,
   Validate,
@@ -23,4 +24,8 @@ export class LoginDTO {
   @Validate(ValidatePasswordAtleastOneLowerLetter)
   @Validate(ValidatePasswordAtleastOneSpecialCharacter)
   password: string;
+
+  @IsString()
+  @IsOptional()
+  device_token?: string;
 }

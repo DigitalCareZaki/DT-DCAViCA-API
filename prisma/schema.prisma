@@ -94,11 +94,12 @@ model User {
   middle_name String?
   last_name   String
 
-  dob    DateTime
-  uri    String?
-  role   Role
-  gender Gender
-  title  Title
+  dob           DateTime
+  uri           String?
+  role          Role
+  gender        Gender
+  title         Title
+  device_token  String?
   active Boolean  @default(true)
 
   email        String  @unique
