@@ -27,14 +27,13 @@ export class AuthService {
     private readonly eventEmitter: EventEmitter2,
   ) { }
 
-  public async login(dto: LoginDTO): Promise<UserRes & { token: string }> {
-    const user = await this.prisma.user.findFirstOrThrow({
+  public async login(dto: LoginDTO) {
+    const user: any = await this.prisma.user.findFirstOrThrow({
       where: {
         AND: {
           email: dto.email,
         },
       },
-
       select: {
         id: true,
         first_name: true,
@@ -54,6 +53,14 @@ export class AuthService {
 
     if (!user.active) {
       throw new AppError('User is blocked', HttpStatus.UNAUTHORIZED);
+    }
+
+    if (dto.device_token) {
+      user.device_token = dto.device_token;
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { device_token: dto.device_token },
+      });
     }
 
     const isValidPassword = await argon.verify(user.password, dto.password);
