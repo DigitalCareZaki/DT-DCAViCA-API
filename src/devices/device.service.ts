@@ -10,7 +10,7 @@ import type { Device } from './types';
 
 @Injectable()
 export class DeviceService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   public async getAllDevices(
     userId: string,
@@ -312,6 +312,41 @@ export class DeviceService {
         },
       });
     }
+  }
+
+  public async getDeviceList(
+    category: MeasurementType,
+
+  ) {
+
+    return await this.prisma.device.findMany({
+      where: {
+        category: category,
+        patient_devices: {
+          none: {},
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        serial_number: true,
+        uri: true,
+        category: true,
+        created_by: {
+          select: {
+            id: true,
+            first_name: true,
+            middle_name: true,
+            last_name: true,
+            email: true,
+          },
+        },
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
   }
 
   public async getAllDevicesForPatient(

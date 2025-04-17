@@ -258,22 +258,10 @@ export class TelemedService {
       },
     });
   }
-  public async todayappointments(user: UserRes): Promise<{ count: number; appointments: RequestedAppointmentProps[] }> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const activeAppointments = await this.prisma.appointmentParticipants.findMany({
+  public async appointmentAnalytics(user: UserRes): Promise<RequestedAppointmentProps[]> {
+    return this.prisma.appointmentParticipants.findMany({
       where: {
-        user_id: user.id,
-        status: 'ACTIVE',
-        appointment: {
-          start_date: {
-            gte: today,
-          },
-          end_date: {
-            lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
-          },
-        },
+        user_id: user.id
       },
       select: {
         status: true,
@@ -297,21 +285,62 @@ export class TelemedService {
                 role: true,
               },
             },
+
             participants: {
               select: {
                 id: true,
               },
             },
+
             created_at: true,
           },
         },
       },
     });
+  }
+  public async todayappointments(user: UserRes) {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
-    return {
-      count: activeAppointments.length,
-      appointments: activeAppointments,
+    const todayAppointments = await this.prisma.appointmentParticipants.findMany({
+      where: {
+        user_id: user.id,
+        appointment: {
+          start_date: {
+            gte: todayStart,
+            lt: todayEnd,
+          },
+        },
+      },
+      select: {
+        status: true,
+      },
+    });
+    const totalAppointments = await this.prisma.appointmentParticipants.findMany({
+      where: {
+        user_id: user.id
+      },
+      select: {
+        status: true,
+      },
+    });
+
+    const counts = {
+      totalAppointments: totalAppointments.length,
+      active: 0,
+      scheduled: 0,
+      cancelled: 0,
     };
+
+    todayAppointments.forEach((appointment) => {
+      if (appointment.status === 'ACTIVE') counts.active++;
+      if (appointment.status === 'ONGOING') counts.scheduled++;
+      if (appointment.status === 'CANCELLED') counts.cancelled++;
+    });
+
+    return counts;
+
   }
 
   public async calendar(userId: string): Promise<SlotParent> {

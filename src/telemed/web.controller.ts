@@ -35,6 +35,7 @@ import type {
 } from './types';
 import type { UserRes } from '@types';
 import { TelemedActionDTO } from './dto/action.dto';
+import { JwtGuard } from 'src/auth/guards';
 
 @Controller('web/telemed')
 export class TelemedWebController extends TelemedController {
@@ -81,6 +82,7 @@ export class TelemedWebController extends TelemedController {
     return this.getTelemedService().searchTelemed(search, user.id);
   }
 
+
   @HttpCode(HttpStatus.OK)
   @Get('/requested')
   public async requested(
@@ -89,10 +91,17 @@ export class TelemedWebController extends TelemedController {
     return this.getTelemedService().requested(user);
   }
   @HttpCode(HttpStatus.OK)
-  @Get('/today-appointments')
+  @Get('/appointmentanalytics')
+  public async appointmentAnalytics(
+    @GetUser() user: UserRes,
+  ): Promise<RequestedAppointmentProps[]> {
+    return this.getTelemedService().appointmentAnalytics(user);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Get('/todayappointments')
   public async todayappointments(
     @GetUser() user: UserRes,
-  ): Promise<{ count: number; appointments: RequestedAppointmentProps[] }> {
+  ) {
     return this.getTelemedService().todayappointments(user);
   }
 

@@ -19,6 +19,7 @@ import { DeviceDTO, ManageDeviceDTO } from './dto';
 
 import type { HealthRes, UserRes } from '@types';
 import type { Device } from './types';
+import { Measurement, MeasurementType } from '@prisma/client';
 
 @Controller('web/devices')
 export class DeviceWebController extends DeviceController {
@@ -57,6 +58,17 @@ export class DeviceWebController extends DeviceController {
       user.id,
       user.organization_id,
       user.role,
+    );
+  }
+  // get devices category wise
+  @HttpCode(HttpStatus.OK)
+  @Get('devices/:category')
+  public async getDeviceList(
+    @GetUser() user: UserRes,
+    @Param('category') category: MeasurementType,
+  ) {
+    return this.getDeviceService().getDeviceList(
+      category
     );
   }
 
