@@ -20,6 +20,7 @@ import type {
   GetMeetingParticipantsProps,
   GetMeetingChatsProps,
   SlotParent,
+  AppointmentReport,
 } from './types';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
 import { SENDGRID_TEMPLATES } from 'src/constant';
@@ -394,6 +395,71 @@ export class TelemedService {
     // console.log(`New SlotParent created for user ${userId}`);
     return completeSlotParent;
   }
+
+
+
+
+  public async createReport(
+    user: UserRes,
+    data: AppointmentReport,
+  ): Promise<AppointmentReport> {
+    // Fetch the appointment with existing observation (if any)
+    const existingAppointment = await this.prisma.appointment.findUnique({
+      where: { id: data.appointmentId },
+      include: {
+        appointmentObservation: true,
+      },
+    });
+
+    if (!existingAppointment) {
+      throw new Error(`Appointment with ID ${data.appointmentId} does not exist.`);
+    }
+
+    let observation;
+
+    // If observation exists, update it
+    if (existingAppointment.appointmentObservation) {
+      observation = await this.prisma.appointmentObservation.update({
+        where: { id: existingAppointment.appointmentObservation.id },
+        data: {
+          Observations: data.observations,
+          Diagnosis: data.diagnosis,
+          Medications: data.medications,
+          Procedure: data.procedure,
+          Follow_up_date: data.follow_up_date,
+        },
+      });
+    } else {
+      //  If no observation exists, create one and link it
+      observation = await this.prisma.appointmentObservation.create({
+        data: {
+          Observations: data.observations,
+          Diagnosis: data.diagnosis,
+          Medications: data.medications,
+          Procedure: data.procedure,
+          Follow_up_date: data.follow_up_date,
+          appointment: {
+            connect: { id: data.appointmentId },
+          },
+        },
+      });
+
+      // Link the new observation to the appointment
+      await this.prisma.appointment.update({
+        where: { id: data.appointmentId },
+        data: {
+          appointmentObservation_id: observation.id,
+        },
+      });
+    }
+
+    // Return the final observation
+    return {
+      ...data,
+      id: observation.id,
+    };
+  }
+
 
   public async updateCalendar(
     user: UserRes,

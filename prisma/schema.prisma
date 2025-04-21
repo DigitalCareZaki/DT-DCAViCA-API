@@ -661,16 +661,13 @@ model AppointmentParticipants {
 model AppointmentObservation {
   id String @id @default(uuid())
 
-  Observations String
-  Diagnosis String
-  Medications String
-  Procedure  String
+  Observations String?
+  Diagnosis String?
+  Medications String?
+  Procedure  String?
   Follow_up_date DateTime?
 
-
-
-  appointment_id String
-  appointment    Appointment @relation(name: "appointmentObservation", fields: [appointment_id], references: [id])
+  appointment Appointment? @relation(name: "appointmentObservation")
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -712,12 +709,14 @@ model Appointment {
   organizer    User   @relation(name: "appointmentOrganizer", fields: [organizer_id], references: [id])
   organizer_id String
 
+  appointmentObservation    AppointmentObservation? @relation(name: "appointmentObservation", fields: [appointmentObservation_id], references: [id])
+  appointmentObservation_id String? @unique
+
   room_id String?
 
   room Room? @relation("appointmentRoom")
 
   participants       AppointmentParticipants[] @relation("appointmentParticipantsBridge")
-  appointmentObservation       AppointmentObservation[] @relation("appointmentObservation")
   medication         Medication[]              @relation("appointmentMedication")
   joinedAppointments JoinedParticipants[]      @relation("joinedAppointment")
 

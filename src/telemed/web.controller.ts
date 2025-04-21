@@ -32,6 +32,7 @@ import type {
   LeftMeetingProps,
   GetMeetingChatsProps,
   SlotParent,
+  AppointmentReport,
 } from './types';
 import type { UserRes } from '@types';
 import { TelemedActionDTO } from './dto/action.dto';
@@ -126,6 +127,16 @@ export class TelemedWebController extends TelemedController {
     // console.log(`Updating calendar for user: ${user.id}`);
     // console.log('Data: ', data);
     return this.getTelemedService().updateCalendar(user, data);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('/report')
+  public async createReport(
+    @GetUser() user: UserRes,
+    @Body() data: AppointmentReport, // Accepting SlotParent as input data
+  ): Promise<AppointmentReport> {
+
+    return this.getTelemedService().createReport(user, data);
   }
 
   @HttpCode(HttpStatus.OK)

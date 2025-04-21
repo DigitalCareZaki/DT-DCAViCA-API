@@ -37,6 +37,15 @@ export type SlotWrapper = {
   slotParentId?: string; // Note the string type here
 };
 
+export type AppointmentReport = {
+  id: string;
+  appointmentId: string;
+  observations?: string;
+  diagnosis?: string;
+  medications?: string;
+  procedure?: string;
+  follow_up_date?: Date;
+};
 export type SlotParent = {
   id: string;
   slots: SlotWrapper[];
