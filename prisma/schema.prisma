@@ -658,6 +658,23 @@ model AppointmentParticipants {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
+model AppointmentObservation {
+  id String @id @default(uuid())
+
+  Observations String
+  Diagnosis String
+  Medications String
+  Procedure  String
+  Follow_up_date DateTime?
+
+
+
+  appointment_id String
+  appointment    Appointment @relation(name: "appointmentObservation", fields: [appointment_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
 
 model JoinedParticipants {
   id String @id @default(uuid())
@@ -700,6 +717,7 @@ model Appointment {
   room Room? @relation("appointmentRoom")
 
   participants       AppointmentParticipants[] @relation("appointmentParticipantsBridge")
+  appointmentObservation       AppointmentObservation[] @relation("appointmentObservation")
   medication         Medication[]              @relation("appointmentMedication")
   joinedAppointments JoinedParticipants[]      @relation("joinedAppointment")
 
