@@ -661,11 +661,11 @@ model AppointmentParticipants {
 model AppointmentObservation {
   id String @id @default(uuid())
 
-  Observations String?
-  Diagnosis String?
-  Medications String?
-  Procedure  String?
-  Follow_up_date DateTime?
+  observations String?
+  diagnosis String?
+  medications String?
+  procedure  String?
+  follow_up_date DateTime?
 
   appointment Appointment? @relation(name: "appointmentObservation")
 
