@@ -477,7 +477,7 @@ export class TelemedService {
           Diagnosis: data.diagnosis,
           Medications: data.medications,
           Procedure: data.procedure,
-          Follow_up_date: data.follow_up_date,
+          Follow_up_date: new Date(data.follow_up_date),
         },
       });
     } else {
