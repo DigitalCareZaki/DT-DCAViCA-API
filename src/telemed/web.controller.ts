@@ -92,6 +92,14 @@ export class TelemedWebController extends TelemedController {
     return this.getTelemedService().requested(user);
   }
   @HttpCode(HttpStatus.OK)
+  @Get('/patientappointments')
+  public async patientAppointments(
+    @Query('patientId') patientId?: string,
+
+  ): Promise<RequestedAppointmentProps[]> {
+    return this.getTelemedService().patientAppointments(patientId);
+  }
+  @HttpCode(HttpStatus.OK)
   @Get('/appointmentanalytics')
   public async appointmentAnalytics(
     @GetUser() user: UserRes,

@@ -259,6 +259,47 @@ export class TelemedService {
       },
     });
   }
+  public async patientAppointments(patientId: string): Promise<RequestedAppointmentProps[]> {
+    return this.prisma.appointmentParticipants.findMany({
+      where: {
+        user_id: patientId,
+      },
+
+      select: {
+        status: true,
+        id: true,
+        appointment: {
+          select: {
+            id: true,
+            about: true,
+            type: true,
+            title: true,
+            start_date: true,
+            end_date: true,
+            description: true,
+            organizer: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                middle_name: true,
+                uri: true,
+                role: true,
+              },
+            },
+
+            participants: {
+              select: {
+                id: true,
+              },
+            },
+
+            created_at: true,
+          },
+        },
+      },
+    });
+  }
   public async appointmentAnalytics(user: UserRes): Promise<RequestedAppointmentProps[]> {
     return this.prisma.appointmentParticipants.findMany({
       where: {
