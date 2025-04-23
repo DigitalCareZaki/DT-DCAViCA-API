@@ -426,6 +426,16 @@ export class TelemedService {
                 id: true,
               },
             },
+            appointmentObservation: {
+              select: {
+                id: true,
+                Observations: true,
+                Diagnosis: true,
+                Medications: true,
+                Procedure: true,
+                Follow_up_date: true,
+              },
+            },
 
             created_at: true,
           },
