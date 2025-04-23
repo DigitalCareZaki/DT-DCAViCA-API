@@ -341,107 +341,88 @@ export class TelemedService {
   }
 
 
-  // old code without pagintion make qasir bhai 
-  // public async patientAppointments(patientId: string): Promise<RequestedAppointmentProps[]> {
-  //   return this.prisma.appointmentParticipants.findMany({
-  //     where: {
-  //       user_id: patientId,
-  //     },
 
-  //     select: {
-  //       status: true,
-  //       id: true,
-  //       appointment: {
-  //         select: {
-  //           id: true,
-  //           about: true,
-  //           type: true,
-  //           title: true,
-  //           start_date: true,
-  //           end_date: true,
-  //           description: true,
-  //           organizer: {
-  //             select: {
-  //               id: true,
-  //               first_name: true,
-  //               last_name: true,
-  //               middle_name: true,
-  //               uri: true,
-  //               role: true,
-  //             },
-  //           },
+  public async appointmentAnalytics(user: UserRes,
+    page = 1,
+    limit = 10
+  ) {
+    const skip = (page - 1) * limit;
+    const [data, totalItems] = await this.prisma.$transaction([
+      this.prisma.appointmentParticipants.findMany({
+        where: {
+          user_id: user.id
 
-  //           participants: {
-  //             select: {
-  //               id: true,
-  //             },
-  //           },
-  //           appointmentObservation: {
-  //             select: {
-  //               id: true,
-  //               Observations: true,
-  //               Diagnosis: true,
-  //               Medications: true,
-  //               Procedure: true,
-  //               Follow_up_date: true,
-  //             },
-  //           },
-
-  //           created_at: true,
-  //         },
-  //       },
-  //     },
-  //   });
-  // }
-  public async appointmentAnalytics(user: UserRes): Promise<RequestedAppointmentProps[]> {
-    return this.prisma.appointmentParticipants.findMany({
-      where: {
-        user_id: user.id
-      },
-      select: {
-        status: true,
-        id: true,
-        appointment: {
-          select: {
-            id: true,
-            about: true,
-            type: true,
-            title: true,
-            start_date: true,
-            end_date: true,
-            description: true,
-            organizer: {
-              select: {
-                id: true,
-                first_name: true,
-                last_name: true,
-                middle_name: true,
-                uri: true,
-                role: true,
+        },
+        skip,
+        take: limit,
+        select: {
+          status: true,
+          id: true,
+          appointment: {
+            select: {
+              id: true,
+              about: true,
+              type: true,
+              title: true,
+              start_date: true,
+              end_date: true,
+              description: true,
+              organizer: {
+                select: {
+                  id: true,
+                  first_name: true,
+                  last_name: true,
+                  middle_name: true,
+                  uri: true,
+                  role: true,
+                },
               },
-            },
 
-            participants: {
-              select: {
-                id: true,
+              participants: {
+                select: {
+                  id: true,
+                },
               },
-            },
-            appointmentObservation: {
-              select: {
-                id: true,
-                Observations: true,
-                Diagnosis: true,
-                Medications: true,
-                Procedure: true,
-                Follow_up_date: true,
+              appointmentObservation: {
+                select: {
+                  id: true,
+                  Observations: true,
+                  Diagnosis: true,
+                  Medications: true,
+                  Procedure: true,
+                  Follow_up_date: true,
+                },
               },
-            },
 
-            created_at: true,
+              created_at: true,
+            },
           },
         },
+      }),
+
+      this.prisma.appointmentParticipants.count({
+        where: {
+          user_id: user.id,
+        },
+      }),
+    ]);
+
+
+    const totalPages = Math.ceil(totalItems / limit);
+
+    return {
+      data,
+      pagination: {
+        totalItems,
+        totalPages,
+        currentPage: page,
+        perPage: limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        nextPage: page < totalPages ? page + 1 : null,
+        prevPage: page > 1 ? page - 1 : null,
       },
-    });
+    };
   }
   public async todayappointments(user: UserRes) {
     const todayStart = new Date();
