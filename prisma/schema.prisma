@@ -691,38 +691,38 @@ model JoinedParticipants {
   updated_at DateTime @updatedAt
 }
 
-model Appointment {
-  id String @id @default(uuid())
+  model Appointment {
+    id String @id @default(uuid())
 
-  title       String
-  description String?
+    title       String
+    description String?
 
-  type   AppointmentType   @default(ONLINE)
-  about  AppointmentAbout  @default(CASUAL)
-  status AppointmentStatus @default(ACTIVE)
+    type   AppointmentType   @default(ONLINE)
+    about  AppointmentAbout  @default(CASUAL)
+    status AppointmentStatus @default(ACTIVE)
 
-  start_date DateTime
-  end_date   DateTime
+    start_date DateTime
+    end_date   DateTime
 
-  notes String[]
+    notes String[]
 
-  organizer    User   @relation(name: "appointmentOrganizer", fields: [organizer_id], references: [id])
-  organizer_id String
+    organizer    User   @relation(name: "appointmentOrganizer", fields: [organizer_id], references: [id])
+    organizer_id String
 
-  appointmentObservation    AppointmentObservation? @relation(name: "appointmentObservation", fields: [appointmentObservation_id], references: [id])
-  appointmentObservation_id String? @unique
+    appointmentObservation    AppointmentObservation? @relation(name: "appointmentObservation", fields: [appointmentObservation_id], references: [id])
+    appointmentObservation_id String? @unique
 
-  room_id String?
+    room_id String?
 
-  room Room? @relation("appointmentRoom")
+    room Room? @relation("appointmentRoom")
 
-  participants       AppointmentParticipants[] @relation("appointmentParticipantsBridge")
-  medication         Medication[]              @relation("appointmentMedication")
-  joinedAppointments JoinedParticipants[]      @relation("joinedAppointment")
+    participants       AppointmentParticipants[] @relation("appointmentParticipantsBridge")
+    medication         Medication[]              @relation("appointmentMedication")
+    joinedAppointments JoinedParticipants[]      @relation("joinedAppointment")
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-}
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+  }
 
 model Message {
   id String @id @default(uuid())

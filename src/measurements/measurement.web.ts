@@ -100,4 +100,20 @@ export class MeasurementWebController extends MeasurementController {
       data,
     );
   }
+
+  @HttpCode(HttpStatus.CREATED)
+  @Post('/:id') // :id -> patient -> user_id
+  public async updateMeasurementStatus(
+    @Param('id') id: string,
+    @Query('status') status: number,
+    @Query('updated_by') updated_by: string
+  ) {
+    return this.getMeasurementService().updateMeasurementStatus(
+      id,
+      status,
+      updated_by
+
+    );
+  }
 }
+

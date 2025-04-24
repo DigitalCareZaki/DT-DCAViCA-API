@@ -22,22 +22,22 @@ export class MeasurementService {
     private eventEmitter: EventEmitter2,
   ) { }
 
-  // public async updateMeasurementStatus(
-  //   measurementId: string,
-  //   new_status: number,
-  //   updated_status_by: string,
-  // ) {
-  //   return await this.prisma.measurement.update({
-  //     where: {
-  //       id: measurementId,
-  //     },
-  //     data: {
-  //       updated_status: new_status,
-  //       updated_status_by: updated_status_by,
-  //       updated_status_at: new Date(),
-  //     },
-  //   });
-  // }
+  public async updateMeasurementStatus(
+    measurementId: string,
+    new_status: number,
+    updated_by: string,
+  ) {
+    return await this.prisma.measurement.update({
+      where: {
+        id: measurementId,
+      },
+      data: {
+        updated_status: new_status,
+        updated_status_by: updated_by,
+        updated_status_at: new Date(),
+      },
+    });
+  }
 
   // this is the new one for pagination implementation
   public async getMeasurementsOfAllPatients(
