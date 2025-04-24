@@ -841,7 +841,7 @@ export class DoctorService {
       throw new AppError('The doctor is already associated with this patient', HttpStatus.BAD_REQUEST);
     }
 
-    return await this.prisma.patient.update({
+    const data = await this.prisma.patient.update({
       where: {
         user_id: patientId,
       },
@@ -850,11 +850,42 @@ export class DoctorService {
           connect: {
             user_id: doctorId,
           },
+
         },
       },
     });
 
+    return await this.prisma.doctor.findFirst({
+      where: {
 
+        user_id: doctorId,
+
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            middle_name: true,
+            email: true,
+            uri: true,
+            phone_number: true,
+          },
+        },
+        specialities: {
+          select: {
+            title: true,
+          },
+        },
+        departments: {
+          select: {
+            title: true,
+          },
+        },
+      },
+
+    });
 
   }
 

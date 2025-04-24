@@ -153,7 +153,7 @@ export class DoctorWebController extends DoctorController {
 
   @HttpCode(HttpStatus.OK)
   @Patch('/doctors')
-  public async assignDoctorToPatient(@Body('doctor_id') doctorId: string, @Body('patient_id') patientId: string) {
+  public async assignDoctorToPatient(@Body('doctorId') doctorId: string, @Body('patientId') patientId: string) {
     return this.getDoctorService().assignDoctorToPatient(doctorId, patientId);
   }
 }
