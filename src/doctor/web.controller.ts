@@ -144,4 +144,16 @@ export class DoctorWebController extends DoctorController {
   public async getDoctorStats(@GetUser() user: UserRes): Promise<DoctorStats> {
     return this.getDoctorService().getStats(user.id);
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/doctors')
+  public async getDoctorList(@Query('search') search: string) {
+    return this.getDoctorService().getDoctorList(search);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Patch('/doctors')
+  public async assignDoctorToPatient(@Body('doctor_id') doctorId: string, @Body('patient_id') patientId: string) {
+    return this.getDoctorService().assignDoctorToPatient(doctorId, patientId);
+  }
 }

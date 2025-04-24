@@ -34,7 +34,7 @@ export class DoctorService {
     private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
     private helperService: HelpersService,
-  ) {}
+  ) { }
 
   public async profile(id: string): Promise<ProfileRes> {
     return await this.prisma.user.findUniqueOrThrow({
@@ -763,4 +763,99 @@ export class DoctorService {
 
     return statusCounts;
   }
+
+  public async getDoctorList(search: string) {
+    const doctorList = await this.prisma.doctor.findMany({
+      where: {
+        OR: [
+          {
+            user: {
+              first_name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          },
+          {
+            user: {
+              last_name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          },
+          {
+            user: {
+              email: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            middle_name: true,
+            email: true,
+            uri: true,
+            phone_number: true,
+          },
+        },
+        specialities: {
+          select: {
+            title: true,
+          },
+        },
+        departments: {
+          select: {
+            title: true,
+          },
+        },
+      },
+    });
+
+    console.log('doctorList>>>>>>>>>>>>> ', doctorList);
+
+    return doctorList;
+  }
+
+  public async assignDoctorToPatient(doctorId: string, patientId: string) {
+    const isExisted = await this.prisma.patient.findFirst({
+      where: {
+        AND: [
+          { user_id: patientId },
+          { doctors: { some: { user_id: doctorId } } },
+        ],
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (isExisted?.id) {
+      throw new AppError('The doctor is already associated with this patient', HttpStatus.BAD_REQUEST);
+    }
+
+    return await this.prisma.patient.update({
+      where: {
+        user_id: patientId,
+      },
+      data: {
+        doctors: {
+          connect: {
+            user_id: doctorId,
+          },
+        },
+      },
+    });
+
+
+
+  }
+
 }
