@@ -150,4 +150,10 @@ export class DoctorWebController extends DoctorController {
   public async getDoctorList(@Query('search') search: string) {
     return this.getDoctorService().getDoctorList(search);
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Patch('/doctors')
+  public async assignDoctorToPatient(@Body('doctor_id') doctorId: string, @Body('patient_id') patientId: string) {
+    return this.getDoctorService().assignDoctorToPatient(doctorId, patientId);
+  }
 }

@@ -823,4 +823,39 @@ export class DoctorService {
 
     return doctorList;
   }
+
+  public async assignDoctorToPatient(doctorId: string, patientId: string) {
+    const isExisted = await this.prisma.patient.findFirst({
+      where: {
+        AND: [
+          { user_id: patientId },
+          { doctors: { some: { user_id: doctorId } } },
+        ],
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (isExisted?.id) {
+      throw new AppError('The doctor is already associated with this patient', HttpStatus.BAD_REQUEST);
+    }
+
+    return await this.prisma.patient.update({
+      where: {
+        user_id: patientId,
+      },
+      data: {
+        doctors: {
+          connect: {
+            user_id: doctorId,
+          },
+        },
+      },
+    });
+
+
+
+  }
+
 }
