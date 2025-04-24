@@ -342,71 +342,217 @@ export class TelemedService {
 
 
 
-  public async appointmentAnalytics(user: UserRes,
-    page = 1,
-    limit = 10
-  ) {
+  // public async appointmentAnalytics(user: UserRes,
+  //   page = 1,
+  //   limit = 10
+  // ) {
+  //   const skip = (page - 1) * limit;
+  //   if(user.role == 'DOCTOR'){
+  //   const [data, totalItems] = await this.prisma.$transaction([
+  //     this.prisma.appointmentParticipants.findMany({
+  //       where: {
+  //         user_id: user.id
+
+  //       },
+  //       skip,
+  //       take: limit,
+  //       select: {
+  //         status: true,
+  //         id: true,
+  //         appointment: {
+  //           select: {
+  //             id: true,
+  //             about: true,
+  //             type: true,
+  //             title: true,
+  //             start_date: true,
+  //             end_date: true,
+  //             description: true,
+  //             organizer: {
+  //               select: {
+  //                 id: true,
+  //                 first_name: true,
+  //                 last_name: true,
+  //                 middle_name: true,
+  //                 uri: true,
+  //                 role: true,
+  //               },
+  //             },
+
+  //             participants: {
+  //               select: {
+  //                 id: true,
+  //               },
+  //             },
+  //             appointmentObservation: {
+  //               select: {
+  //                 id: true,
+  //                 Observations: true,
+  //                 Diagnosis: true,
+  //                 Medications: true,
+  //                 Procedure: true,
+  //                 Follow_up_date: true,
+  //               },
+  //             },
+
+  //             created_at: true,
+  //           },
+  //         },
+  //       },
+  //     }),
+
+  //     this.prisma.appointmentParticipants.count({
+  //       where: {
+  //         user_id: user.id,
+  //       },
+  //     }),
+  //   ]);
+
+
+  //   const totalPages = Math.ceil(totalItems / limit);
+
+  //   return {
+  //     data,
+  //     pagination: {
+  //       totalItems,
+  //       totalPages,
+  //       currentPage: page,
+  //       perPage: limit,
+  //       hasNextPage: page < totalPages,
+  //       hasPrevPage: page > 1,
+  //       nextPage: page < totalPages ? page + 1 : null,
+  //       prevPage: page > 1 ? page - 1 : null,
+  //     },
+  //   };
+  // }
+  // if(user.role == 'PATIENT'){
+
+  // }
+  // }
+
+
+
+
+  public async appointmentAnalytics(user: UserRes, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
-    const [data, totalItems] = await this.prisma.$transaction([
-      this.prisma.appointmentParticipants.findMany({
-        where: {
-          user_id: user.id
 
-        },
-        skip,
-        take: limit,
-        select: {
-          status: true,
-          id: true,
-          appointment: {
-            select: {
-              id: true,
-              about: true,
-              type: true,
-              title: true,
-              start_date: true,
-              end_date: true,
-              description: true,
-              organizer: {
-                select: {
-                  id: true,
-                  first_name: true,
-                  last_name: true,
-                  middle_name: true,
-                  uri: true,
-                  role: true,
+    let data: any[] = [];
+    let totalItems = 0;
+
+    if (user.role === 'DOCTOR') {
+      [data, totalItems] = await this.prisma.$transaction([
+        this.prisma.appointmentParticipants.findMany({
+          where: { user_id: user.id },
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            status: true,
+            appointment: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                about: true,
+                type: true,
+                status: true,
+                start_date: true,
+                end_date: true,
+                created_at: true,
+                organizer: {
+                  select: {
+                    id: true,
+                    first_name: true,
+                    last_name: true,
+                    middle_name: true,
+                    uri: true,
+                    role: true,
+                  },
+                },
+                participants: {
+                  select: { id: true },
+                },
+                appointmentObservation: {
+                  select: {
+                    id: true,
+                    Observations: true,
+                    Diagnosis: true,
+                    Medications: true,
+                    Procedure: true,
+                    Follow_up_date: true,
+                  },
                 },
               },
-
-              participants: {
-                select: {
-                  id: true,
-                },
-              },
-              appointmentObservation: {
-                select: {
-                  id: true,
-                  Observations: true,
-                  Diagnosis: true,
-                  Medications: true,
-                  Procedure: true,
-                  Follow_up_date: true,
-                },
-              },
-
-              created_at: true,
             },
           },
-        },
-      }),
+        }),
+        this.prisma.appointmentParticipants.count({ where: { user_id: user.id } }),
+      ]);
 
-      this.prisma.appointmentParticipants.count({
-        where: {
-          user_id: user.id,
-        },
-      }),
-    ]);
+      // normalize for doctor
+      data = data.map((item) => ({
+        id: item.id,
+        status: item.status,
+        ...item.appointment,
+      }));
+    }
 
+    if (user.role === 'PATIENT') {
+      [data, totalItems] = await this.prisma.$transaction([
+        this.prisma.appointment.findMany({
+          where: { organizer_id: user.id },
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            about: true,
+            type: true,
+            status: true,
+            start_date: true,
+            end_date: true,
+            created_at: true,
+            organizer: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                middle_name: true,
+                uri: true,
+                role: true,
+              },
+            },
+            participants: {
+              select: {
+                id: true,
+                user: {
+                  select: {
+                    first_name: true,
+                    last_name: true,
+                    middle_name: true,
+                    uri: true,
+                    role: true,
+                  },
+                },
+
+              },
+            },
+            appointmentObservation: {
+              select: {
+                id: true,
+                Observations: true,
+                Diagnosis: true,
+                Medications: true,
+                Procedure: true,
+                Follow_up_date: true,
+              },
+            },
+          },
+        }),
+        this.prisma.appointment.count({ where: { organizer_id: user.id } }),
+      ]);
+    }
 
     const totalPages = Math.ceil(totalItems / limit);
 
@@ -424,6 +570,7 @@ export class TelemedService {
       },
     };
   }
+
   public async todayappointments(user: UserRes) {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
