@@ -304,11 +304,11 @@ export class TelemedService {
               appointmentObservation: {
                 select: {
                   id: true,
-                  Observations: true,
-                  Diagnosis: true,
-                  Medications: true,
-                  Procedure: true,
-                  Follow_up_date: true,
+                  observations: true,
+                  diagnosis: true,
+                  medications: true,
+                  procedure: true,
+                  follow_up_date: true,
                 },
               },
               created_at: true,
@@ -475,11 +475,11 @@ export class TelemedService {
                 appointmentObservation: {
                   select: {
                     id: true,
-                    Observations: true,
-                    Diagnosis: true,
-                    Medications: true,
-                    Procedure: true,
-                    Follow_up_date: true,
+                    observations: true,
+                    diagnosis: true,
+                    medications: true,
+                    procedure: true,
+                    follow_up_date: true,
                   },
                 },
               },
@@ -541,11 +541,11 @@ export class TelemedService {
             appointmentObservation: {
               select: {
                 id: true,
-                Observations: true,
-                Diagnosis: true,
-                Medications: true,
-                Procedure: true,
-                Follow_up_date: true,
+                observations: true,
+                diagnosis: true,
+                medications: true,
+                procedure: true,
+                follow_up_date: true,
               },
             },
           },
@@ -694,22 +694,22 @@ export class TelemedService {
       observation = await this.prisma.appointmentObservation.update({
         where: { id: existingAppointment.appointmentObservation.id },
         data: {
-          Observations: data.observations,
-          Diagnosis: data.diagnosis,
-          Medications: data.medications,
-          Procedure: data.procedure,
-          Follow_up_date: new Date(data.follow_up_date),
+          observations: data.observations,
+          diagnosis: data.diagnosis,
+          medications: data.medications,
+          procedure: data.procedure,
+          follow_up_date: new Date(data.follow_up_date),
         },
       });
     } else {
       //  If no observation exists, create one and link it
       observation = await this.prisma.appointmentObservation.create({
         data: {
-          Observations: data.observations,
-          Diagnosis: data.diagnosis,
-          Medications: data.medications,
-          Procedure: data.procedure,
-          Follow_up_date: data.follow_up_date,
+          observations: data.observations,
+          diagnosis: data.diagnosis,
+          medications: data.medications,
+          procedure: data.procedure,
+          follow_up_date: data.follow_up_date,
           appointment: {
             connect: { id: data.appointmentId },
           },

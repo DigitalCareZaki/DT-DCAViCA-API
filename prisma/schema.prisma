@@ -386,10 +386,11 @@ model ElectronicMedicalReport {
 
   patient_id String
   patient    Patient @relation(name: "patientElectronicMedicalReport", fields: [patient_id], references: [id])
-
-  family_history String?
+  
+  type           EMRType
   uri            String
   title          String
+  description    String?
 
   created DateTime @default(now())
   updated DateTime @updatedAt
@@ -927,4 +928,13 @@ enum VideoPriority {
 enum VideoCategory {
   INFORMATIONAL
   MARKETING
+}
+
+enum EMRType {
+  FAMILY_HISTORY
+  PARENT_HISTORY
+  SURGICAL_HISTORY
+  MEDICATION_HISTORY
+  DIAGNOSIS
+  RECORD
 }
