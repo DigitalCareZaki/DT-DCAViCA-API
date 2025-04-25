@@ -158,7 +158,16 @@ export class AuthService {
         pincode: true,
       },
     });
+    if (updateUser) {
+      await this.prisma.password.create({
+        data: {
+          type: 'PASSWORD',
+          updated_by: `${user.first_name} ${user.last_name}`,
+          user_id: user.id
+        },
+      });
 
+    }
     return {
       ...updateUser,
       isPincode: !!updateUser.pincode,
@@ -332,6 +341,14 @@ export class AuthService {
 
       data: {
         pincode: await argon.hash(dto.pincode),
+      },
+    });
+
+    await this.prisma.password.create({
+      data: {
+        type: 'PIN',
+        updated_by: `${user.first_name} ${user.last_name}`,
+        user_id: user.id
       },
     });
 
