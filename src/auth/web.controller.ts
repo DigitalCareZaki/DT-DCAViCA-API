@@ -87,4 +87,10 @@ export class AuthWebController extends AuthController {
   public async existsPincode(@GetUser() user: UserRes) {
     return this.getAuthService().existsPincode(user);
   }
+  @HttpCode(HttpStatus.OK)
+  @Get('pinpassword')
+  @UseGuards(JwtGuard)
+  public async getPinPasswordList(@GetUser() user: UserRes) {
+    return this.getAuthService().getPinPasswordList(user);
+  }
 }
