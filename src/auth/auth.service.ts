@@ -418,4 +418,31 @@ export class AuthService {
       message: `Check your email address at ${user.email} for the OTP`,
     };
   }
+
+  public async getPinPasswordList(user: UserRes) {
+    const pinPasswordList = await this.prisma.password.findMany({
+      where: {
+        user_id: user.id
+
+      },
+
+      include: {
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            middle_name: true,
+            email: true,
+            uri: true,
+            phone_number: true,
+          },
+        },
+
+      },
+
+    });
+    return pinPasswordList;
+  }
+
 }
