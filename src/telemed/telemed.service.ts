@@ -709,7 +709,7 @@ export class TelemedService {
           diagnosis: data.diagnosis,
           medications: data.medications,
           procedure: data.procedure,
-          follow_up_date: data.follow_up_date,
+          follow_up_date: new Date(data.follow_up_date),
           appointment: {
             connect: { id: data.appointmentId },
           },
