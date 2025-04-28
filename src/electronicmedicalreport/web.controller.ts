@@ -39,21 +39,8 @@ export class EMRWebController extends ElectronicmedicalreportController {
   }
 
   @Get('/')
-  public async getPatientRecords(
-    @GetUser() user: UserRes,
-    @Query('patient_id') patient_id: string,
-    @Query('search') search: string,
-  ) {
-    console.log('getting records');
-    console.log({
-      patient_id,
-      user_id: user.id,
-      search,
-    });
-    return this.getService().getPatientRecords(
-      patient_id ?? undefined,
-      user.id,
-      search ?? '',
-    );
+  public async getPatientRecords(@Query('patient_id') patient_id: string, @Query('search') search: string) {
+    console.log({ patient_id, search });
+    return this.getService().getPatientRecords(patient_id, search ?? '');
   }
 }

@@ -23,19 +23,17 @@ export class ElectronicmedicalreportService {
         patient_id: patient.id,
         title: data.title,
         uri: data.uri,
-        family_history: data.family_history,
+        description: data.description,
+        type: data.type,
       },
     });
   }
 
-  public async getPatientRecords(
-    patient_id: string | undefined,
-    user_id: string,
-    search: string,
-  ) {
+  public async getPatientRecords(patient_id: string, search: string) {
     const patient = await this.prisma.patient.findFirstOrThrow({
       where: {
-        user_id: patient_id ?? user_id,
+        user_id: patient_id,
+        // user_id: "0f73dccd-6794-4f83-bcd9-174bbd0b4110"
       },
       select: {
         id: true,
@@ -57,7 +55,8 @@ export class ElectronicmedicalreportService {
         title: true,
         uri: true,
         created: true,
-        family_history: true,
+        description: true,
+        type: true,
         patient: {
           select: {
             user: {
@@ -89,7 +88,8 @@ export class ElectronicmedicalreportService {
           title: true,
           uri: true,
           created: true,
-          family_history: true,
+          description: true,
+          type: true,
           patient: {
             select: {
               user: {

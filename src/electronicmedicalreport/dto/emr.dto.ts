@@ -1,3 +1,4 @@
+import { EMRType } from '@prisma/client';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class EMRDto {
@@ -11,5 +12,8 @@ export class EMRDto {
 
   @IsString()
   @IsOptional()
-  family_history: string;
+  description: string;
+
+  @IsString()
+   type: EMRType;
 }
