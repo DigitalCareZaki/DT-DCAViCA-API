@@ -1,24 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { UserRes } from '@types';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { EMRDto } from './dto/emr.dto';
+import { EMR_DTO } from './dto/emr.dto';
+import { AppError } from '../errors/index';
 
 @Injectable()
 export class ElectronicmedicalreportService {
   constructor(private prisma: PrismaService) { }
 
-  public async create(user: UserRes, data: EMRDto) {
+  public async create(data: EMR_DTO) {
     const patient = await this.prisma.patient.findFirstOrThrow({
-      where: {
-        user_id: user.id,
-      },
-
-      select: {
-        id: true,
-      },
+      where: { user_id: data.patient_id },
+      select: { id: true },
     });
 
-    await this.prisma.electronicMedicalReport.create({
+    if (!patient) {
+      throw new AppError('Patient not found', HttpStatus.NOT_FOUND);
+    }
+
+    const report = await this.prisma.electronicMedicalReport.create({
       data: {
         patient_id: patient.id,
         title: data.title,
@@ -26,7 +26,24 @@ export class ElectronicmedicalreportService {
         description: data.description,
         type: data.type,
       },
+      include: {
+        patient: {
+          include: {
+            user: {
+              select: {
+                first_name: true,
+                last_name: true,
+                middle_name: true,
+                uri: true,
+                id: true,
+              },
+            },
+          },
+        },
+      },
     });
+
+    return report;
   }
 
   public async getPatientRecords(patient_id: string, search: string) {

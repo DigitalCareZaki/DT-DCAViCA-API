@@ -12,10 +12,8 @@ import { ElectronicmedicalreportController } from './electronicmedicalreport.con
 import { ElectronicmedicalreportService } from './electronicmedicalreport.service';
 import { RolesGuard } from 'src/auth/guards';
 import { Role } from 'src/auth/enums/role.enum';
-import { GetUser } from 'src/auth/decorators';
-import { UserRes } from '@types';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
-import { EMRDto } from './dto/emr.dto';
+import { EMR_DTO } from './dto/emr.dto';
 
 @Controller('web/emr')
 export class EMRWebController extends ElectronicmedicalreportController {
@@ -30,12 +28,13 @@ export class EMRWebController extends ElectronicmedicalreportController {
     };
   }
 
-  @UseGuards(RolesGuard)
-  @RequirePermission(Role.PATIENT)
   @Post('/')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.DOCTOR, Role.NURSE)
   @HttpCode(HttpStatus.CREATED)
-  public async create(@GetUser() user: UserRes, @Body() data: EMRDto) {
-    return this.getService().create(user, data);
+  public async create(@Body() data: EMR_DTO) {
+    const report = await this.getService().create(data);
+    return report;
   }
 
   @Get('/')
