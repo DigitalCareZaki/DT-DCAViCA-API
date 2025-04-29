@@ -46,49 +46,71 @@ export class ElectronicmedicalreportService {
     return report;
   }
 
-  public async getPatientRecords(patient_id: string, search: string) {
+  public async getPatientRecords(patient_id: string, search: string = '', page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    const take = limit;
+
     const patient = await this.prisma.patient.findFirstOrThrow({
-      where: {
-        user_id: patient_id,
-        // user_id: "0f73dccd-6794-4f83-bcd9-174bbd0b4110"
-      },
-      select: {
-        id: true,
-      },
+      where: { user_id: patient_id },
+      select: { id: true },
     });
 
-    console.log('patientId: >>>>>>>>>>>>>>  ', patient.id);
-
-    return await this.prisma.electronicMedicalReport.findMany({
-      where: {
-        patient_id: patient.id,
-        title: {
-          contains: search,
-          mode: 'insensitive',
+    const [reports, totalItems] = await this.prisma.$transaction([
+      this.prisma.electronicMedicalReport.findMany({
+        where: {
+          patient_id: patient.id,
+          title: { contains: search, mode: 'insensitive' }
         },
-      },
-
-      select: {
-        title: true,
-        uri: true,
-        created: true,
-        description: true,
-        type: true,
-        patient: {
-          select: {
-            user: {
-              select: {
-                first_name: true,
-                last_name: true,
-                middle_name: true,
-                uri: true,
-                id: true,
+        skip,
+        take,
+        orderBy: { created: 'desc' },
+        select: {
+          title: true,
+          uri: true,
+          created: true,
+          description: true,
+          type: true,
+          patient: {
+            select: {
+              user: {
+                select: {
+                  first_name: true,
+                  last_name: true,
+                  middle_name: true,
+                  uri: true,
+                  id: true,
+                },
               },
             },
           },
         },
+      }),
+      this.prisma.electronicMedicalReport.count({
+        where: {
+          patient_id: patient.id,
+          title: { contains: search, mode: 'insensitive' }
+        }
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return {
+      data: reports,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
       },
-    });
+    };
+
   }
 
   public async getAllPatientReports(page: number, limit: number) {
