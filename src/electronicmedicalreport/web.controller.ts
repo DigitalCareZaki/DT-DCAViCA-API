@@ -29,8 +29,6 @@ export class EMRWebController extends ElectronicmedicalreportController {
   }
 
   @Post('/')
-  @UseGuards(RolesGuard)
-  @RequirePermission(Role.DOCTOR, Role.NURSE)
   @HttpCode(HttpStatus.CREATED)
   public async create(@Body() data: EMR_DTO) {
     const report = await this.getService().create(data);
