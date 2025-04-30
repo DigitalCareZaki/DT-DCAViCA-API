@@ -15,10 +15,7 @@ import { SENDGRID_TEMPLATES } from 'src/constant';
 
 @Injectable()
 export class PatientService {
-  constructor(
-    private prisma: PrismaService,
-    private mail: SendgridService,
-  ) { }
+  constructor(private prisma: PrismaService, private mail: SendgridService) { }
 
   public async addPatient(
     data: AddPatientDTO,
@@ -243,5 +240,21 @@ export class PatientService {
 
   private async encryptPassword(value): Promise<string> {
     return await argon.hash(value);
+  }
+
+  public async fetchContacts(userId: string) {
+    return await this.prisma.contacts.findMany({
+      where: {
+        user_id: userId,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        number: true,
+        relationship: true,
+        created_at: true,
+      },
+    });
   }
 }

@@ -46,4 +46,10 @@ export class PatientWebController extends PatientController {
       data,
     );
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/contacts') // :id -> medication -> patient_medication_alerts -> id
+  public async fetchContacts(@GetUser() user: any) {
+    return this.getPatientService().fetchContacts(user.id);
+  }
 }
