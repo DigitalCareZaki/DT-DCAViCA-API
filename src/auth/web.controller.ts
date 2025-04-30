@@ -7,6 +7,7 @@ import {
   Post,
   Patch,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
@@ -90,7 +91,9 @@ export class AuthWebController extends AuthController {
   @HttpCode(HttpStatus.OK)
   @Get('pinpassword')
   @UseGuards(JwtGuard)
-  public async getPinPasswordList(@GetUser() user: UserRes) {
-    return this.getAuthService().getPinPasswordList(user);
+  public async getPinPasswordList(@GetUser() user: UserRes,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,) {
+    return this.getAuthService().getPinPasswordList(user, +page, +limit);
   }
 }
