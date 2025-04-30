@@ -419,30 +419,86 @@ export class AuthService {
     };
   }
 
-  public async getPinPasswordList(user: UserRes) {
-    const pinPasswordList = await this.prisma.password.findMany({
-      where: {
-        user_id: user.id
+  // public async getPinPasswordList(user: UserRes) {
+  //   const pinPasswordList = await this.prisma.password.findMany({
+  //     where: {
+  //       user_id: user.id
 
-      },
+  //     },
 
-      include: {
-        user: {
-          select: {
-            id: true,
-            first_name: true,
-            last_name: true,
-            middle_name: true,
-            email: true,
-            uri: true,
-            phone_number: true,
-          },
+  //     include: {
+  //       user: {
+  //         select: {
+  //           id: true,
+  //           first_name: true,
+  //           last_name: true,
+  //           middle_name: true,
+  //           email: true,
+  //           uri: true,
+  //           phone_number: true,
+  //         },
+  //       },
+
+  //     },
+
+  //   });
+  //   return pinPasswordList;
+  // }
+
+
+  public async getPinPasswordList(user: UserRes, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const [reports, totalItems] = await this.prisma.$transaction([
+      this.prisma.password.findMany({
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: 'desc',
+        },
+        where: {
+          user_id: user.id
+
         },
 
-      },
+        include: {
+          user: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              middle_name: true,
+              email: true,
+              uri: true,
+              phone_number: true,
+            },
+          },
 
-    });
-    return pinPasswordList;
+        },
+
+      }),
+
+      this.prisma.password.count(),
+
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return {
+      data: reports,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+      },
+    };
   }
 
 }
