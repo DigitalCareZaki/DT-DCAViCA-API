@@ -6,7 +6,7 @@ import { ToggleEmailTemplate } from './dto/toggleEmailTemplate.dto';
 
 @Injectable()
 export class MasterService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   public async updateProfile(
     id: string,
@@ -247,6 +247,38 @@ export class MasterService {
       },
       data: {
         active: !template.active,
+      },
+    });
+  }
+
+  public async getBranches() {
+    return await this.prisma.branch.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone_number: true,
+        orgnatization: {
+          select: {
+            name: true,
+          },
+        },
+        location: {
+          select: {
+            address: true,
+            city: {
+              select: {
+                name: true,
+                country: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        created_at: true,
       },
     });
   }

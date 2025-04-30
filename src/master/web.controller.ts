@@ -79,6 +79,12 @@ export class WebMasterController extends MasterController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @Get('/branches')
+  public async getBranches() {
+    return this.getMasterService().getBranches();
+  }
+
+  @HttpCode(HttpStatus.OK)
   @Patch('/toggle-email-template')
   public async toggleEmailTemplate(@Body() data: ToggleEmailTemplate) {
     return this.getMasterService().toggleEmailTemplate(data);
