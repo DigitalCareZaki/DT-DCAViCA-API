@@ -158,7 +158,16 @@ export class AuthService {
         pincode: true,
       },
     });
+    if (updateUser) {
+      await this.prisma.password.create({
+        data: {
+          type: 'PASSWORD',
+          updated_by: `${user.first_name} ${user.last_name}`,
+          user_id: user.id
+        },
+      });
 
+    }
     return {
       ...updateUser,
       isPincode: !!updateUser.pincode,
@@ -335,6 +344,14 @@ export class AuthService {
       },
     });
 
+    await this.prisma.password.create({
+      data: {
+        type: 'PIN',
+        updated_by: `${user.first_name} ${user.last_name}`,
+        user_id: user.id
+      },
+    });
+
     return {
       message: 'Pincode set successful',
       pincode: dto.pincode,
@@ -401,4 +418,87 @@ export class AuthService {
       message: `Check your email address at ${user.email} for the OTP`,
     };
   }
+
+  // public async getPinPasswordList(user: UserRes) {
+  //   const pinPasswordList = await this.prisma.password.findMany({
+  //     where: {
+  //       user_id: user.id
+
+  //     },
+
+  //     include: {
+  //       user: {
+  //         select: {
+  //           id: true,
+  //           first_name: true,
+  //           last_name: true,
+  //           middle_name: true,
+  //           email: true,
+  //           uri: true,
+  //           phone_number: true,
+  //         },
+  //       },
+
+  //     },
+
+  //   });
+  //   return pinPasswordList;
+  // }
+
+
+  public async getPinPasswordList(user: UserRes, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const [reports, totalItems] = await this.prisma.$transaction([
+      this.prisma.password.findMany({
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: 'desc',
+        },
+        where: {
+          user_id: user.id
+
+        },
+
+        include: {
+          user: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              middle_name: true,
+              email: true,
+              uri: true,
+              phone_number: true,
+            },
+          },
+
+        },
+
+      }),
+
+      this.prisma.password.count(),
+
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return {
+      data: reports,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+      },
+    };
+  }
+
 }
