@@ -3,7 +3,8 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class UploaderService {
   public async handleFile(file: Express.Multer.File) {
-    // Haris railway
+
+    console.log('file >>>>>>>>>>> ', file);
     // const fileUrl = `https://mobility-health-backend-production.up.railway.app/uploads/${file.filename}`;
 
     // Softsols railway

@@ -6,8 +6,8 @@ import { Readable } from 'stream';
 export class CloudinaryService {
   constructor(@Inject('CLOUDINARY') private cloudinary: typeof Cloudinary) { }
 
-  async uploadFile(file: Express.Multer.File): Promise<UploadApiResponse> {
-    const isPDF = file.mimetype === 'application/pdf';
+  public async uploadFile(file: Express.Multer.File) {
+    const isPDF = file.mimetype === 'application/pdf' || file.mimetype === 'application/octet-stream';
 
     return new Promise((resolve, reject) => {
       const upload = this.cloudinary.uploader.upload_stream(
@@ -25,7 +25,15 @@ export class CloudinaryService {
             ? result.secure_url.replace('/image/', '/raw/') // <- This is key
             : result.secure_url;
 
-          resolve({ ...result, secure_url: url }); // <- Replace returned URL
+          // resolve({ ...result, secure_url: url }); // <- Replace returned URL
+
+          resolve({
+            url: result.url,
+            filename: file.filename,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+          });
         },
       );
 
@@ -33,5 +41,4 @@ export class CloudinaryService {
       readableStream.pipe(upload);
     });
   }
-
 }

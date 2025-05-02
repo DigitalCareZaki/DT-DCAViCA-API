@@ -32,7 +32,9 @@ export class UploaderWebController extends UploaderController {
   @HttpCode(HttpStatus.OK)
   @Post('/')
   @UseInterceptors(FileInterceptor('file'))
-  public async upload(@UploadedFile() file: Express.Multer.File) {
+  // public async upload(@UploadedFile() file: Express.Multer.File) {
+  async upload(@UploadedFile() file: Express.Multer.File) {
+    console.log('object >>>>>>>>>>> ', file);
     return this.getUploaderService().handleFile(file);
   }
 }
