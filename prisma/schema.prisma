@@ -88,13 +88,13 @@ model Contacts {
 }
 
 model Password {
-  id String @id @default(uuid())
-  type String
-  updated_by String
-  updated_at DateTime @default(now())
-  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  user_id String @unique
-  created_at DateTime @default(now())
+  id          String @id @default(uuid())
+  type        String
+  updated_by  String
+  updated_at  DateTime @default(now())
+  user        User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id     String
+  created_at  DateTime @default(now())
   
 }
 model User {
@@ -154,7 +154,7 @@ model User {
   doctor  Doctor?
   patient Patient?
   nurse   Nurse?
-  password_record Password?
+  password_records Password[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

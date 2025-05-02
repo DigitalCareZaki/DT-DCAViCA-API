@@ -158,6 +158,7 @@ export class AuthService {
         pincode: true,
       },
     });
+
     if (updateUser) {
       await this.prisma.password.create({
         data: {
@@ -166,8 +167,8 @@ export class AuthService {
           user_id: user.id
         },
       });
-
     }
+
     return {
       ...updateUser,
       isPincode: !!updateUser.pincode,
