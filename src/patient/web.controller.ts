@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Param,
   Body,
+  Query,
 } from '@nestjs/common';
 
 import { PatientController } from './patient.controller';
@@ -27,10 +28,9 @@ export class PatientWebController extends PatientController {
   @Get('/medications/alerts')
   public async getPatientMedicationAlertsForToday(
     @GetUser() user: UserRes,
-  ): Promise<PatientMedicationAlert[]> {
-    return this.getPatientService().getAllPatientMedicationAlertsForToday(
-      user.id,
-    );
+    @Query('page') page = 1,
+    @Query('limit') limit = 10) {
+    return this.getPatientService().getAllPatientMedicationAlertsForToday(user.id, +page, +limit);
   }
 
   @HttpCode(HttpStatus.OK)

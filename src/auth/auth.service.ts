@@ -457,11 +457,7 @@ export class AuthService {
         orderBy: {
           created_at: 'desc',
         },
-        where: {
-          user_id: user.id
-
-        },
-
+        where: { user_id: user.id },
         include: {
           user: {
             select: {
@@ -474,13 +470,12 @@ export class AuthService {
               phone_number: true,
             },
           },
-
         },
-
       }),
 
-      this.prisma.password.count(),
-
+      this.prisma.password.count({
+        where: { user_id: user.id },
+      }),
     ]);
 
     const totalPages = Math.ceil(totalItems / limit);

@@ -495,6 +495,37 @@ async function patientMeasurements() {
   });
 }
 
+async function createOrganizationMedications() {
+  const organization = await prisma.organization.findFirstOrThrow();
+
+  await prisma.organizationMedication.create({
+    data: {
+      name: 'Panadol',
+      organization_id: organization.id,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+
+  await prisma.organizationMedication.create({
+    data: {
+      name: 'Paracetamol',
+      organization_id: organization.id,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+
+  await prisma.organizationMedication.create({
+    data: {
+      name: 'Ibuprofen',
+      organization_id: organization.id,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+}
+
 async function createMedication() {
   const now = new Date();
   const millisecondsToAdd = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -535,6 +566,7 @@ async function main() {
   await createNurse();
   await connectPatientToNurse();
   await patientMeasurements();
+  await createOrganizationMedications();
   await createMedication();
   await createMaster();
   // const res = await prisma.post.update({

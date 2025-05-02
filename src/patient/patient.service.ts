@@ -156,58 +156,87 @@ export class PatientService {
     });
   }
 
-  public async getAllPatientMedicationAlertsForToday(userId: string) {
+  public async getAllPatientMedicationAlertsForToday(userId: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const take = limit;
     const date = new Date();
-    const today = new Date(
-      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-    );
+    const today = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 
     const tomorrow = new Date(today);
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
-    return await this.prisma.medication.findMany({
-      where: {
-        patient: {
-          user_id: userId,
-        },
-        end_date: {
-          gte: today,
-        },
-        patient_medication_alerts: {
-          some: {
-            alert_time: {
-              gte: today,
-              lte: tomorrow,
+    const [data, totalItems] = await this.prisma.$transaction([
+      this.prisma.medication.findMany({
+        skip,
+        take,
+        where: {
+          patient: { user_id: userId },
+          end_date: { gte: today },
+          patient_medication_alerts: {
+            some: {
+              alert_time: { gte: today, lte: tomorrow },
             },
           },
         },
-      },
-      select: {
-        id: true,
-        name: true,
-        start_date: true,
-        end_date: true,
-        time: true,
-        dosage: true,
-        frequency: true,
-        unit: true,
-        created_at: true,
-        updated_at: true,
-        patient_medication_alerts: {
-          where: {
-            alert_time: {
-              gte: today,
-              lte: tomorrow,
+        select: {
+          id: true,
+          name: true,
+          start_date: true,
+          end_date: true,
+          time: true,
+          dosage: true,
+          frequency: true,
+          unit: true,
+          created_at: true,
+          updated_at: true,
+          patient_medication_alerts: {
+            where: {
+              alert_time: {
+                gte: today,
+                lte: tomorrow,
+              },
+            },
+            select: {
+              id: true,
+              alert_time: true,
+              taken: true,
             },
           },
-          select: {
-            id: true,
-            alert_time: true,
-            taken: true,
+        },
+      }),
+      this.prisma.medication.count({
+        where: {
+          patient: { user_id: userId },
+          end_date: { gte: today },
+          patient_medication_alerts: {
+            some: {
+              alert_time: {
+                gte: today,
+                lte: tomorrow,
+              },
+            },
           },
         },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return {
+      data,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
       },
-    });
+    };
   }
 
   public async updatePatientMedicationAlertTakenStatus(
