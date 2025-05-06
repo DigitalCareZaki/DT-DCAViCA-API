@@ -70,7 +70,7 @@ import { SupportModule } from './technicalSupport/support.module';
 import { SendgridModule } from './sendGrid/sendgrid.module';
 import { TwilioModule } from './twilio/twilio.module';
 import { FirebaseModule } from './firebaseNotification/firebase.module';
-import { CloudinaryModule } from './cloudinary/cloudinary.module';
+// import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   providers: [
@@ -129,7 +129,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     TabletModule,
     SupportModule,
     SendgridModule,
-    CloudinaryModule,
+    // CloudinaryModule,
   ],
 })
 export class AppModule implements NestModule {
