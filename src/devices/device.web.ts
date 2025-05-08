@@ -99,6 +99,19 @@ export class DeviceWebController extends DeviceController {
     );
   }
 
+  @HttpCode(HttpStatus.CREATED)
+  @Post('/create-device')
+  public async createPatientDevice(
+    @GetUser() user: UserRes,
+    @Body() data: DeviceDTO,
+  ): Promise<Device> {
+    return this.getDeviceService().createDevice(
+      user.id,
+      user.organization_id,
+      data,
+    );
+  }
+
   @HttpCode(HttpStatus.OK)
   @Patch('/:deviceId') // :deviceId -> device -> id
   public async updateDevice(
