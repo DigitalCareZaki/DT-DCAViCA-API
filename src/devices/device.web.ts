@@ -15,7 +15,7 @@ import { DeviceService } from './device.service';
 
 import { GetUser } from 'src/auth/decorators';
 
-import { DeviceDTO, ManageDeviceDTO } from './dto';
+import { DeviceDTO, ManageDeviceDTO, PatientDeviceDTO } from './dto';
 
 import type { HealthRes, UserRes } from '@types';
 import type { Device } from './types';
@@ -108,6 +108,19 @@ export class DeviceWebController extends DeviceController {
     return this.getDeviceService().createDevice(
       user.id,
       user.organization_id,
+      data,
+    );
+  }
+
+  @HttpCode(HttpStatus.CREATED)
+  @Post('/assign-device')
+  public async assignDevice(
+    @GetUser() user: UserRes,
+    @Body() data: PatientDeviceDTO,
+  ) {
+    console.log(data, 'device data ===========>>>');
+    return this.getDeviceService().assignDevice(
+      user.id,
       data,
     );
   }

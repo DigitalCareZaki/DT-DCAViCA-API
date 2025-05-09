@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { PrismaService } from 'src/prisma/prisma.service';
 
-import { DeviceDTO, ManageDeviceDTO } from './dto';
+import { DeviceDTO, ManageDeviceDTO, PatientDeviceDTO } from './dto';
 
 import type { MeasurementType } from '@prisma/client';
 import type { UserRole } from '@types';
@@ -550,6 +550,7 @@ export class DeviceService {
 
   public async createDevice(userId, organizationId: string, data: DeviceDTO) {
     // check if device does not already exist in organization
+    console.log(data, 'device data ===========>>>');
     const deviceAlreadyExists = await this.prisma.device.findFirst({
       where: {
         AND: [
@@ -571,7 +572,9 @@ export class DeviceService {
     });
 
     if (deviceAlreadyExists) {
-      throw new Error('Device already exists in your organization');
+
+      throw new BadRequestException('Device already exists in your organization.');
+
     }
 
     const device = await this.prisma.device.create({
@@ -636,6 +639,36 @@ export class DeviceService {
     });
 
     return device;
+  }
+
+
+  public async assignDevice(userId, data: PatientDeviceDTO) {
+    console.log(data, 'device data ===========>>>');
+    //Check if the device is already issued
+    const alreadyIssued = await this.prisma.patientDevice.findFirst({
+      where: {
+        device_id: data.device_id,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (alreadyIssued) {
+      throw new BadRequestException('This device is already issued to another patient.');
+    }
+
+    // Step 2: Create new issuance
+    const patientDevice = await this.prisma.patientDevice.create({
+      data: {
+        device: { connect: { id: data.device_id } },
+        issued_to: { connect: { user_id: data.issued_to } },
+        issued_by: { connect: { id: userId } },
+        issued_at: new Date(),
+      },
+    });
+
+    return patientDevice;
   }
 
   public async updateDevice(
