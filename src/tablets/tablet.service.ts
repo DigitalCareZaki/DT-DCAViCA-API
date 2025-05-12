@@ -10,7 +10,7 @@ import type { Tablet } from './types';
 
 @Injectable()
 export class TabletService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   public async getAllTablets(
     userId: string,

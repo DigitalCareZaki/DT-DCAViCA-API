@@ -832,6 +832,13 @@ model Videos {
   created_at DateTime @default(now())
 }
 
+model SmsLog {
+  id          String @id @default(uuid())
+  to          String
+  body        String
+  created_at  DateTime @default(now())
+}
+
 enum RolePlatform {
   APP
   MOBILE

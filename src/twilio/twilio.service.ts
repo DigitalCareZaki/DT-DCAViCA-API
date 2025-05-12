@@ -36,13 +36,14 @@
 
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from 'src/prisma/prisma.service';
 import * as Twilio from 'twilio';
 
 @Injectable()
 export class TwilioService {
   private client: Twilio.Twilio;
 
-  constructor(private configService: ConfigService) {
+  constructor(private configService: ConfigService, private prisma: PrismaService) {
     const accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
     const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
 
@@ -62,6 +63,13 @@ export class TwilioService {
       }
 
       const message = await this.client.messages.create({ body, from, to });
+
+      await this.prisma.smsLog.create({
+        data: {
+          to,
+          body,
+        },
+      });
 
       console.log('Message sent:', message.sid);
       return message;
