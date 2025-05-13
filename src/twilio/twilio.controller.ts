@@ -7,8 +7,8 @@ import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { Role } from 'src/auth/enums/role.enum';
 
 @Controller()
-@UseGuards(JwtGuard, RolesGuard)
-@RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.DOCTOR)
+// @UseGuards(JwtGuard, RolesGuard)
+// @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.DOCTOR)
 export class TwilioController {
   constructor(private twilioService: TwilioService) { }
 
