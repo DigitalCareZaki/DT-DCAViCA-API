@@ -220,6 +220,16 @@ async function createDoctor() {
     },
   });
 
+  const speciality2 = await prisma.specialization.create({
+    data:
+    {
+      title: 'Gynecologist',
+      institute_name: 'Dow Medical University',
+      graduation_date: new Date(2020, 3, 1),
+      working_from: new Date(2021, 1, 1),
+    },
+  });
+
   await prisma.user.create({
     data: {
       password: encPassword,
@@ -246,6 +256,45 @@ async function createDoctor() {
           specialities: {
             connect: {
               id: speciality.id,
+            },
+          },
+        },
+      },
+      associated_branches: {
+        connect: {
+          id: branch.id,
+        },
+      },
+      organization_id: organization.id,
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      password: encPassword,
+      email: 'muhammadsaqib2@avica.com',
+      first_name: 'Muhammad',
+      last_name: 'Saqib',
+      dob: new Date(),
+      role: 'DOCTOR',
+      gender: 'MALE',
+      title: 'MR',
+      phone_number: '+923122190118',
+      username: 'saqib',
+      location_id: location.id,
+      doctor: {
+        create: {
+          npi_number: '152396214',
+          pmdc_number: '14647-A',
+          employee_id: 'LQ-3',
+          departments: {
+            connect: {
+              id: department.id,
+            },
+          },
+          specialities: {
+            connect: {
+              id: speciality2.id,
             },
           },
         },
