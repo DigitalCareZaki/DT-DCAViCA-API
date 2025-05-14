@@ -84,12 +84,32 @@ export class FirebaseService implements OnModuleInit {
         }
     }
 
-    public async sendNotification(token: string, title: string, body: string) {
-        if (!token) {
-            console.error('No FCM token found');
-            return;
-        }
+    public async sendNotification(sender: string, receiver: string, title: string, body: string) {
         try {
+            await this.prisma.notification.create({
+                data: {
+                    sender_id: sender,
+                    reciever_id: receiver,
+                    title,
+                    description: body,
+                },
+            });
+            console.log('Notification saved to database');
+
+            const user = await this.prisma.user.findUnique({
+                where: {
+                    id: receiver,
+                },
+                select: {
+                    device_token: true,
+                },
+            });
+            if (!user || !user.device_token) {
+                console.log('User not found or device token not found');
+                return;
+            }
+            const token = user.device_token;
+
             const message = {
                 notification: {
                     title,

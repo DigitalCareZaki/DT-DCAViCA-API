@@ -6,9 +6,7 @@ export class NotificationController {
     constructor(private readonly firebaseService: FirebaseService) { }
 
     @Post('send')
-    async sendNotification(
-        @Body() { token, title, body }: { token: string; title: string; body: string }
-    ) {
-        return this.firebaseService.sendNotification(token, title, body);
+    async sendNotification(@Body() { sender, receiver, title, body }: { sender: string; receiver: string; title: string; body: string }) {
+        return this.firebaseService.sendNotification(sender, receiver, title, body);
     }
 }
