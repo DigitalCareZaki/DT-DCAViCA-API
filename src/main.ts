@@ -6,6 +6,7 @@ import * as express from 'express';
 import { join } from 'path';
 
 import type { } from './global';
+import { ResponseInterceptor } from './interceptor/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -36,7 +37,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-
+  app.useGlobalInterceptors(new ResponseInterceptor());
   app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
 
   app.setGlobalPrefix('api/v1/');

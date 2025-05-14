@@ -78,15 +78,16 @@ const getResponseMessage = (
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
+  constructor(private readonly httpAdapterHost: HttpAdapterHost) { }
 
   catch(
     exception: HttpException | PrismaClientKnownRequestError | unknown,
     host: ArgumentsHost,
   ): void {
     const ctx = host.switchToHttp();
-
-    console.log(exception);
+    const request = ctx.getRequest();
+    const response = ctx.getResponse();
+    const isMobile = request.headers?.ismobile;
 
     const { httpAdapter } = this.httpAdapterHost;
 
@@ -98,7 +99,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     ) {
       // @ts-ignore
       httpAdapter.reply(
-        ctx.getResponse(),
+        response,
         // @ts-ignore
         exception?.response,
         // @ts-ignore
@@ -108,14 +109,24 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     const httpStatus = getStatusCode(exception);
+    let responseBody = {};
+    if (isMobile)
+      responseBody = {
+        statusCode: httpStatus,
+        data: {
+          timestamp: new Date().toISOString(),
+          path: httpAdapter.getRequestUrl(request),
+          message: getResponseMessage(exception) || 'Something went wrong',
+        },
+      };
+    else
+      responseBody = {
+        statusCode: httpStatus,
+        timestamp: new Date().toISOString(),
+        path: httpAdapter.getRequestUrl(request),
+        message: getResponseMessage(exception) || 'Something went wrong',
+      };
 
-    const responseBody = {
-      statusCode: httpStatus,
-      timestamp: new Date().toISOString(),
-      path: httpAdapter.getRequestUrl(ctx.getRequest()),
-      message: getResponseMessage(exception) || 'Something went wrong',
-    };
-
-    httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
+    httpAdapter.reply(response, responseBody, httpStatus);
   }
 }
