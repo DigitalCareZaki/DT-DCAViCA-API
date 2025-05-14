@@ -551,6 +551,41 @@ async function createMedication() {
   });
 }
 
+async function createNotifications() {
+
+  const patient = await prisma.patient.findFirstOrThrow({
+    orderBy: { created_at: 'desc' },
+  });
+
+  const doctor = await prisma.doctor.findFirstOrThrow({
+    orderBy: { created_at: 'desc' },
+  });
+
+  await prisma.notification.createMany({
+    data: [
+      {
+        title: 'Test Notification',
+        description: 'This is a test notification',
+        sender_id: doctor.user_id,
+        reciever_id: patient.user_id,
+      },
+      {
+        title: 'Test Notification 2',
+        description: 'This is a test notification 2',
+        sender_id: doctor.user_id,
+        reciever_id: patient.user_id,
+      },
+      {
+        title: 'Test Notification 3',
+        description: 'This is a test notification 3',
+        sender_id: doctor.user_id,
+        reciever_id: patient.user_id,
+      }
+    ],
+  });
+
+}
+
 async function main() {
   await createCountry();
   await createCity();
@@ -569,6 +604,7 @@ async function main() {
   await createOrganizationMedications();
   await createMedication();
   await createMaster();
+  await createNotifications();
   // const res = await prisma.post.update({
   //   where: {
   //     id: 'c16dab1e-2f1b-4aeb-afc2-65867b6610d7',
