@@ -145,6 +145,9 @@ model User {
   messageSender   Message[] @relation("messageSender")
   messageReciever Message[] @relation("messageReciever")
 
+  smsSender   Sms[] @relation("smsSender")
+  smsReciever Sms[] @relation("smsReceiver")
+
   notificationSender    Notification[] @relation("notificationSender")
   notificcationReciever Notification[] @relation("notificationReciever")
 
@@ -832,10 +835,17 @@ model Videos {
   created_at DateTime @default(now())
 }
 
-model SmsLog {
+model Sms {
   id          String @id @default(uuid())
   to          String
   body        String
+
+  sender_id String
+  sender    User   @relation(name: "smsSender", fields: [sender_id], references: [id])
+
+  reciever_id String
+  reciever    User   @relation(name: "smsReceiver", fields: [reciever_id], references: [id])
+
   created_at  DateTime @default(now())
 }
 

@@ -633,6 +633,7 @@ async function createNotifications() {
     ],
   });
 
+  console.log('Notifications created');
 }
 
 async function main() {
