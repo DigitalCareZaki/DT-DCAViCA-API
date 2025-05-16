@@ -145,6 +145,7 @@ async function createMaster() {
       phone_number: '+923440021312',
       username: 'master',
       location_id: location.id,
+      uri: 'http://res.cloudinary.com/dnymwfrn3/image/upload/v1747411638/avica/dnfbgtkkv4kxuz6qeloh.jpg',
     },
   });
 
@@ -186,6 +187,7 @@ async function createSuperAdmin() {
       username: 'superadmin',
       location_id: location.id,
       organization_id: organization.id,
+      uri: 'http://res.cloudinary.com/dnymwfrn3/image/upload/v1747411638/avica/dnfbgtkkv4kxuz6qeloh.jpg',
     },
   });
 
@@ -243,6 +245,7 @@ async function createDoctor() {
       phone_number: '+923122190119',
       username: 'drsaqib',
       location_id: location.id,
+      uri: 'http://res.cloudinary.com/dnymwfrn3/image/upload/v1747411638/avica/dnfbgtkkv4kxuz6qeloh.jpg',
       doctor: {
         create: {
           npi_number: '152396213',
@@ -282,6 +285,7 @@ async function createDoctor() {
       phone_number: '+923122190118',
       username: 'saqib',
       location_id: location.id,
+      uri: 'http://res.cloudinary.com/dnymwfrn3/image/upload/v1747411638/avica/dnfbgtkkv4kxuz6qeloh.jpg',
       doctor: {
         create: {
           npi_number: '152396214',
@@ -349,6 +353,7 @@ async function createPatient() {
       phone_number: '+92312211312',
       username: 'harisiqbal',
       location_id: location.id,
+      uri: 'http://res.cloudinary.com/dnymwfrn3/image/upload/v1747411638/avica/dnfbgtkkv4kxuz6qeloh.jpg',
       associated_branches: {
         connect: {
           id: branch.id,
@@ -464,6 +469,7 @@ async function createNurse() {
         },
       },
       organization_id: organization.id,
+      uri: 'http://res.cloudinary.com/dnymwfrn3/image/upload/v1747411638/avica/dnfbgtkkv4kxuz6qeloh.jpg',
       user_meta_data: {
         create: {
           ip_address: '21.22.41.8',
