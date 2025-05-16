@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 
 import * as argon from 'argon2';
 
@@ -636,6 +636,47 @@ async function createNotifications() {
   console.log('Notifications created');
 }
 
+async function sendSMS() {
+  const patient = await prisma.user.findFirstOrThrow({
+    where: {
+      role: Role.PATIENT,
+    },
+    orderBy: { created_at: 'desc' },
+  });
+
+  const doctor = await prisma.user.findFirstOrThrow({
+    where: {
+      role: Role.DOCTOR,
+    },
+    orderBy: { created_at: 'desc' },
+  });
+
+  await prisma.sms.createMany({
+    data: [
+      {
+        to: patient.phone_number,
+        body: 'This is a test SMS',
+        sender_id: doctor.id,
+        receiver_id: patient.id,
+      },
+      {
+        to: patient.phone_number,
+        body: 'This is a test SMS 2',
+        sender_id: doctor.id,
+        receiver_id: patient.id,
+      },
+      {
+        to: patient.phone_number,
+        body: 'This is a test SMS 3',
+        sender_id: doctor.id,
+        receiver_id: patient.id,
+      }
+    ]
+  });
+
+  console.log('SMS created');
+}
+
 async function main() {
   await createCountry();
   await createCity();
@@ -655,6 +696,8 @@ async function main() {
   await createMedication();
   await createMaster();
   await createNotifications();
+  await sendSMS();
+
   // const res = await prisma.post.update({
   //   where: {
   //     id: 'c16dab1e-2f1b-4aeb-afc2-65867b6610d7',
