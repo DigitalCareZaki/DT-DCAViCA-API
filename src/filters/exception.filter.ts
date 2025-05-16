@@ -113,6 +113,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (isMobile)
       responseBody = {
         statusCode: httpStatus,
+        success: false,
         data: {
           timestamp: new Date().toISOString(),
           path: httpAdapter.getRequestUrl(request),

@@ -20,6 +20,7 @@ export class ResponseInterceptor implements NestInterceptor {
                 if (isMobile)
                     return {
                         statusCode: 200,
+                        success: true,
                         data,
                     };
 
