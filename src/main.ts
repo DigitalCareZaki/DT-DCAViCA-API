@@ -27,16 +27,14 @@ async function bootstrap() {
   //   optionsSuccessStatus: 204,
   // });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe({
+    transform: true,
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+    whitelist: true,
+    forbidNonWhitelisted: true,
+  }));
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
 

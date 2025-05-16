@@ -69,58 +69,53 @@ export class ReadingRangeService {
     data: ReadingRangeDTO,
   ): Promise<PatientReadingRangeAlert> {
 
-    const doesPatientExistAndIsAssignedToUser =
-      await this.prisma.patient.findFirst({
-        where: {
-          AND: [
-            {
-              user_id: data.patient_id,
-            },
-            {
-              OR: [
-                {
-                  doctors: {
-                    some: {
-                      user_id: user.id,
-                    },
-                  },
-                },
-                {
-                  nurses: {
-                    some: {
-                      user_id: user.id,
-                    },
-                  },
-                },
-              ],
-            },
-          ],
-        },
-        select: {
-          id: true,
-        },
-      });
-
-    if (!doesPatientExistAndIsAssignedToUser) {
-      throw new AppError(
-        'Either patient does not exist, or you are not associated with them',
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
-    const alertAlreadyExists =
-      await this.prisma.patientMeasurementRange.findFirst({
-        where: {
-          patient: {
+    const doesPatientExistAndIsAssignedToUser = await this.prisma.patient.findFirst({
+      where: {
+        AND: [
+          {
             user_id: data.patient_id,
           },
-          user_id: user.id,
-          type: data.type as MeasurementType,
+          {
+            OR: [
+              {
+                doctors: {
+                  some: {
+                    user_id: user.id,
+                  },
+                },
+              },
+              {
+                nurses: {
+                  some: {
+                    user_id: user.id,
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!doesPatientExistAndIsAssignedToUser) {
+      throw new AppError('Either patient does not exist, or you are not associated with them', HttpStatus.FORBIDDEN);
+    }
+
+    const alertAlreadyExists = await this.prisma.patientMeasurementRange.findFirst({
+      where: {
+        patient: {
+          user_id: data.patient_id,
         },
-        select: {
-          id: true,
-        },
-      });
+        user_id: user.id,
+        type: data.type as MeasurementType,
+      },
+      select: {
+        id: true,
+      },
+    });
 
     if (!alertAlreadyExists) {
       const alt = await this.prisma.patientMeasurementRange.create({
@@ -173,7 +168,21 @@ export class ReadingRangeService {
         },
       });
       if (alt.send_sms) {
-        await this.sms.sendSMS(user.email, `Your patient ${alt.patient.user.first_name} has an alert for ${alt.type} of ${alt.range[0]}/${alt.range[1]}`);
+        const message = `Your patient ${alt.patient.user.first_name} has an alert for ${alt.type} of ${alt.range[0]}/${alt.range[1]}`;
+        await this.sms.sendSMS(user.phone_number, message);
+
+        // Save the SMS log to the database
+        await this.prisma.sms.create({
+          data: {
+            receiver_id: user.id,
+            sender_id: alt.patient.user.id,
+            to: user.phone_number,
+            body: message,
+          },
+        });
+
+
+
       } else {
         const contacts = await this.prisma.contacts.findMany({
           where: {
@@ -189,8 +198,18 @@ export class ReadingRangeService {
 
         if (contacts.length > 0) {
           contacts.forEach(async (contact) => {
-            await this.sms.sendSMS(contact.number, `Your patient ${alt.patient.user.first_name} has an alert for ${alt.type} of ${alt.range[0]}/${alt.range[1]}`);
+            const message = `Your patient ${alt.patient.user.first_name} has an alert for ${alt.type} of ${alt.range[0]}/${alt.range[1]}`;
+            await this.sms.sendSMS(contact.number, message);
 
+            // Save the SMS log to the database
+            await this.prisma.sms.create({
+              data: {
+                receiver_id: user.id,
+                sender_id: alt.patient.user.id,
+                to: contact.number,
+                body: message,
+              },
+            });
           });
         }
       }
@@ -240,7 +259,18 @@ export class ReadingRangeService {
         },
       });
       if (data.send_sms) {
-        await this.sms.sendSMS(user.email, `Your patient ${alert.patient.user.first_name} has an alert for ${alert.type} of ${alert.range[0]}/${alert.range[1]}`);
+        const message = `Your patient ${alert.patient.user.first_name} has an alert for ${alert.type} of ${alert.range[0]}/${alert.range[1]}`;
+        await this.sms.sendSMS(user.phone_number, message);
+
+        // Save the SMS log to the database
+        await this.prisma.sms.create({
+          data: {
+            receiver_id: user.id,
+            sender_id: alert.patient.user.id,
+            to: user.phone_number,
+            body: message,
+          },
+        });
       } else {
         const contacts = await this.prisma.contacts.findMany({
           where: {
@@ -256,7 +286,18 @@ export class ReadingRangeService {
 
         if (contacts.length > 0) {
           contacts.forEach(async (contact) => {
-            await this.sms.sendSMS(contact.number, `Your patient ${alert.patient.user.first_name} has an alert for ${alert.type} of ${alert.range[0]}/${alert.range[1]}`);
+            const message = `Your patient ${alert.patient.user.first_name} has an alert for ${alert.type} of ${alert.range[0]}/${alert.range[1]}`;
+            await this.sms.sendSMS(contact.number, message);
+            
+            // Save the SMS log to the database
+            await this.prisma.sms.create({
+              data: {
+                receiver_id: user.id,
+                sender_id: alert.patient.user.id,
+                to: contact.number,
+                body: message,
+              },
+            });
 
           });
         }

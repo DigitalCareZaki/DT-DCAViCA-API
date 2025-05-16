@@ -42,12 +42,14 @@ import * as Twilio from 'twilio';
 @Injectable()
 export class TwilioService {
   private client: Twilio.Twilio;
+  private from: string;
 
-  constructor(private configService: ConfigService, private prisma: PrismaService) {
+  constructor(private configService: ConfigService) {
     const accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
     const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
+    this.from = this.configService.get<string>('TWILIO_PHONE_NUMBER');
 
-    if (!accountSid || !authToken) {
+    if (!accountSid || !authToken || !this.from) {
       throw new Error('Twilio credentials are not provided');
     }
 
@@ -56,21 +58,7 @@ export class TwilioService {
 
   public async sendSMS(to: string, body: string): Promise<any> {
     try {
-      const from = this.configService.get<string>('TWILIO_PHONE_NUMBER');
-
-      if (!from) {
-        throw new Error('Twilio phone number is not configured');
-      }
-
-      const message = await this.client.messages.create({ body, from, to });
-
-      await this.prisma.smsLog.create({
-        data: {
-          to,
-          body,
-        },
-      });
-
+      const message = await this.client.messages.create({ body, from: this.from, to });
       console.log('Message sent:', message.sid);
       return message;
     } catch (error) {

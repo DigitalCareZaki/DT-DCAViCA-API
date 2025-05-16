@@ -50,4 +50,45 @@ export class NotificationsService {
       },
     });
   }
+
+  public async getPatientNotifications(patientId: string) {
+    return this.prisma.notification.findMany({
+      where: {
+        reciever_id: patientId,
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+
+      select: {
+        id: true,
+        sender: {
+          select: {
+            first_name: true,
+            last_name: true,
+            middle_name: true,
+            uri: true,
+            email: true,
+            role: true,
+          },
+        },
+        reciever: {
+          select: {
+            first_name: true,
+            last_name: true,
+            middle_name: true,
+            uri: true,
+            email: true,
+            role: true,
+          },
+        },
+
+        title: true,
+        description: true,
+        sender_id: true,
+        reciever_id: true,
+        created_at: true,
+      },
+    });
+  }
 }

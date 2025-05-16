@@ -146,7 +146,7 @@ model User {
   messageReciever Message[] @relation("messageReciever")
 
   smsSender   Sms[] @relation("smsSender")
-  smsReciever Sms[] @relation("smsReceiver")
+  smsReceiver Sms[] @relation("smsReceiver")
 
   notificationSender    Notification[] @relation("notificationSender")
   notificcationReciever Notification[] @relation("notificationReciever")
@@ -843,8 +843,8 @@ model Sms {
   sender_id String
   sender    User   @relation(name: "smsSender", fields: [sender_id], references: [id])
 
-  reciever_id String
-  reciever    User   @relation(name: "smsReceiver", fields: [reciever_id], references: [id])
+  receiver_id String
+  receiver    User   @relation(name: "smsReceiver", fields: [receiver_id], references: [id])
 
   created_at  DateTime @default(now())
 }
