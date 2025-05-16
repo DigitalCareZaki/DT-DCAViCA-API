@@ -850,16 +850,13 @@ export class DoctorService {
           connect: {
             user_id: doctorId,
           },
-
         },
       },
     });
 
     return await this.prisma.doctor.findFirst({
       where: {
-
         user_id: doctorId,
-
       },
       include: {
         user: {
@@ -884,9 +881,7 @@ export class DoctorService {
           },
         },
       },
-
     });
-
   }
 
 }

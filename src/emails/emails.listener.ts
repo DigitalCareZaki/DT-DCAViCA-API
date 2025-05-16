@@ -35,6 +35,16 @@ export class EmailsListener {
   @OnEvent('send_email')
   public async handleSendEmailEvent(payload: EmailPayload) {
     try {
+      const user = await this.prisma.user.findUnique({
+        where: { email: payload.to },
+      });
+
+      if (!user) {
+        // Either insert a placeholder user, or skip creating the email record
+        console.log(`User with email ${payload.to} not found`);
+        return;
+      }
+
       const template = await this.prisma.emailTemplate.findFirst({
         where: {
           AND: [
@@ -56,6 +66,8 @@ export class EmailsListener {
         template.html,
         payload.data,
       );
+
+      console.log('payload.data >>>>>>>>>>>>>> ', payload);
 
       await this.transporter
         .sendMail({

@@ -370,13 +370,33 @@ async function createPatient() {
     },
   });
 
-  await prisma.patient.create({
+  const patient = await prisma.patient.create({
     data: {
       user_id: user.id,
     },
   });
 
   console.log('Patient created');
+
+
+  const doctor = await prisma.user.findFirstOrThrow({ where: { role: 'DOCTOR' } });
+
+
+  await prisma.patient.update({
+    where: {
+      user_id: patient.user_id,
+    },
+    data: {
+      doctors: {
+        connect: {
+          user_id: doctor.id,
+        },
+      },
+    },
+  });
+
+  console.log('Patient connected to doctor');
+
 }
 
 async function connectPatientToDoctors() {
@@ -748,7 +768,7 @@ async function main() {
     data: {
       subject: "Welcome to Avica! We're Glad to Have You Onboard",
       key: 'template:onboarding',
-      active: false,
+      active: true,
       html: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
     <html xmlns="http://www.w3.org/1999/xhtml">
       <head>
