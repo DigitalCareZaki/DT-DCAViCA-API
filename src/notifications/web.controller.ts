@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, UseGuards } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { GetUser } from 'src/auth/decorators';
 import { UserRes } from '@types';
@@ -16,8 +16,8 @@ export class NotificationsWebController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Get('/')
-  public async fetchPatientNotifications(@Body() patient_id: string) {
+  @Get('/:patient_id')
+  public async fetchPatientNotifications(@Param('patient_id') patient_id: string) {
     return this.notificationService.getPatientNotifications(patient_id);
   }
 }
