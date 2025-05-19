@@ -6,7 +6,7 @@ import { ComposeDTO } from './dto/compose.dto';
 
 @Injectable()
 export class MessageService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   public async inbox(userId: string, search: string): Promise<InboxRes[]> {
     return this.prisma.message.findMany({
@@ -113,6 +113,7 @@ export class MessageService {
         subject: data.subject,
         content: data.content,
         reciever_id: reciever.id,
+        parent_id: data.parent_id ?? null,
       },
     });
   }
@@ -455,6 +456,26 @@ export class MessageService {
         last_name: true,
         middle_name: true,
       },
+    });
+  }
+  public async getThreadByParent(userId: string, messageId: string) {
+    console.log('messageId: ', messageId);
+    return await this.prisma.message.findMany({
+      where: {
+        id: messageId,
+      },
+      include: {
+        replies: {
+          include: {
+            replies: {
+              include: {
+                replies: true, // etc., adjust depth
+              },
+            },
+          },
+        },
+      },
+
     });
   }
 }

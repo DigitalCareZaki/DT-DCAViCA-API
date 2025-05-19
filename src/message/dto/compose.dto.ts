@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, Validate } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, Validate } from 'class-validator';
 import { ValidateAdditionalUri } from 'src/validators';
 
 export class ComposeDTO {
@@ -13,6 +13,10 @@ export class ComposeDTO {
   @IsString()
   @IsNotEmpty()
   content: string;
+
+  @IsOptional()
+  @IsString()
+  parent_id: string;
 
   @Validate(ValidateAdditionalUri)
   attachments: string[];

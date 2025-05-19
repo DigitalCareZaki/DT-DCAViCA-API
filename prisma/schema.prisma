@@ -204,7 +204,7 @@ model Specialization {
   uri             String[]
 
   doctor Doctor[] @relation(name: "doctorSpecilization")
-
+  nurse Nurse[] @relation(name: "nurseSpecilization")
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
@@ -238,7 +238,7 @@ model Nurse {
   user_id     String @unique
   npi_number  String @unique
   employee_id String
-
+  specialities Specialization[] @relation(name: "nurseSpecilization")
   department    Department @relation(name: "nurseDepartment", fields: [department_id], references: [id])
   department_id String
 
@@ -753,6 +753,9 @@ model Message {
   sender      User   @relation(name: "messageSender", fields: [sender_id], references: [id])
   reciever_id String
   reciever    User   @relation(name: "messageReciever", fields: [reciever_id], references: [id])
+  parent_id   String? 
+  parent      Message?  @relation("MessageThread", fields: [parent_id], references: [id])
+  replies     Message[] @relation("MessageThread")
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
