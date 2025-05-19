@@ -568,8 +568,10 @@ export class DoctorService {
   }
 
   public async addPatientNurse(
-    patientId: string,
+
     nurseId: string,
+    patientId: string,
+
   ): Promise<GetNurses> {
     const isExisted = await this.prisma.nurse.findFirst({
       where: {

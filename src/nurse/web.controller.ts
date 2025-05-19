@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -26,6 +27,8 @@ import {
   PatientProfile,
   NurseStats,
 } from './types';
+import { LinkNurseDTO } from 'src/common/dto/linkNurse.dto';
+import { GetNurses } from 'src/doctor/types';
 
 @Controller('web/nurse')
 export class NurseWebController extends NurseController {
@@ -107,5 +110,20 @@ export class NurseWebController extends NurseController {
   @Get('/stats')
   public async getNurseStats(@GetUser() user: UserRes): Promise<NurseStats> {
     return this.getNurseService().getStats(user.id);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/speciality')
+  public async getSpecialityList() {
+    return this.getNurseService().getSpecialityList();
+  }
+
+  @HttpCode(HttpStatus.CREATED)
+  @Patch('/nurses')
+  public async addPatientNurse(@Body() data: LinkNurseDTO): Promise<GetNurses> {
+    return this.getNurseService().addPatientNurse(
+      data.nurse_id,
+      data.patient_id,
+    );
   }
 }

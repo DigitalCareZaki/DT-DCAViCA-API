@@ -24,13 +24,14 @@ import type {
   NurseStats,
 } from './types';
 import type { JsonRes } from '@types';
+import { GetNurses } from 'src/doctor/types';
 
 @Injectable()
 export class NurseService {
   constructor(
     private prisma: PrismaService,
     private helperService: HelpersService,
-  ) {}
+  ) { }
 
   public async profile(id: string): Promise<ProfileRes> {
     return await this.prisma.user.findUniqueOrThrow({
@@ -565,4 +566,81 @@ export class NurseService {
 
     return statusCounts;
   }
+
+  public async getSpecialityList() {
+    const specializationList = await this.prisma.specialization.findMany({
+      select: {
+        id: true,
+        title: true,
+      },
+    });
+
+    return specializationList;
+  }
+
+  public async addPatientNurse(
+
+    nurseId: string,
+    patientId: string,
+
+  ): Promise<GetNurses> {
+    const isExisted = await this.prisma.nurse.findFirst({
+      where: {
+        AND: [
+          {
+            user_id: nurseId,
+          },
+          {
+            patients: {
+              some: {
+                user_id: patientId,
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (isExisted?.id) {
+      throw new AppError(
+        'The nurse is already associated with this nurse',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return await this.prisma.nurse.update({
+      where: {
+        user_id: nurseId,
+      },
+      data: {
+        patients: {
+          connect: {
+            user_id: patientId,
+          },
+        },
+      },
+
+      select: {
+        user: {
+          select: {
+            first_name: true,
+            middle_name: true,
+            last_name: true,
+            email: true,
+            id: true,
+            phone_number: true,
+          },
+        },
+        department: {
+          select: {
+            title: true,
+          },
+        },
+      },
+    });
+  }
+
 }
