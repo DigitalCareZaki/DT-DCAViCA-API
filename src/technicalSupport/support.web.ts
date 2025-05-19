@@ -24,6 +24,7 @@ export class SupportWebController extends SupportController {
       subject: 'Technical Support Query',
       content: message,
       attachments: [],
+      parent_id: null
     });
   }
 }

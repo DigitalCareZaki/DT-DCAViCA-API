@@ -97,4 +97,13 @@ export class MessageWebController extends MessageController {
   ): Promise<SearchUserRes[]> {
     return this.getMessageService().searchUsers(value);
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/thread')
+  public async getThreadByParent(
+    @GetUser() user: UserRes,
+    @Query('messageId') messageId: string,
+  ) {
+    return this.getMessageService().getThreadByParent(user.id, messageId);
+  }
 }

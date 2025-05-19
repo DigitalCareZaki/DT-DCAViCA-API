@@ -62,8 +62,8 @@ export class DoctorWebController extends DoctorController {
   @Patch('/nurses')
   public async addPatientNurse(@Body() data: LinkNurseDTO): Promise<GetNurses> {
     return this.getDoctorService().addPatientNurse(
-      data.patient_id,
       data.nurse_id,
+      data.patient_id,
     );
   }
 
@@ -149,8 +149,27 @@ export class DoctorWebController extends DoctorController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @Get('/doctors/speciality')
+  public async getDoctorsBySpeciality(@Query('specialityId') specialityId: string) {
+    return this.getDoctorService().getDoctorsBySpeciality(specialityId);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Get('/speciality')
+  public async getSpecialityList() {
+    return this.getDoctorService().getSpecialityList();
+  }
+
+  @HttpCode(HttpStatus.OK)
   @Patch('/doctors')
   public async assignDoctorToPatient(@Body('doctorId') doctorId: string, @Body('patientId') patientId: string) {
     return this.getDoctorService().assignDoctorToPatient(doctorId, patientId);
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/nurse/speciality')
+  public async getNursesBySpeciality(@Query('specialityId') specialityId: string) {
+    return this.getDoctorService().getNursesBySpeciality(specialityId);
+  }
+
+
 }

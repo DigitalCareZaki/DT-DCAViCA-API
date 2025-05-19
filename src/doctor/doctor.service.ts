@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpStatus, BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import * as argon from 'argon2';
@@ -838,7 +838,7 @@ export class DoctorService {
     });
 
     if (isExisted?.id) {
-      throw new AppError('The doctor is already associated with this patient', HttpStatus.BAD_REQUEST);
+      throw new BadRequestException('The doctor is already associated with this patient');
     }
 
     const data = await this.prisma.patient.update({
@@ -882,6 +882,90 @@ export class DoctorService {
         },
       },
     });
+  }
+
+  public async getSpecialityList() {
+    const specializationList = await this.prisma.specialization.findMany({
+      select: {
+        id: true,
+        title: true,
+      },
+    });
+
+    return specializationList;
+  }
+
+  public async getDoctorsBySpeciality(specialityId: string) {
+    const doctorList = await this.prisma.doctor.findMany({
+      where: {
+        specialities: {
+          some: {
+            id: specialityId, // assuming `id` is the field name in `Speciality` model
+          },
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            middle_name: true,
+            email: true,
+            uri: true,
+            phone_number: true,
+          },
+        },
+        specialities: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        departments: {
+          select: {
+            title: true,
+          },
+        },
+      },
+    });
+
+
+
+    return doctorList;
+  }
+
+
+  public async getNursesBySpeciality(specialityId: string) {
+    const nurseList = await this.prisma.nurse.findMany({
+      where: {
+        specialities: {
+          some: {
+            id: specialityId, // assuming `id` is the field name in `Speciality` model
+          },
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            middle_name: true,
+            email: true,
+            uri: true,
+            phone_number: true,
+          },
+        },
+        specialities: {
+          select: {
+            id: true,
+            title: true,
+          },
+        }
+      },
+    });
+    return nurseList;
   }
 
 }
