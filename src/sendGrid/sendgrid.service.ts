@@ -17,18 +17,20 @@ export class SendgridService {
     const recipientEmail = to;
 
     // Check if user with this email exists
-    const userExists = await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { email: recipientEmail },
     });
 
-    console.log('userExists >>>>>> ', userExists.id);
+    console.log('userExists >>>>>> ', user.id);
 
     const template = await this.fetchTemplateById(templateId);
-    console.log('template >>>>>> ', template);
     if (!template) {
       console.log('Template not found');
       return;
     }
+
+    const rawHtml = template.versions?.[0].html_content || '';
+    const renderedHtml = this.renderDynamicTemplate(rawHtml, data);
 
     const msg = {
       from: { email: process.env.SENDGRID_EMAIL, name: 'AViCA Team' },
@@ -39,14 +41,14 @@ export class SendgridService {
 
     try {
       const res = await sgMail.send(msg);
-      console.log('sgMail.send res ======>>>>', res);
+      console.log('sgMail.send res ======>>>>', JSON.stringify(res));
 
       await this.prisma.emails.create({
         data: {
           subject: template.versions?.[0].subject,
           to: recipientEmail,
           sended: true,
-          html: template.versions?.[0].html_content,
+          html: renderedHtml,
         },
       });
     } catch (err) {
@@ -56,7 +58,7 @@ export class SendgridService {
           to: recipientEmail,
           sended: false,
           subject: template.versions?.[0].subject,
-          html: template.versions?.[0].html_content,
+          html: renderedHtml,
           error: err?.message ?? 'Something went wrong',
         },
       });
@@ -79,5 +81,11 @@ export class SendgridService {
     });
 
     return body;
+  }
+
+  private renderDynamicTemplate(html: string, data: Record<string, any>): string {
+    return html.replace(/{{\s*(\w+)\s*}}/g, (_, key) => {
+      return data[key] ?? '';
+    });
   }
 }
