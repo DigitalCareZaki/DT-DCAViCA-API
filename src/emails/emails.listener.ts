@@ -104,33 +104,33 @@ export class EmailsListener {
     }
   }
 
-  private parseEmail(
-    type: string,
-    html: string,
-    data: { [key: string]: string },
-  ): string {
-    if (type === 'template:reset-password-request') {
-      return this.parseResetPassword(html, data);
-    }
+  // private parseEmail(
+  //   type: string,
+  //   html: string,
+  //   data: { [key: string]: string },
+  // ): string {
+  //   if (type === 'template:reset-password-request') {
+  //     return this.parseResetPassword(html, data);
+  //   }
 
-    if (type === 'template:onboarding') {
-      return this.parseOnBoarding(html, data);
-    }
+  //   if (type === 'template:onboarding') {
+  //     return this.parseOnBoarding(html, data);
+  //   }
 
-    return '';
-  }
+  //   return '';
+  // }
 
-  private parseResetPassword(
-    html: string,
-    data: { [key: string]: string },
-  ): string {
-    return html.replace('OTPDIGIT', data?.otp);
-  }
+  // private parseResetPassword(
+  //   html: string,
+  //   data: { [key: string]: string },
+  // ): string {
+  //   return html.replace('OTPDIGIT', data?.otp);
+  // }
 
-  private parseOnBoarding(
-    html: string,
-    data: { [key: string]: string },
-  ): string {
-    return html.replace('USERNAME', data?.name);
-  }
+  // private parseOnBoarding(
+  //   html: string,
+  //   data: { [key: string]: string },
+  // ): string {
+  //   return html.replace('USERNAME', data?.name);
+  // }
 }

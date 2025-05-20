@@ -69,6 +69,7 @@ import { SupportModule } from './technicalSupport/support.module';
 import { SendgridModule } from './sendGrid/sendgrid.module';
 import { TwilioModule } from './twilio/twilio.module';
 import { FirebaseModule } from './firebaseNotification/firebase.module';
+import { EmailsModule } from './emails/emails.module';
 // import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
@@ -113,7 +114,7 @@ import { FirebaseModule } from './firebaseNotification/firebase.module';
     ComplianceModule,
     DeviceModule,
     TwilioModule,
-
+    EmailsModule,
     // For Measurement and Medication
     EventEmitterModule.forRoot({
       wildcard: true,
