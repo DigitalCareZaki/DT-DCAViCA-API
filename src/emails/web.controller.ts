@@ -6,7 +6,6 @@ import { Role } from 'src/auth/enums/role.enum';
 import { UserRes } from '@types';
 import { JwtGuard } from 'src/auth/guards';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { EmailPayload } from './types';
 
 @Controller('web/emails')
 @UseGuards(JwtGuard)
@@ -34,7 +33,7 @@ export class EmailsWebController {
   @Post('/send')
   public async sendEmail() {
     // testing API
-    const payload: EmailPayload = {
+    const payload = {
       to: "kashif@avica.com",
       data: {
         name: 'Mr. Kashif',

@@ -12,14 +12,13 @@ import { UserRes, UserRole } from '@types';
 import { allowedQueryRoles } from 'src/constant';
 import { Role } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { EmailPayload } from 'src/emails/types';
 
 @Injectable()
 export class OrganizationService {
   constructor(
     private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   public async getOrganization(userId: string): Promise<CurrentOrganization> {
     return await this.prisma.organization.findFirst({
@@ -474,7 +473,7 @@ export class OrganizationService {
     role: UserRole;
     title: string;
   }): Promise<void> {
-    const payload: EmailPayload = {
+    const payload = {
       to: email,
       data: {
         name: this.getName(first_name, middle_name, last_name, role, title),

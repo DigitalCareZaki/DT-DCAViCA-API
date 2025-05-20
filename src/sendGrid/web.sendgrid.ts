@@ -1,24 +1,26 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-
-import { SendgridController } from './sendgrid.controller';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { SendgridService } from './sendgrid.service';
-
-import { GetUser } from 'src/auth/decorators';
-
-import { MailDTO } from './dto';
-
-import type { SendMailPayload, UserRes } from '@types';
-import type { MailRes } from './types';
+import type { SendMailPayload } from '@types';
 
 @Controller('web/mail')
-export class SendgridWebController extends SendgridController {
-  constructor(sendGridService: SendgridService) {
-    super(sendGridService);
-  }
+export class SendgridWebController {
+  constructor(private readonly sendGridService: SendgridService) { }
 
   @HttpCode(HttpStatus.CREATED)
   @Post('/send')
   public async sendMail(@Body() data: SendMailPayload) {
-    return this.getSendGridService().sendSgMail(data);
+    return this.sendGridService.sendSgMail(data);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/templates')
+  public async getTemplates() {
+    return this.sendGridService.fetchTemplates();
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/template/:id')
+  public async getTemplateById(@Param('id') id: string) {
+    return this.sendGridService.fetchTemplateById(id);
   }
 }

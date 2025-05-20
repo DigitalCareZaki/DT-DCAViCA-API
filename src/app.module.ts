@@ -43,7 +43,6 @@ import { SocketModule } from './socket/socket.module';
 import { ChatModule } from './chat/chat.module';
 
 import { MessageModule } from './message/message.module';
-import { EmailsModule } from './emails/emails.module';
 
 import { ElectronicmedicalreportModule } from './electronicmedicalreport/electronicmedicalreport.module';
 
@@ -104,7 +103,6 @@ import { FirebaseModule } from './firebaseNotification/firebase.module';
     SocketModule,
     ChatModule,
     MessageModule,
-    EmailsModule,
     ElectronicmedicalreportModule,
     LogsModule,
     NotificationsModule,

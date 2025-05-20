@@ -17,7 +17,7 @@ import {
 
 import { AppError } from 'src/errors';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { EmailPayload } from 'src/emails/types';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -404,7 +404,7 @@ export class AuthService {
       },
     });
 
-    const mailPayload: EmailPayload = {
+    const mailPayload: any = {
       to: user.email,
       template: 'template:reset-password-request',
       data: {
@@ -412,7 +412,7 @@ export class AuthService {
       },
     };
 
-    this.eventEmitter.emitAsync('send_email', mailPayload);
+    // this.eventEmitter.emitAsync('send_email', mailPayload);
 
     return {
       status: 'success',
