@@ -578,6 +578,38 @@ export class NurseService {
     return specializationList;
   }
 
+  public async getNursesBySpeciality(specialityId: string) {
+    const nurseList = await this.prisma.nurse.findMany({
+      where: {
+        specialities: {
+          some: {
+            id: specialityId, // assuming `id` is the field name in `Speciality` model
+          },
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            middle_name: true,
+            email: true,
+            uri: true,
+            phone_number: true,
+          },
+        },
+        specialities: {
+          select: {
+            id: true,
+            title: true,
+          },
+        }
+      },
+    });
+    return nurseList;
+  }
+
   public async addPatientNurse(
 
     nurseId: string,

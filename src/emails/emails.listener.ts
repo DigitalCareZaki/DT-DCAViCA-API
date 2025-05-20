@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { EmailPayload, template } from './types';
 import { Transporter, createTransport } from 'nodemailer';
 
 @Injectable()
@@ -33,7 +32,7 @@ export class EmailsListener {
   }
 
   @OnEvent('send_email')
-  public async handleSendEmailEvent(payload: EmailPayload) {
+  public async handleSendEmailEvent(payload: any) {
     try {
       const user = await this.prisma.user.findUnique({
         where: { email: payload.to },
@@ -45,93 +44,93 @@ export class EmailsListener {
         return;
       }
 
-      const template = await this.prisma.emailTemplate.findFirst({
-        where: {
-          AND: [
-            {
-              key: payload.template,
-            },
-            {
-              active: true,
-            },
-          ],
-        },
-        orderBy: {
-          created_at: 'desc',
-        },
-      });
+      // const template = await this.prisma.emailTemplate.findFirst({
+      //   where: {
+      //     AND: [
+      //       {
+      //         key: payload.template,
+      //       },
+      //       {
+      //         active: true,
+      //       },
+      //     ],
+      //   },
+      //   orderBy: {
+      //     created_at: 'desc',
+      //   },
+      // });
 
-      const parsedTempate = this.parseEmail(
-        payload.template,
-        template.html,
-        payload.data,
-      );
+      // const parsedTempate = this.parseEmail(
+      //   payload.template,
+      //   template.html,
+      //   payload.data,
+      // );
 
-      console.log('payload.data >>>>>>>>>>>>>> ', payload);
+      // console.log('payload.data >>>>>>>>>>>>>> ', payload);
 
-      await this.transporter
-        .sendMail({
-          from: 'avica@demowebsite.world',
-          to: payload.to,
-          subject: template.subject,
-          html: parsedTempate,
-        })
-        .then(async () => {
-          await this.prisma.emails.create({
-            data: {
-              to: payload.to,
-              sended: true,
-              subject: template.subject,
-              html: template.html,
-            },
-          });
-        })
-        .catch(async (err) => {
-          await this.prisma.emails.create({
-            data: {
-              to: payload.to,
-              sended: false,
-              subject: template.subject,
-              html: template.html,
-              error: err?.message ?? 'Something went wrong',
-            },
-          });
+      // await this.transporter
+      //   .sendMail({
+      //     from: 'avica@demowebsite.world',
+      //     to: payload.to,
+      //     subject: template.subject,
+      //     html: parsedTempate,
+      //   })
+      //   .then(async () => {
+      //     await this.prisma.emails.create({
+      //       data: {
+      //         to: payload.to,
+      //         sended: true,
+      //         subject: template.subject,
+      //         html: template.html,
+      //       },
+      //     });
+      //   })
+      //   .catch(async (err) => {
+      //     await this.prisma.emails.create({
+      //       data: {
+      //         to: payload.to,
+      //         sended: false,
+      //         subject: template.subject,
+      //         html: template.html,
+      //         error: err?.message ?? 'Something went wrong',
+      //       },
+      //     });
 
-          throw err;
-        });
+      //     throw err;
+      //   });
     } catch (err) {
       console.log(err);
       console.log('Error at sending email');
     }
   }
 
-  private parseEmail(
-    type: template,
-    html: string,
-    data: { [key: string]: string },
-  ): string {
-    if (type === 'template:reset-password-request') {
-      return this.parseResetPassword(html, data);
-    }
+  // private parseEmail(
+  //   type: string,
+  //   html: string,
+  //   data: { [key: string]: string },
+  // ): string {
+  //   if (type === 'template:reset-password-request') {
+  //     return this.parseResetPassword(html, data);
+  //   }
 
-    if (type === 'template:onboarding') {
-      return this.parseOnBoarding(html, data);
-    }
+  //   if (type === 'template:onboarding') {
+  //     return this.parseOnBoarding(html, data);
+  //   }
 
-    return '';
-  }
+  //   return '';
+  // }
 
-  private parseResetPassword(
-    html: string,
-    data: { [key: string]: string },
-  ): string {
-    return html.replace('OTPDIGIT', data?.otp);
-  }
+  // private parseResetPassword(
+  //   html: string,
+  //   data: { [key: string]: string },
+  // ): string {
+  //   return html.replace('OTPDIGIT', data?.otp);
+  // }
 
-  private parseOnBoarding(
-    html: string,
-    data: { [key: string]: string },
-  ): string {
-    return html.replace('USERNAME', data?.name);
-  }
+  // private parseOnBoarding(
+  //   html: string,
+  //   data: { [key: string]: string },
+  // ): string {
+  //   return html.replace('USERNAME', data?.name);
+  // }
 }

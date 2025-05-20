@@ -16,15 +16,15 @@ import {
 } from './dto';
 
 import { AppError } from 'src/errors';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { EmailPayload } from 'src/emails/types';
+import { SendgridService } from 'src/sendGrid/sendgrid.service';
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly otpService: OtpService,
-    private readonly eventEmitter: EventEmitter2,
+    private readonly sendgridService: SendgridService
   ) { }
 
   public async login(dto: LoginDTO) {
@@ -400,22 +400,22 @@ export class AuthService {
       data: {
         user_id: user.id,
         otp: encryptedOtp,
-        life: new Date(new Date().getTime() + 60 * 60 * 1000),
+        life: new Date(new Date().getTime() + 10 * 60 * 1000),  // 10 minutes
       },
     });
 
-    const mailPayload: EmailPayload = {
+    const mailPayload = {
       to: user.email,
-      template: 'template:reset-password-request',
+      templateId: 'd-d12adb1f032d4a1baecc66642ba4786f',
       data: {
         otp,
       },
     };
 
-    this.eventEmitter.emitAsync('send_email', mailPayload);
+    await this.sendgridService.sendSgMail(mailPayload);
 
     return {
-      status: 'success',
+      otp: otp,
       message: `Check your email address at ${user.email} for the OTP`,
     };
   }

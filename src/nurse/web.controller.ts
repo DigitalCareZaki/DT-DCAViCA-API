@@ -118,6 +118,14 @@ export class NurseWebController extends NurseController {
     return this.getNurseService().getSpecialityList();
   }
 
+  // test api test karni han doctor ay gayn
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/nurses/speciality')
+  public async getNursesBySpeciality(@Query('specialityId') specialityId: string) {
+    return this.getNurseService().getNursesBySpeciality(specialityId);
+  }
+
   @HttpCode(HttpStatus.CREATED)
   @Patch('/nurses')
   public async addPatientNurse(@Body() data: LinkNurseDTO): Promise<GetNurses> {

@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
 import { EmailsService } from './emails.service';
 import { GetUser } from 'src/auth/decorators';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
@@ -6,7 +6,6 @@ import { Role } from 'src/auth/enums/role.enum';
 import { UserRes } from '@types';
 import { JwtGuard } from 'src/auth/guards';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { EmailPayload } from './types';
 
 @Controller('web/emails')
 @UseGuards(JwtGuard)
@@ -34,14 +33,20 @@ export class EmailsWebController {
   @Post('/send')
   public async sendEmail() {
     // testing API
-    const payload: EmailPayload = {
-      to: "shazee257@gmail.com",
+    const payload = {
+      to: "kashif@avica.com",
       data: {
-        name: 'Mr. Shahzad',
+        name: 'Mr. Kashif',
       },
       template: 'template:onboarding',
     };
 
     return this.eventEmitter.emitAsync('send_email', payload);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('email-history/:userId')
+  public async getUserEmailHistory(@Param('userId') userId: string) {
+    return this.emailService.getUserEmailHistory(userId);
   }
 }

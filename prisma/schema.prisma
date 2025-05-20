@@ -48,17 +48,6 @@ model SlotParent {
   endTime   DateTime?
 }
 
-model EmailTemplate {
-  id  String @id @default(uuid())
-  key String
-
-  active  Boolean @default(true)
-  subject String
-  html    String  @db.Text
-
-  created_at DateTime @default(now())
-}
-
 model Emails {
   id String @id @default(uuid())
 

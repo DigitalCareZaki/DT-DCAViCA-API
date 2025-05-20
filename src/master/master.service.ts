@@ -205,50 +205,50 @@ export class MasterService {
   }
 
   public async getEmailTemplates() {
-    return this.prisma.emailTemplate.findMany({
-      select: {
-        id: true,
-        key: true,
-        subject: true,
-        html: true,
-        created_at: true,
-        active: true,
-      },
+    // return this.prisma.emailTemplate.findMany({
+    //   select: {
+    //     id: true,
+    //     key: true,
+    //     subject: true,
+    //     html: true,
+    //     created_at: true,
+    //     active: true,
+    //   },
 
-      orderBy: {
-        created_at: 'desc',
-      },
-    });
+    //   orderBy: {
+    //     created_at: 'desc',
+    //   },
+    // });
   }
 
   public async toggleEmailTemplate(data: ToggleEmailTemplate) {
-    const template = await this.prisma.emailTemplate.findUnique({
-      where: {
-        id: data.id,
-      },
-      select: {
-        active: true,
-        key: true,
-      },
-    });
+    // const template = await this.prisma.emailTemplate.findUnique({
+    //   where: {
+    //     id: data.id,
+    //   },
+    //   select: {
+    //     active: true,
+    //     key: true,
+    //   },
+    // });
 
-    await this.prisma.emailTemplate.updateMany({
-      where: {
-        key: template.key,
-      },
-      data: {
-        active: false,
-      },
-    });
+    // await this.prisma.emailTemplate.updateMany({
+    //   where: {
+    //     key: template.key,
+    //   },
+    //   data: {
+    //     active: false,
+    //   },
+    // });
 
-    return await this.prisma.emailTemplate.update({
-      where: {
-        id: data.id,
-      },
-      data: {
-        active: !template.active,
-      },
-    });
+    // return await this.prisma.emailTemplate.update({
+    //   where: {
+    //     id: data.id,
+    //   },
+    //   data: {
+    //     active: !template.active,
+    //   },
+    // });
   }
 
   public async getBranches() {

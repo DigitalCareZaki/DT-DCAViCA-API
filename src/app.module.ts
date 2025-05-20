@@ -43,7 +43,6 @@ import { SocketModule } from './socket/socket.module';
 import { ChatModule } from './chat/chat.module';
 
 import { MessageModule } from './message/message.module';
-import { EmailsModule } from './emails/emails.module';
 
 import { ElectronicmedicalreportModule } from './electronicmedicalreport/electronicmedicalreport.module';
 
@@ -70,6 +69,7 @@ import { SupportModule } from './technicalSupport/support.module';
 import { SendgridModule } from './sendGrid/sendgrid.module';
 import { TwilioModule } from './twilio/twilio.module';
 import { FirebaseModule } from './firebaseNotification/firebase.module';
+import { EmailsModule } from './emails/emails.module';
 // import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
@@ -83,6 +83,7 @@ import { FirebaseModule } from './firebaseNotification/firebase.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     FirebaseModule,
+    SendgridModule,
     AuthModule,
     PrismaModule,
     DoctorModule,
@@ -104,7 +105,6 @@ import { FirebaseModule } from './firebaseNotification/firebase.module';
     SocketModule,
     ChatModule,
     MessageModule,
-    EmailsModule,
     ElectronicmedicalreportModule,
     LogsModule,
     NotificationsModule,
@@ -115,7 +115,7 @@ import { FirebaseModule } from './firebaseNotification/firebase.module';
     ComplianceModule,
     DeviceModule,
     TwilioModule,
-
+    EmailsModule,
     // For Measurement and Medication
     EventEmitterModule.forRoot({
       wildcard: true,
@@ -128,7 +128,7 @@ import { FirebaseModule } from './firebaseNotification/firebase.module';
     VideosModule,
     TabletModule,
     SupportModule,
-    SendgridModule,
+
     // CloudinaryModule,
   ],
 })

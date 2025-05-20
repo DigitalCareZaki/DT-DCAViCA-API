@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
-import { SendgridController } from './sendgrid.controller';
+import { Global, Module } from '@nestjs/common';
 import { SendgridService } from './sendgrid.service';
 import { SendgridWebController } from './web.sendgrid';
 
+@Global()
 @Module({
-  controllers: [SendgridWebController, SendgridController],
+  controllers: [SendgridWebController],
   providers: [SendgridService],
+  exports: [SendgridService],
 })
-export class SendgridModule {}
+export class SendgridModule { }

@@ -117,4 +117,35 @@ export class EmailsService {
       },
     });
   }
+
+  public async getUserEmailHistory(userId: string) {
+    return this.prisma.emails.findMany({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+
+      select: {
+        id: true,
+        error: true,
+        sended: true,
+        subject: true,
+        html: true,
+        user: {
+          select: {
+            first_name: true,
+            last_name: true,
+            middle_name: true,
+            uri: true,
+            email: true,
+          },
+        },
+        created_at: true,
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+  }
 }
