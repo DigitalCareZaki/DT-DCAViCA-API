@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
 import { EmailsService } from './emails.service';
 import { GetUser } from 'src/auth/decorators';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
@@ -42,5 +42,11 @@ export class EmailsWebController {
     };
 
     return this.eventEmitter.emitAsync('send_email', payload);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('email-history/:userId')
+  public async getUserEmailHistory(@Param('userId') userId: string) {
+    return this.emailService.getUserEmailHistory(userId);
   }
 }
