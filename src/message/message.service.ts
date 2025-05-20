@@ -463,13 +463,21 @@ export class MessageService {
     const thread = await this.prisma.message.findUnique({
       where: { id: messageId },
       include: {
+        sender: true, // Include sender of the root message
         replies: {
           include: {
+            sender: true, // Include sender of the first-level replies
             replies: {
               include: {
+                sender: true, // Include sender of the second-level replies
                 replies: {
                   include: {
-                    replies: true, // You can go deeper if needed
+                    sender: true, // Include sender of the third-level replies
+                    replies: {
+                      include: {
+                        sender: true, // You can keep going deeper if needed
+                      },
+                    },
                   },
                 },
               },
