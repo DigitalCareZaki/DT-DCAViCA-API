@@ -101,9 +101,18 @@ export class MessageWebController extends MessageController {
   @HttpCode(HttpStatus.OK)
   @Get('/thread')
   public async getThreadByParent(
+
+    @Query('messageId') messageId: string,
+  ) {
+    return this.getMessageService().getThreadByParent(messageId);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/messagesbyuser')
+  public async getUserMessages(
     @GetUser() user: UserRes,
     @Query('messageId') messageId: string,
   ) {
-    return this.getMessageService().getThreadByParent(user.id, messageId);
+    return this.getMessageService().getUserMessages(user.id);
   }
 }

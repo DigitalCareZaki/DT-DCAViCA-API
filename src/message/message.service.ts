@@ -458,24 +458,67 @@ export class MessageService {
       },
     });
   }
-  public async getThreadByParent(userId: string, messageId: string) {
-    console.log('messageId: ', messageId);
-    return await this.prisma.message.findMany({
-      where: {
-        id: messageId,
-      },
+
+  public async getThreadByParent(messageId: string) {
+    const thread = await this.prisma.message.findUnique({
+      where: { id: messageId },
       include: {
         replies: {
           include: {
             replies: {
               include: {
-                replies: true, // etc., adjust depth
+                replies: {
+                  include: {
+                    replies: true, // You can go deeper if needed
+                  },
+                },
               },
             },
           },
         },
       },
+    });
 
+    // Recursive function to flatten replies
+    const flattenReplies = (message: any): any[] => {
+      let result: any[] = [message]; // include the current message
+      if (message.replies && message.replies.length > 0) {
+        for (const reply of message.replies) {
+          result = result.concat(flattenReplies(reply));
+        }
+      }
+      return result;
+    };
+
+    const flatThread = flattenReplies(thread);
+
+
+    const uniqueRepliesMap = new Map();
+    flatThread.forEach(msg => uniqueRepliesMap.set(msg.id, msg));
+    const uniqueReplies = Array.from(uniqueRepliesMap.values());
+
+    // Sort by creation time if needed
+    uniqueReplies.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    return uniqueReplies;
+  }
+
+  public async getUserMessages(userId: string) {
+    return await this.prisma.message.findMany({
+      where: {
+        parent_id: null, // Root messages only
+        OR: [
+          { reciever_id: userId },
+        ],
+      },
+      include: {
+        replies: true, // Optionally eager-load direct replies
+      },
+      orderBy: {
+        updated_at: 'desc',
+      },
     });
   }
+
+
 }
