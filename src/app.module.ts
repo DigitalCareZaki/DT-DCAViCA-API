@@ -83,6 +83,7 @@ import { EmailsModule } from './emails/emails.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     FirebaseModule,
+    SendgridModule,
     AuthModule,
     PrismaModule,
     DoctorModule,
@@ -127,7 +128,7 @@ import { EmailsModule } from './emails/emails.module';
     VideosModule,
     TabletModule,
     SupportModule,
-    SendgridModule,
+
     // CloudinaryModule,
   ],
 })
