@@ -35,9 +35,9 @@ export class EmailsWebController {
   public async sendEmail() {
     // testing API
     const payload: EmailPayload = {
-      to: "shazee257@gmail.com",
+      to: "kashif@avica.com",
       data: {
-        name: 'Mr. Shahzad',
+        name: 'Mr. Kashif',
       },
       template: 'template:onboarding',
     };
