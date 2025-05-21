@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
-
 import { PrismaService } from 'src/prisma/prisma.service';
-import { HelpersService } from 'src/helpers/helpers.service';
 import { TelemedCreateDTO } from './dto';
 import { TelemedActionDTO } from './dto/action.dto';
 import { SendMailPayload } from '@types';
-
 import type { UserRes } from '@types';
 import type {
   Appointment,
@@ -27,14 +24,9 @@ import { SENDGRID_TEMPLATES } from 'src/constant';
 
 @Injectable()
 export class TelemedService {
-  constructor(
-    private prisma: PrismaService,
-    private helperService: HelpersService,
-    private mail: SendgridService,
+  constructor(private prisma: PrismaService, private mail: SendgridService) { }
 
-  ) { }
-
-  public async createAppointment(user: UserRes, dto: TelemedCreateDTO): Promise<Appointment> {
+  public async createAppointment(user: UserRes, dto: TelemedCreateDTO) {
     const appointment = await this.prisma.appointment.create({
       data: {
         title: dto.title,
@@ -43,10 +35,13 @@ export class TelemedService {
         end_date: dto.end_date,
         type: dto.type,
         about: dto.about,
-        organizer_id: user.id,
+        organizer_id: user.id,  // patient id
       },
     });
 
+    console.log('appointment >>>>>>>>>>>', appointment.id);
+
+    // dto.users is doctor id
     const records = dto.users.map((user) => {
       return this.prisma.appointmentParticipants.create({
         data: {

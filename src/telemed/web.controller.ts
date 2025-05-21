@@ -63,7 +63,7 @@ export class TelemedWebController {
   @Post()
   @UseGuards(RolesGuard)
   @RequirePermission(Role.DOCTOR, Role.NURSE, Role.PATIENT)
-  public async createTelemed(@Body() data: TelemedCreateDTO, @GetUser() user: UserRes): Promise<AppointmentType> {
+  public async createTelemed(@Body() data: TelemedCreateDTO, @GetUser() user: UserRes) {
     return this.telemedService.createAppointment(user, data);
   }
 
