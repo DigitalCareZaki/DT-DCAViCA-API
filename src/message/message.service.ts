@@ -11,6 +11,7 @@ export class MessageService {
   public async inbox(userId: string, search: string): Promise<InboxRes[]> {
     return this.prisma.message.findMany({
       where: {
+        parent_id: null,
         AND: [
           {
             reciever_id: userId,
