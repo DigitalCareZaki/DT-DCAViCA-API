@@ -5,21 +5,24 @@ import {
   HttpStatus,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 
-import { RagController } from './rag.controller';
 import { RagService } from './rag.service';
 
 import { GetUser } from 'src/auth/decorators';
 
 import { HealthRes, UserRes } from '@types';
 import type { PatientRag } from './types';
+import { RequirePermission } from 'src/auth/decorators/role.decorator';
+import { JwtGuard, RolesGuard } from 'src/auth/guards';
+import { Role } from 'src/auth/enums/role.enum';
 
 @Controller('web/rag')
-export class RagWebController extends RagController {
-  constructor(ragService: RagService) {
-    super(ragService);
-  }
+@UseGuards(JwtGuard, RolesGuard)
+@RequirePermission(Role.DOCTOR, Role.NURSE, Role.PATIENT)
+export class RagWebController {
+  constructor(private readonly ragService: RagService) { }
 
   @HttpCode(HttpStatus.OK)
   @Get('/health')
@@ -37,7 +40,7 @@ export class RagWebController extends RagController {
     @Query('start_date') start_date?: string,
     @Query('end_date') end_date?: string,
   ): Promise<PatientRag> {
-    return this.getRagService().getAllPatientRag(
+    return this.ragService.getAllPatientRag(
       user.id,
       user.role,
       start_date,
@@ -53,7 +56,7 @@ export class RagWebController extends RagController {
     @Query('start_date') start_date?: string,
     @Query('end_date') end_date?: string,
   ): Promise<PatientRag> {
-    return this.getRagService().getSinglePatientRag(
+    return this.ragService.getSinglePatientRag(
       id,
       user.id,
       user.role,

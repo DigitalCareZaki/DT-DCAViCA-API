@@ -1,15 +1,9 @@
 import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
-
-import { RagController } from './rag.controller';
-import { RagService } from './rag.service';
-
 import type { HealthRes } from '@types';
 
 @Controller('app/rag')
-export class RagAppController extends RagController {
-  constructor(ragService: RagService) {
-    super(ragService);
-  }
+export class RagAppController {
+  constructor() { }
 
   @HttpCode(HttpStatus.OK)
   @Get()
