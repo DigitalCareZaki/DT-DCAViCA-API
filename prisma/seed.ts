@@ -17,13 +17,11 @@ async function createCountry() {
 async function createCity() {
   const country = await prisma.country.findFirstOrThrow();
 
-  return await prisma.city.createMany({
-    data: [
-      {
-        name: 'Karachi',
-        country_id: country.id,
-      },
-    ],
+  return await prisma.city.create({
+    data: {
+      name: 'Karachi',
+      country_id: country.id,
+    },
   });
 }
 
@@ -46,21 +44,12 @@ async function createLocation() {
 }
 
 async function createOrganization() {
+  const city = await prisma.city.findFirstOrThrow();
+
   const location = await prisma.location.create({
     data: {
       address: 'Dalmia National Stadium Road, Karachi, Pakistan',
-      city: {
-        create: {
-          name: 'Karachi',
-          country: {
-            create: {
-              name: 'Pakistan',
-              code: '+92',
-              country_code: 'PK',
-            },
-          },
-        },
-      },
+      city_id: city.id
     },
   });
 
