@@ -179,19 +179,8 @@ export class AuthService {
   public async resetPassword(payload: ResetPasswordDTO) {
     const user = await this.prisma.user.findFirst({
       where: {
-        OR: [
-          {
-            email: payload.email,
-          },
-          {
-            username: payload.email,
-          },
-          {
-            phone_number: payload.email,
-          },
-        ],
+        email: payload.email,
       },
-
       select: {
         id: true,
       },
@@ -224,20 +213,9 @@ export class AuthService {
       },
     });
 
-    if (!otpDB) {
-      throw new AppError(
-        'Please generate new reset password request',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    if (otpDB.attempts >= 3) {
-      throw new AppError('Too many attempts', HttpStatus.BAD_REQUEST);
-    }
-
-    if (otpDB.life < new Date(Date.now())) {
-      throw new AppError('OTP expired', HttpStatus.BAD_REQUEST);
-    }
+    if (!otpDB) throw new AppError('Please generate new reset password request', HttpStatus.BAD_REQUEST);
+    if (otpDB.attempts >= 3) throw new AppError('Too many attempts', HttpStatus.BAD_REQUEST);
+    if (otpDB.life < new Date(Date.now())) throw new AppError('OTP expired', HttpStatus.BAD_REQUEST);
 
     if (otpDB.otp !== hash) {
       await this.prisma.oTP.update({
@@ -249,7 +227,6 @@ export class AuthService {
             increment: 1,
           },
         },
-
         select: {
           id: true,
         },
