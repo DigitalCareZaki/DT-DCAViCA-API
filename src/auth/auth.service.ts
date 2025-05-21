@@ -17,6 +17,7 @@ import {
 
 import { AppError } from 'src/errors';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
+import { SENDGRID_TEMPLATES } from 'src/constant';
 
 @Injectable()
 export class AuthService {
@@ -406,7 +407,7 @@ export class AuthService {
 
     const mailPayload = {
       to: user.email,
-      templateId: 'd-d12adb1f032d4a1baecc66642ba4786f',
+      templateId: SENDGRID_TEMPLATES.OTP,
       data: {
         otp,
       },
