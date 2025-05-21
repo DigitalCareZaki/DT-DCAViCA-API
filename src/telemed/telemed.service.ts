@@ -34,10 +34,7 @@ export class TelemedService {
 
   ) { }
 
-  public async createAppointment(
-    user: UserRes,
-    dto: TelemedCreateDTO,
-  ): Promise<Appointment> {
+  public async createAppointment(user: UserRes, dto: TelemedCreateDTO): Promise<Appointment> {
     const appointment = await this.prisma.appointment.create({
       data: {
         title: dto.title,
