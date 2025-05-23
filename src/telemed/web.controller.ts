@@ -109,10 +109,10 @@ export class TelemedWebController {
   @Get('/appointmentanalytics')
   public async appointmentAnalytics(
     @GetUser() user: UserRes,
-    @Query('page') page = '1',
-    @Query('limit') limit = '10',
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
   ) {
-    return this.telemedService.appointmentAnalytics(user);
+    return this.telemedService.appointmentAnalytics(user, +page, +limit);
   }
   @HttpCode(HttpStatus.OK)
   @Get('/todayappointments')
