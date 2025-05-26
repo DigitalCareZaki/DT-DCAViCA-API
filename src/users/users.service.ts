@@ -33,6 +33,14 @@ export class UsersService {
                     }
                 },
             },
+            orderBy: [
+                {
+                    first_name: 'asc',
+                },
+                {
+                    id: 'asc', // fallback ordering when first_name is null
+                }
+            ],
         });
     }
 }
