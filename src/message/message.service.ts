@@ -11,7 +11,6 @@ export class MessageService {
   public async inbox(userId: string, search: string): Promise<InboxRes[]> {
     return this.prisma.message.findMany({
       where: {
-        parent_id: null,
         AND: [
           {
             reciever_id: userId,
@@ -89,6 +88,9 @@ export class MessageService {
         created_at: true,
         deleted: true,
         starred: true,
+        is_read: true,
+        root_id: true,
+        parent_id: true
       },
 
       orderBy: {
@@ -107,6 +109,19 @@ export class MessageService {
       },
     });
 
+    let root_id: string | null = null;
+
+    if (data.parent_id) {
+      const parent = await this.prisma.message.findUnique({
+        where: { id: data.parent_id },
+        select: { id: true, root_id: true },
+      });
+
+      if (parent) {
+        root_id = parent.root_id ?? parent.id;
+      }
+    }
+
     return this.prisma.message.create({
       data: {
         sender_id: userId,
@@ -115,6 +130,7 @@ export class MessageService {
         content: data.content,
         reciever_id: reciever.id,
         parent_id: data.parent_id ?? null,
+        root_id: root_id ?? null,
       },
     });
   }
@@ -459,58 +475,76 @@ export class MessageService {
       },
     });
   }
-
   public async getThreadByParent(messageId: string) {
-    const thread = await this.prisma.message.findUnique({
+    const message = await this.prisma.message.findUniqueOrThrow({
       where: { id: messageId },
-      include: {
-        sender: true, // Include sender of the root message
-        replies: {
-          include: {
-            sender: true, // Include sender of the first-level replies
-            replies: {
-              include: {
-                sender: true, // Include sender of the second-level replies
-                replies: {
-                  include: {
-                    sender: true, // Include sender of the third-level replies
-                    replies: {
-                      include: {
-                        sender: true, // You can keep going deeper if needed
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+      select: { id: true, root_id: true },
     });
 
-    // Recursive function to flatten replies
-    const flattenReplies = (message: any): any[] => {
-      let result: any[] = [message]; // include the current message
-      if (message.replies && message.replies.length > 0) {
-        for (const reply of message.replies) {
-          result = result.concat(flattenReplies(reply));
-        }
-      }
-      return result;
-    };
+    const rootId = message.root_id ?? message.id;
 
-    const flatThread = flattenReplies(thread);
-
-
-    const uniqueRepliesMap = new Map();
-    flatThread.forEach(msg => uniqueRepliesMap.set(msg.id, msg));
-    const uniqueReplies = Array.from(uniqueRepliesMap.values());
-
-    // Sort by creation time if needed
-    uniqueReplies.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-    return uniqueReplies;
+    return await this.prisma.message.findMany({
+      where: {
+        OR: [
+          { id: rootId },
+          { root_id: rootId },
+        ],
+      },
+      orderBy: { created_at: 'desc' },
+    });
   }
+
+  // public async getThreadByParent(messageId: string) {
+  //   const thread = await this.prisma.message.findUnique({
+  //     where: { id: messageId },
+  //     include: {
+  //       sender: true, // Include sender of the root message
+  //       replies: {
+  //         include: {
+  //           sender: true, // Include sender of the first-level replies
+  //           replies: {
+  //             include: {
+  //               sender: true, // Include sender of the second-level replies
+  //               replies: {
+  //                 include: {
+  //                   sender: true, // Include sender of the third-level replies
+  //                   replies: {
+  //                     include: {
+  //                       sender: true, // You can keep going deeper if needed
+  //                     },
+  //                   },
+  //                 },
+  //               },
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   // Recursive function to flatten replies
+  //   const flattenReplies = (message: any): any[] => {
+  //     let result: any[] = [message]; // include the current message
+  //     if (message.replies && message.replies.length > 0) {
+  //       for (const reply of message.replies) {
+  //         result = result.concat(flattenReplies(reply));
+  //       }
+  //     }
+  //     return result;
+  //   };
+
+  //   const flatThread = flattenReplies(thread);
+
+
+  //   const uniqueRepliesMap = new Map();
+  //   flatThread.forEach(msg => uniqueRepliesMap.set(msg.id, msg));
+  //   const uniqueReplies = Array.from(uniqueRepliesMap.values());
+
+  //   // Sort by creation time if needed
+  //   uniqueReplies.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  //   return uniqueReplies;
+  // }
 
   public async getUserMessages(userId: string) {
     return await this.prisma.message.findMany({
@@ -528,6 +562,40 @@ export class MessageService {
       },
     });
   }
+
+  public async markThreadAsRead(userId: string, rootId: string) {
+    console.log('Marking thread as read for user:', userId, 'rootId:', rootId);
+    return await this.prisma.message.updateMany({
+      where: {
+        reciever_id: userId,
+        is_read: false,
+        OR: [
+          { id: rootId },
+          { root_id: rootId },
+        ],
+      },
+      data: {
+        is_read: true,
+      },
+    });
+
+
+  }
+  public async markMessageAsRead(userId: string, id: string) {
+    console.log('Marking thread as read for user:', userId, 'Id:', id);
+
+    return await this.prisma.message.updateMany({
+      where: {
+        id: id,
+        is_read: false,
+
+      },
+      data: {
+        is_read: true,
+      },
+    });
+  }
+
 
 
 }

@@ -737,12 +737,13 @@ model Message {
 
   starred Boolean @default(false)
   deleted Boolean @default(false)
-
+is_read Boolean @default(false)
   sender_id   String
   sender      User   @relation(name: "messageSender", fields: [sender_id], references: [id])
   reciever_id String
   reciever    User   @relation(name: "messageReciever", fields: [reciever_id], references: [id])
   parent_id   String? 
+  root_id      String?   // for flat threads
   parent      Message?  @relation("MessageThread", fields: [parent_id], references: [id])
   replies     Message[] @relation("MessageThread")
 

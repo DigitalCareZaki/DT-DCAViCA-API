@@ -18,6 +18,8 @@ export class ComposeDTO {
   @IsString()
   parent_id: string;
 
+
+
   @Validate(ValidateAdditionalUri)
   attachments: string[];
 }

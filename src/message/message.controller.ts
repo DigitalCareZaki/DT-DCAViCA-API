@@ -5,7 +5,7 @@ import { MessageService } from './message.service';
 @Controller()
 @UseGuards(JwtGuard)
 export class MessageController {
-  constructor(private messageService: MessageService) {}
+  constructor(private messageService: MessageService) { }
 
   public getMessageService(): MessageService {
     return this.messageService;

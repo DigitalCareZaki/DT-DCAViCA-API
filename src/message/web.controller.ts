@@ -115,4 +115,23 @@ export class MessageWebController extends MessageController {
   ) {
     return this.getMessageService().getUserMessages(user.id);
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Patch('/update/:rootId')
+  public async markThreadAsRead(
+    @GetUser() user: UserRes,
+    @Param('rootId') rootId: string,
+  ): Promise<any> {
+    console.log('Marking thread as read for user:', user.id, 'and rootId:', rootId);
+    return this.getMessageService().markThreadAsRead(user.id, rootId);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Patch('/update-message/:id')
+  public async markMessageAsRead(
+    @GetUser() user: UserRes,
+    @Param('id') id: string,
+  ): Promise<any> {
+    console.log('Marking thread as read for user:', user.id, 'and rootId:', id);
+    return this.getMessageService().markMessageAsRead(user.id, id);
+  }
 }
