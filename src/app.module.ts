@@ -71,6 +71,7 @@ import { TwilioModule } from './twilio/twilio.module';
 import { FirebaseModule } from './firebaseNotification/firebase.module';
 import { EmailsModule } from './emails/emails.module';
 // import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   providers: [
@@ -128,6 +129,7 @@ import { EmailsModule } from './emails/emails.module';
     VideosModule,
     TabletModule,
     SupportModule,
+    UsersModule,
 
     // CloudinaryModule,
   ],
