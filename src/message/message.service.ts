@@ -490,6 +490,17 @@ export class MessageService {
           { root_id: rootId },
         ],
       },
+      include: {
+        sender: {
+          select: {
+            first_name: true,
+            last_name: true,
+            middle_name: true,
+            uri: true,
+            email: true,
+          },
+        },
+      },
       orderBy: { created_at: 'desc' },
     });
   }

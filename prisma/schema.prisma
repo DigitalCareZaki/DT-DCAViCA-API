@@ -737,7 +737,7 @@ model Message {
 
   starred Boolean @default(false)
   deleted Boolean @default(false)
-is_read Boolean @default(false)
+  is_read Boolean @default(false)
   sender_id   String
   sender      User   @relation(name: "messageSender", fields: [sender_id], references: [id])
   reciever_id String

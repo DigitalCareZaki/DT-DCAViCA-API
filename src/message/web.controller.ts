@@ -100,10 +100,7 @@ export class MessageWebController extends MessageController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/thread')
-  public async getThreadByParent(
-
-    @Query('messageId') messageId: string,
-  ) {
+  public async getThreadByParent(@Query('messageId') messageId: string) {
     return this.getMessageService().getThreadByParent(messageId);
   }
 
