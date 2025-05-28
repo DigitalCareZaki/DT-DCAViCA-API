@@ -50,12 +50,7 @@ export class RagWebController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/patients/:id') // :id -> patient -> user_id
-  public async getSinglePatientRag(
-    @GetUser() user: UserRes,
-    @Param('id') id: string,
-    @Query('start_date') start_date?: string,
-    @Query('end_date') end_date?: string,
-  ): Promise<PatientRag> {
+  public async getSinglePatientRag(@GetUser() user: UserRes, @Param('id') id: string, @Query('start_date') start_date?: string, @Query('end_date') end_date?: string) {
     return this.ragService.getSinglePatientRag(
       id,
       user.id,

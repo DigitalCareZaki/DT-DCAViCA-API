@@ -11,12 +11,7 @@ import type { PatientRag } from './types';
 export class RagService {
   constructor(private prisma: PrismaService) { }
 
-  public async getAllPatientRag(
-    userId: string,
-    role: UserRole,
-    start_date?: string,
-    end_date?: string,
-  ): Promise<PatientRag> {
+  public async getAllPatientRag(userId: string, role: UserRole, start_date?: string, end_date?: string) {
     if (role === 'PATIENT') {
       throw new AppError('You can not access this route', HttpStatus.FORBIDDEN);
     }
@@ -47,13 +42,7 @@ export class RagService {
     return await this.formatResults(start_date, end_date, result);
   }
 
-  public async getSinglePatientRag(
-    patientId: string,
-    userId: string,
-    role: UserRole,
-    start_date?: string,
-    end_date?: string,
-  ): Promise<PatientRag> {
+  public async getSinglePatientRag(patientId: string, userId: string, role: UserRole, start_date?: string, end_date?: string) {
     // Doctor
     if (role === 'DOCTOR' || role === 'NURSE') {
       const patient = await this.prisma.patient.findFirst({
@@ -91,20 +80,10 @@ export class RagService {
         },
       });
 
-      if (!patient) {
-        throw new AppError(
-          'Can not fetch information for this user',
-          HttpStatus.FORBIDDEN,
-        );
-      }
+      if (!patient) throw new AppError('Can not fetch information for this user', HttpStatus.FORBIDDEN);
     } else {
       // Patient
-      if (patientId !== userId) {
-        throw new AppError(
-          'Can not fetch information for this patient',
-          HttpStatus.FORBIDDEN,
-        );
-      }
+      if (patientId !== userId) throw new AppError('Can not fetch information for this patient', HttpStatus.FORBIDDEN);
     }
 
     [start_date, end_date] = await this.validateDates(start_date, end_date);
@@ -153,11 +132,7 @@ export class RagService {
     return [start_date, end_date];
   }
 
-  private async formatResults(
-    start_date: string | null,
-    end_date: string | null,
-    result: any[],
-  ): Promise<PatientRag> {
+  private async formatResults(start_date: string | null, end_date: string | null, result: any[]): Promise<PatientRag> {
     const formattedResult: PatientRag = {
       ecg: { high: 0, normal: 0, low: 0, pending: 0 },
       spo2: { high: 0, normal: 0, low: 0, pending: 0 },
@@ -169,9 +144,7 @@ export class RagService {
     };
 
     result.forEach((item) => {
-      formattedResult[item.type.toLowerCase()][
-        item?.status?.toLowerCase() ?? 'pending'
-      ] = item._count._all;
+      formattedResult[item.type.toLowerCase()][item?.status?.toLowerCase() ?? 'pending'] = item._count._all;
     });
 
     return formattedResult;
