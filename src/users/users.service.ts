@@ -56,4 +56,52 @@ export class UsersService {
             ],
         });
     }
+
+    async getProfile(id: string) {
+        return await this.prisma.user.findUniqueOrThrow({
+            where: {
+                id,
+            },
+            select: {
+                id: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+                dob: true,
+                uri: true,
+                role: true,
+                gender: true,
+                title: true,
+                email: true,
+                phone_number: true,
+                username: true,
+                pincode: true,
+                location: {
+                    include: {
+                        city: {
+                            include: {
+                                country: true,
+                            },
+                        },
+                    },
+                },
+                patient: {
+                    select: {
+                        emr: true,
+                        weight: true,
+                        height: true,
+                    }
+                },
+                doctor: {
+                    include: {
+                        specialities: true,
+                        departments: true,
+                    },
+                },
+                created_at: true,
+                updated_at: true,
+                active: true,
+            },
+        });
+    }
 }
