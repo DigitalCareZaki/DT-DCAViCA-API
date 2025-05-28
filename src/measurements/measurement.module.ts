@@ -6,5 +6,6 @@ import { MeasurementAppController } from './measurement.app';
 @Module({
   controllers: [MeasurementWebController, MeasurementAppController],
   providers: [MeasurementService],
+  exports: [MeasurementService],
 })
 export class MeasurementModule {}

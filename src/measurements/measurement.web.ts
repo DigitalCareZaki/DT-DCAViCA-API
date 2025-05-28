@@ -27,7 +27,7 @@ import type { ModifiedMeasurement } from './types';
 @UseGuards(JwtGuard, RolesGuard)
 @RequirePermission(Role.DOCTOR, Role.NURSE, Role.PATIENT)
 export class MeasurementWebController {
-  constructor(private readonly measurementService: MeasurementService) {}
+  constructor(private readonly measurementService: MeasurementService) { }
 
   @HttpCode(HttpStatus.OK)
   @Get('')
@@ -86,11 +86,7 @@ export class MeasurementWebController {
 
   @HttpCode(HttpStatus.CREATED)
   @Post('/patients/:id') // :id -> patient -> user_id
-  public async createMeasurements(
-    @GetUser() user: UserRes,
-    @Param('id') id: string,
-    @Body() data: MeasurementDTO,
-  ): Promise<ModifiedMeasurement> {
+  public async createMeasurements(@GetUser() user: UserRes, @Param('id') id: string, @Body() data: MeasurementDTO) {
     return this.measurementService.createPatientMeasurement(
       id,
       user.id,

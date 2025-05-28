@@ -1,6 +1,7 @@
 import {
   IsArray,
   IsNotEmpty,
+  IsNumber,
   IsString,
   MaxLength,
   Validate,
@@ -48,4 +49,36 @@ export class MeasurementDTO {
   @IsArray()
   @Transform(({ value }) => value.filter((val) => Number(val)))
   values: Array<number>;
+}
+
+export class SingleValueMeasurementDTO {
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(20)
+  title: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @Validate(ValidateMeasurementType)
+  type: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @Validate(ValidateMeasurementMode)
+  mode: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @Validate(ValidateMeasurementUnit)
+  @Validate(ValidateMeasurementUnitForType)
+  unit: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Validate(ValidateMeasurementReadingSource)
+  reading_source: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  value: number;
 }

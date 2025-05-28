@@ -3,7 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { PrismaService } from 'src/prisma/prisma.service';
 
-import { MeasurementDTO } from './dto';
+import { MeasurementDTO, SingleValueMeasurementDTO } from './dto';
 
 import type {
   MeasurementType,
@@ -658,16 +658,11 @@ export class MeasurementService {
   //   }
   // }
 
-  public async createPatientMeasurement(
-    patientId: string,
-    userId: string,
-    role: UserRole,
-    data: MeasurementDTO,
-  ): Promise<ModifiedMeasurement> {
+  public async createPatientMeasurement(patientId: string, userId: string, role: UserRole, data: MeasurementDTO) {
     let measurement = null;
 
     // Doctor and Nurse
-    if (role === 'DOCTOR' || 'Nurse') {
+    if (role === 'DOCTOR' || role === 'NURSE') {
       measurement = await this.prisma.measurement.create({
         data: {
           title: data.title,
@@ -817,6 +812,174 @@ export class MeasurementService {
 
     return measurement;
   }
+
+  public async addSingleValueMeasurement(patientId: string, userId: string, role: UserRole, data: SingleValueMeasurementDTO) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+      },
+    });
+
+    console.log('object', user, '=========>user');
+
+    // if (!user) throw new AppError('User not found', 404);
+
+    let measurement = null;
+
+    // Doctor and Nurse
+    if (role === 'DOCTOR' || role === 'NURSE') {
+      measurement = await this.prisma.measurement.create({
+        data: {
+          title: data.title,
+          mode: data.mode as MeasurementMode,
+          type: data.type as MeasurementType,
+          unit: data.unit as MeasurementUnit,
+          reading_source: data.reading_source as MeasurementReadingSource,
+          values: [data.value],
+          [role.toLocaleLowerCase()]: {
+            connect: {
+              user_id: userId,
+            },
+          },
+          patient: {
+            connect: {
+              user_id: patientId,
+            },
+          },
+        },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          mode: true,
+          type: true,
+          values: true,
+          unit: true,
+          reading_source: true,
+          created_at: true,
+          patient: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+          doctor: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+          nurse: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    } else {
+      // Patient
+      measurement = await this.prisma.measurement.create({
+        data: {
+          title: data.title,
+          mode: data.mode as MeasurementMode,
+          type: data.type as MeasurementType,
+          unit: data.unit as MeasurementUnit,
+          reading_source: data.reading_source as MeasurementReadingSource,
+          values: [data.value],
+          patient: {
+            connect: {
+              user_id: userId,
+            },
+          },
+        },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          mode: true,
+          type: true,
+          values: true,
+          unit: true,
+          reading_source: true,
+          created_at: true,
+          patient: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+          doctor: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+          nurse: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    console.log(measurement, '=========>measurement');
+
+    process.nextTick(() => {
+      const payload: MeasurementCreatedEvent = {
+        patientId,
+        measurement,
+      };
+      this.eventEmitter.emitAsync('measurement.created', payload);
+    });
+
+    return measurement;
+  }
+
 
   public async getPatientListWithLatestReadings(
     userId: string,
