@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
+import { subscribe } from 'diagnostics_channel';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -58,7 +59,7 @@ export class UsersService {
     }
 
     async getProfile(id: string) {
-        return await this.prisma.user.findUniqueOrThrow({
+        const user = await this.prisma.user.findUniqueOrThrow({
             where: {
                 id,
             },
@@ -103,5 +104,16 @@ export class UsersService {
                 active: true,
             },
         });
+
+        // Adding static values for language and timezone
+        return {
+            ...user,
+            language: "English",
+            timeZone: "UTC+5",
+            SSN: "123-45-6789", // Example static value for SSN
+            subscribeId: "13127386184", // Example static value for subscribeId
+            measurementSystem: "Standard", // Example static value for MeasurementSystem
+        };
     }
+
 }
