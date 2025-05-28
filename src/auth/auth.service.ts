@@ -49,7 +49,26 @@ export class AuthService {
         active: true,
         organization_id: true,
         pincode: true,
-      },
+        doctor: {
+          select: {
+            specialities: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+            departments: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+            npi_number: true,
+            pmdc_number: true,
+            employee_id: true,
+          },
+        },
+      }
     });
 
     if (!user.active) {
