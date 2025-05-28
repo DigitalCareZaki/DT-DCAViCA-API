@@ -57,19 +57,24 @@ export class AuthService {
                 title: true,
               },
             },
-            departments: {
-              select: {
-                id: true,
-                title: true,
-              },
-            },
-            npi_number: true,
-            pmdc_number: true,
-            employee_id: true,
+            // departments: {
+            //   select: {
+            //     id: true,
+            //     title: true,
+            //   },
+            // },
+            // npi_number: true,
+            // pmdc_number: true,
+            // employee_id: true,
           },
         },
       }
     });
+
+    // Add speciality key using specialities[0].title if it exists
+    if (user.doctor && user.doctor.specialities && user.doctor.specialities.length > 0) {
+      user.speciality = user.doctor.specialities[0].title;
+    }
 
     if (!user.active) {
       throw new AppError('User is blocked', HttpStatus.UNAUTHORIZED);
@@ -90,6 +95,7 @@ export class AuthService {
 
     const isPincode = !!user.pincode;
 
+    delete user.doctor;
     delete user.password;
     delete user.pincode;
 

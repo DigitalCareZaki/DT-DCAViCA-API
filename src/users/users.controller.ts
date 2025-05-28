@@ -28,6 +28,4 @@ export class UsersController {
   public async resetPassword(@Body() dto: ResetPasswordDTO) {
     return this.authService.resetPassword(dto);
   }
-
-
 }
