@@ -21,7 +21,7 @@ export class ResponseInterceptor implements NestInterceptor {
                     return {
                         statusCode: 200,
                         success: true,
-                        data,
+                        data: (data.data && Array.isArray(data.data)) ? data.data : data,
                     };
 
                 return data;
