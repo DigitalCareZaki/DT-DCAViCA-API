@@ -537,6 +537,7 @@ async function patientMeasurements() {
 
   await prisma.measurement.createMany({
     data: [
+      // temperature readings
       {
         patient_id: patient.id,
         doctor_id: doctor.id,
@@ -544,19 +545,118 @@ async function patientMeasurements() {
         mode: 'METRIC',
         type: 'TEMPERATURE',
         status: 'HIGH',
-        title: 'Temperature',
+        title: 'Temperature Reading 2',
         unit: 'FAHRENHEIT',
+        reading_source: 'MANUAL'
       },
+      {
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+        values: [98.4],
+        mode: 'METRIC',
+        type: 'TEMPERATURE',
+        status: 'NORMAL',
+        title: 'Temperature Reading 1',
+        unit: 'FAHRENHEIT',
+        reading_source: 'MANUAL'
+      },
+
+      // blood pressure readings
+      {
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+        values: [90, 120],
+        mode: 'METRIC',
+        type: 'BLOODPRESSURE',
+        status: 'NORMAL',
+        title: 'Blood Pressure Reading 1',
+        unit: 'MMHG',
+        reading_source: 'MANUAL'
+      },
+      {
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+        values: [120, 160],
+        mode: 'METRIC',
+        type: 'BLOODPRESSURE',
+        status: 'HIGH',
+        title: 'Blood Pressure Reading 2',
+        unit: 'MMHG',
+        reading_source: 'MANUAL'
+      },
+
+      // glucose readings
+      {
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+        values: [90],
+        mode: 'METRIC',
+        type: 'BLOODGLUCOSE',
+        status: 'NORMAL',
+        title: 'Blood Glucose Reading 1',
+        unit: 'MGDL',
+        reading_source: 'MANUAL'
+      },
+      {
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+        values: [180],
+        mode: 'METRIC',
+        type: 'BLOODGLUCOSE',
+        status: 'HIGH',
+        title: 'Blood Glucose Reading 2',
+        unit: 'MGDL',
+        reading_source: 'MANUAL'
+      },
+
+      // oxygen saturation readings SPO2
       {
         patient_id: patient.id,
         doctor_id: doctor.id,
         values: [98],
         mode: 'METRIC',
-        type: 'TEMPERATURE',
-        status: 'NORMAL',
-        title: 'Temperature',
-        unit: 'FAHRENHEIT',
+        type: 'SPO2',
+        status: 'HIGH',
+        title: 'Oxygen Saturation Reading 1',
+        unit: 'PERCENTAGE',
+        reading_source: 'MANUAL'
       },
+      {
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+        values: [85],
+        mode: 'METRIC',
+        type: 'SPO2',
+        status: 'LOW',
+        title: 'Oxygen Saturation Reading 2',
+        unit: 'PERCENTAGE',
+        reading_source: 'MANUAL'
+      },
+
+      // ECG readings
+      {
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+        values: [90],
+        mode: 'METRIC',
+        type: 'ECG',
+        status: 'HIGH',
+        title: 'ECG Reading',
+        unit: 'VOLTAGE',
+        reading_source: 'MANUAL'
+      },
+      {
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+        values: [75],
+        mode: 'METRIC',
+        type: 'ECG',
+        status: 'LOW',
+        title: 'ECG Reading 2',
+        unit: 'VOLTAGE',
+        reading_source: 'MANUAL'
+      }
+
     ],
   });
 }

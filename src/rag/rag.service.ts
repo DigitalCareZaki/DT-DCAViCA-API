@@ -96,10 +96,10 @@ export class RagService {
             id: patientId,
           },
         },
-        created_at: {
-          gte: new Date(start_date),
-          lte: new Date(end_date),
-        },
+        // created_at: {
+        //   gte: new Date(start_date),
+        //   lte: new Date(end_date),
+        // },
       },
       _count: {
         _all: true,
