@@ -9,21 +9,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ElectronicmedicalreportService } from './electronicmedicalreport.service';
-import { RolesGuard } from 'src/auth/guards';
-import { Role } from 'src/auth/enums/role.enum';
-import { RequirePermission } from 'src/auth/decorators/role.decorator';
+import { JwtGuard } from 'src/auth/guards';
 import { EMR_DTO } from './dto/emr.dto';
 
 @Controller('web/emr')
+@UseGuards(JwtGuard)
 export class EMRWebController {
-  constructor(private readonly service: ElectronicmedicalreportService) {
-  }
+  constructor(private readonly service: ElectronicmedicalreportService) { }
 
   @Get('/health')
   public async health() {
-    return {
-      status: 'running',
-    };
+    return { status: 'running' };
   }
 
   @Post('/')

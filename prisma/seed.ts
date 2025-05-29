@@ -362,6 +362,8 @@ async function createPatient() {
   const patient = await prisma.patient.create({
     data: {
       user_id: user.id,
+      height: 1.82, // in meters
+      weight: 75, // in kg
     },
   });
 
