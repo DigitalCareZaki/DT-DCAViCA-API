@@ -6,7 +6,7 @@ import { ResetPasswordDTO } from 'src/auth/dto';
 import { MeasurementService } from 'src/measurements/measurement.service';
 import { GetUser } from 'src/auth/decorators';
 import { UserRes } from '@types';
-import { SingleValueMeasurementDTO } from 'src/measurements/dto';
+import { MultiValueMeasurementDTO, SingleValueMeasurementDTO } from 'src/measurements/dto';
 import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 import { Role } from 'src/auth/enums/role.enum';
@@ -42,6 +42,18 @@ export class UsersController {
   @Post('/single-value-measurement/:patientId')
   public async createMeasurement(@GetUser() user: UserRes, @Param('patientId') patientId: string, @Body() data: SingleValueMeasurementDTO) {
     return this.measurementService.addSingleValueMeasurement(
+      patientId,
+      user.id,
+      user.role,
+      data,
+    );
+  }
+
+   @UseGuards(JwtGuard, RolesGuard)
+  @RequirePermission(Role.DOCTOR, Role.NURSE, Role.PATIENT)
+  @Post('/multi-value-measurement/:patientId')
+  public async createMultiValueMeasurement(@GetUser() user: UserRes, @Param('patientId') patientId: string, @Body() data: MultiValueMeasurementDTO) {
+    return this.measurementService.addMultiValueMeasurement(
       patientId,
       user.id,
       user.role,

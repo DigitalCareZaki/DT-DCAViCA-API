@@ -82,3 +82,39 @@ export class SingleValueMeasurementDTO {
   @IsNumber()
   value: number;
 }
+
+export class MultiValueMeasurementDTO {
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(20)
+  title: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @Validate(ValidateMeasurementType)
+  type: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @Validate(ValidateMeasurementMode)
+  mode: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @Validate(ValidateMeasurementUnit)
+  @Validate(ValidateMeasurementUnitForType)
+  unit: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Validate(ValidateMeasurementReadingSource)
+  reading_source: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  value1: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  value2: number;
+}
