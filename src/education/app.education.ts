@@ -1,15 +1,11 @@
-import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
-
-import { EducationController } from './education.controller';
-import { EducationService } from './education.service';
-
+import { Controller, Get, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import type { HealthRes } from '@types';
+import { JwtGuard } from 'src/auth/guards';
 
 @Controller('app/education')
-export class EducationAppController extends EducationController {
-  constructor(educationService: EducationService) {
-    super(educationService);
-  }
+@UseGuards(JwtGuard)
+export class EducationAppController {
+  
 
   @HttpCode(HttpStatus.OK)
   @Get()

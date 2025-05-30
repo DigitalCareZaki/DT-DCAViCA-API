@@ -10,21 +10,19 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { EducationController } from './education.controller';
 import { EducationService } from './education.service';
-import { RolesGuard } from 'src/auth/guards';
+import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { Role } from 'src/auth/enums/role.enum';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 import { GetUser } from 'src/auth/decorators';
 import { PostDTO } from './dto';
-
 import type { HealthRes, JsonRes, UserRes } from '@types';
 import type { PostRes, Post as PostSchemaTypes } from './types';
+
 @Controller('web/education')
-export class EducationWebController extends EducationController {
-  constructor(private readonly educationService: EducationService) {
-    super(educationService);
-  }
+@UseGuards(JwtGuard)
+export class EducationWebController {
+  constructor(private readonly educationService: EducationService) { }
 
   @HttpCode(HttpStatus.OK)
   @Get('/health')
@@ -38,7 +36,7 @@ export class EducationWebController extends EducationController {
   @HttpCode(HttpStatus.OK)
   @Get()
   public async getPosts(): Promise<PostRes[]> {
-    return this.getEducationService().getPosts();
+    return this.educationService.getPosts();
   }
 
   @UseGuards(RolesGuard)
@@ -49,7 +47,7 @@ export class EducationWebController extends EducationController {
     @GetUser() user: UserRes,
     @Body() data: PostDTO,
   ): Promise<PostSchemaTypes> {
-    return this.getEducationService().createPost(user.id, data);
+    return this.educationService.createPost(user.id, data);
   }
 
   @HttpCode(HttpStatus.ACCEPTED)
@@ -58,26 +56,26 @@ export class EducationWebController extends EducationController {
     @GetUser() user: UserRes,
     @Param('id') postId: string,
   ): Promise<JsonRes> {
-    return this.getEducationService().likePost(postId, user.id);
+    return this.educationService.likePost(postId, user.id);
   }
 
   @HttpCode(HttpStatus.OK)
   @Get('/trending-posts')
   public async getTrendingPosts(): Promise<PostRes[]> {
-    return this.getEducationService().getTrendingPosts();
+    return this.educationService.getTrendingPosts();
   }
 
   @HttpCode(HttpStatus.OK)
   @Get('/my-posts')
   public async getMyArticles(@GetUser() user: UserRes): Promise<PostRes[]> {
     // return this.getEducationService()
-    return this.getEducationService().getMyPosts(user);
+    return this.educationService.getMyPosts(user);
   }
 
   @HttpCode(HttpStatus.OK)
   @Get('/search')
   public async search(@Query('value') value: string): Promise<PostRes[]> {
-    return this.getEducationService().search(value);
+    return this.educationService.search(value);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -86,9 +84,9 @@ export class EducationWebController extends EducationController {
     @GetUser() user: UserRes,
     @Param('id') postId: string,
   ) {
-    const post = await this.getEducationService().getPostDetail(postId);
+    const post = await this.educationService.getPostDetail(postId);
 
-    await this.getEducationService().viewPost(postId, user.id);
+    await this.educationService.viewPost(postId, user.id);
 
     return post;
   }
@@ -99,8 +97,8 @@ export class EducationWebController extends EducationController {
     @GetUser() user: UserRes,
     @Param('id') postId: string,
   ): Promise<any> {
-    const post = await this.getEducationService().getIndividualPost(postId);
-    await this.getEducationService().viewPost(postId, user.id);
+    const post = await this.educationService.getIndividualPost(postId);
+    await this.educationService.viewPost(postId, user.id);
 
     return post;
   }
@@ -111,6 +109,6 @@ export class EducationWebController extends EducationController {
     @GetUser() user: UserRes,
     @Param('id') postId: string,
   ): Promise<any> {
-    return await this.getEducationService().deletePost(user.id, postId);
+    return await this.educationService.deletePost(user.id, postId);
   }
 }
