@@ -35,8 +35,8 @@ export class EducationWebController {
 
   @HttpCode(HttpStatus.OK)
   @Get()
-  public async getPosts(): Promise<PostRes[]> {
-    return this.educationService.getPosts();
+  public async getPosts(@Query('page') page?: number, @Query('limit') limit?: number): Promise<PostRes[]> {
+    return this.educationService.getPosts(page ? +page : 1, limit ? +limit : 10);
   }
 
   @UseGuards(RolesGuard)

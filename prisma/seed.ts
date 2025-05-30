@@ -794,6 +794,122 @@ async function sendSMS() {
   console.log('SMS created');
 }
 
+async function createPosts() {
+  const doctor = await this.prisma.user.findFirstOrThrow({
+    where: {
+      role: Role.DOCTOR,
+    },
+    orderBy: { created_at: 'desc' },
+  });
+
+  const superadmin = await this.prisma.user.findFirstOrThrow({
+    where: { role: Role.SUPERADMIN },
+    orderBy: { created_at: 'desc' },
+  });
+
+  await this.prisma.post.createMany({
+    data: [
+      {
+        title: 'Understanding Heart Health: Tips for a Healthy Cardiovascular System',
+        content: 'Maintaining good heart health is crucial for overall well-being. Regular exercise, a balanced diet rich in fruits and vegetables, avoiding smoking, and managing stress are key factors. It\'s important to monitor your blood pressure regularly and maintain a healthy weight. Remember, small lifestyle changes can make a big difference in your heart health.',
+        uri: 'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
+        additional_uri: [
+          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
+          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png'
+        ],
+        refrence: [
+          'American Heart Association',
+          'Mayo Clinic - Heart Health Guidelines'
+        ],
+        author_id: doctor.id,
+        likes_count: 15,
+        comments_count: 8,
+        views_count: 142,
+      },
+      {
+        title: 'Managing Diabetes: A Comprehensive Guide for Patients',
+        content: 'Diabetes management involves monitoring blood sugar levels, taking medications as prescribed, maintaining a healthy diet, and staying physically active. Regular check-ups with your healthcare provider are essential. Understanding carbohydrate counting and recognizing symptoms of high or low blood sugar can help you better manage your condition.',
+        uri: 'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
+        additional_uri: [
+          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png'
+        ],
+        refrence: [
+          'American Diabetes Association',
+          'CDC Diabetes Guidelines'
+        ],
+        author_id: doctor.id,
+        likes_count: 23,
+        comments_count: 12,
+        views_count: 198,
+      },
+      {
+        title: 'The Importance of Regular Health Screenings',
+        content: 'Regular health screenings can help detect potential health issues early when they are most treatable. Depending on your age and risk factors, screenings may include blood pressure checks, cholesterol tests, cancer screenings, and bone density tests. Talk to your healthcare provider about which screenings are right for you.',
+        uri: 'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
+        additional_uri: [],
+        refrence: [
+          'U.S. Preventive Services Task Force',
+          'World Health Organization'
+        ],
+        author_id: superadmin.id,
+        likes_count: 31,
+        comments_count: 6,
+        views_count: 267,
+      },
+      {
+        title: 'Mental Health Awareness: Breaking the Stigma',
+        content: 'Mental health is just as important as physical health. It\'s okay to seek help when you\'re struggling with anxiety, depression, or other mental health concerns. Professional support, therapy, medication when appropriate, and self-care practices can all contribute to better mental health. Remember, seeking help is a sign of strength, not weakness.',
+        uri: 'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
+        additional_uri: [
+          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
+          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png'
+        ],
+        refrence: [
+          'National Institute of Mental Health',
+          'Mental Health America'
+        ],
+        author_id: superadmin.id,
+        likes_count: 45,
+        comments_count: 18,
+        views_count: 356,
+      },
+      {
+        title: 'Nutrition Tips for Healthy Aging',
+        content: 'As we age, our nutritional needs change. Focus on nutrient-dense foods like leafy greens, lean proteins, whole grains, and colorful fruits and vegetables. Stay hydrated, limit processed foods, and consider supplements if recommended by your healthcare provider. Good nutrition supports immune function, bone health, and cognitive function as we age.',
+        uri: 'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
+        additional_uri: [
+          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png'
+        ],
+        refrence: [
+          'National Institute on Aging',
+          'Academy of Nutrition and Dietetics'
+        ],
+        author_id: doctor.id,
+        likes_count: 19,
+        comments_count: 9,
+        views_count: 189,
+      },
+      {
+        title: 'Understanding Your Medication: Tips for Safe Use',
+        content: 'Taking medications safely is crucial for effective treatment. Always follow your doctor\'s instructions, take medications at the prescribed times, and never skip doses. Keep an updated list of all your medications, including over-the-counter drugs and supplements. If you experience side effects, contact your healthcare provider immediately.',
+        uri: 'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
+        additional_uri: [],
+        refrence: [
+          'FDA Medication Safety Guidelines',
+          'Institute for Safe Medication Practices'
+        ],
+        author_id: superadmin.id,
+        likes_count: 12,
+        comments_count: 4,
+        views_count: 134,
+        active: true,
+      }
+    ],
+  });
+
+  console.log('Posts created successfully');
+}
+
 async function main() {
   await createCountry();
   await createCity();
@@ -814,6 +930,7 @@ async function main() {
   await createMaster();
   await createNotifications();
   await sendSMS();
+  await createPosts(); // Add this line
 
   // const res = await prisma.post.update({
   //   where: {
