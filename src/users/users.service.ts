@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
-import { subscribe } from 'diagnostics_channel';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()

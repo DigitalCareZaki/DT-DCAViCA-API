@@ -7,23 +7,22 @@ import {
   Param,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-
-import { MedicationController } from './medication.controller';
 import { MedicationService } from './medication.service';
-
 import { GetUser } from 'src/auth/decorators';
-
 import { MedicationDTO } from './dto';
-
 import { HealthRes, UserRes } from '@types';
 import type { ModifiedMedication } from './types';
+import { JwtGuard, RolesGuard } from 'src/auth/guards';
+import { RequirePermission } from 'src/auth/decorators/role.decorator';
+import { Role } from 'src/auth/enums/role.enum';
 
 @Controller('web/medications')
-export class MedicationWebController extends MedicationController {
-  constructor(medicationService: MedicationService) {
-    super(medicationService);
-  }
+@UseGuards(JwtGuard, RolesGuard)
+@RequirePermission(Role.DOCTOR, Role.NURSE, Role.PATIENT)
+export class MedicationWebController {
+  constructor(private readonly medicationService: MedicationService) { }
 
   @HttpCode(HttpStatus.OK)
   @Get('/health')
@@ -41,7 +40,7 @@ export class MedicationWebController extends MedicationController {
     @Param('id') id: string,
     @Query('search') search: string,
   ): Promise<ModifiedMedication[]> {
-    return this.getMedicationService().getPatientMedication(
+    return this.medicationService.getPatientMedication(
       id,
       user.id,
       user.role,
@@ -56,7 +55,7 @@ export class MedicationWebController extends MedicationController {
     @Param('id') id: string,
     @Body() data: MedicationDTO,
   ): Promise<ModifiedMedication> {
-    return this.getMedicationService().createPatientMedication(
+    return this.medicationService.createPatientMedication(
       id,
       user.id,
       user.role,
