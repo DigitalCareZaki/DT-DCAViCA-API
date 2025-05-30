@@ -95,9 +95,7 @@ export class TelemedService {
     return appointment;
   }
 
-
-
-  public async getAppointments(id: string): Promise<GetAppointmentsType[]> {
+  public async getAppointments(id: string) {
     return this.prisma.appointment.findMany({
       where: {
         organizer_id: id,
@@ -332,99 +330,6 @@ export class TelemedService {
     };
   }
 
-
-
-  // public async appointmentAnalytics(user: UserRes,
-  //   page = 1,
-  //   limit = 10
-  // ) {
-  //   const skip = (page - 1) * limit;
-  //   if(user.role == 'DOCTOR'){
-  //   const [data, totalItems] = await this.prisma.$transaction([
-  //     this.prisma.appointmentParticipants.findMany({
-  //       where: {
-  //         user_id: user.id
-
-  //       },
-  //       skip,
-  //       take: limit,
-  //       select: {
-  //         status: true,
-  //         id: true,
-  //         appointment: {
-  //           select: {
-  //             id: true,
-  //             about: true,
-  //             type: true,
-  //             title: true,
-  //             start_date: true,
-  //             end_date: true,
-  //             description: true,
-  //             organizer: {
-  //               select: {
-  //                 id: true,
-  //                 first_name: true,
-  //                 last_name: true,
-  //                 middle_name: true,
-  //                 uri: true,
-  //                 role: true,
-  //               },
-  //             },
-
-  //             participants: {
-  //               select: {
-  //                 id: true,
-  //               },
-  //             },
-  //             appointmentObservation: {
-  //               select: {
-  //                 id: true,
-  //                 Observations: true,
-  //                 Diagnosis: true,
-  //                 Medications: true,
-  //                 Procedure: true,
-  //                 Follow_up_date: true,
-  //               },
-  //             },
-
-  //             created_at: true,
-  //           },
-  //         },
-  //       },
-  //     }),
-
-  //     this.prisma.appointmentParticipants.count({
-  //       where: {
-  //         user_id: user.id,
-  //       },
-  //     }),
-  //   ]);
-
-
-  //   const totalPages = Math.ceil(totalItems / limit);
-
-  //   return {
-  //     data,
-  //     pagination: {
-  //       totalItems,
-  //       totalPages,
-  //       currentPage: page,
-  //       perPage: limit,
-  //       hasNextPage: page < totalPages,
-  //       hasPrevPage: page > 1,
-  //       nextPage: page < totalPages ? page + 1 : null,
-  //       prevPage: page > 1 ? page - 1 : null,
-  //     },
-  //   };
-  // }
-  // if(user.role == 'PATIENT'){
-
-  // }
-  // }
-
-
-
-
   public async appointmentAnalytics(user: UserRes, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
 
@@ -462,7 +367,19 @@ export class TelemedService {
                   },
                 },
                 participants: {
-                  select: { id: true },
+                  select: {
+                    id: true,
+                    user: {
+                      select: {
+                        id: true,
+                        first_name: true,
+                        last_name: true,
+                        middle_name: true,
+                        uri: true,
+                        role: true,
+                      },
+                    },
+                  },
                 },
                 appointmentObservation: {
                   select: {
@@ -563,6 +480,48 @@ export class TelemedService {
     };
   }
 
+  public async appointmentAnalyticsGroup(user: UserRes) {
+    let data: any[] = [];
+
+    const appointments = await this.prisma.appointment.groupBy({
+      by: ['status'],
+      where: {
+        OR: [
+          {
+            organizer: { id: user.id },
+          },
+          {
+            participants: {
+              some: { user_id: user.id },
+            },
+          },
+        ],
+      },
+      _count: {
+        status: true,
+      },
+    });
+
+    data = appointments.map(item => ({
+      status: item.status,
+      count: item._count.status
+    }));
+
+    // Add any missing statuses with count 0
+    const allStatuses = ['HOLD', 'CANCELLED', 'ONGOING', 'ACTIVE', 'COMPLETED', 'PENDING'];
+    const existingStatuses = data.map(item => item.status);
+
+    console.log('existingStatuses >>>>>>>>', existingStatuses);
+
+    allStatuses.forEach((status: string) => {
+      if (!existingStatuses.includes(status)) {
+        data.push({ status, count: 0 });
+      }
+    });
+
+    return data;
+  }
+
   public async todayappointments(user: UserRes) {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -660,9 +619,6 @@ export class TelemedService {
     return completeSlotParent;
   }
 
-
-
-
   public async createReport(
     user: UserRes,
     data: AppointmentReport,
@@ -723,7 +679,6 @@ export class TelemedService {
       id: observation.id,
     };
   }
-
 
   public async updateCalendar(
     user: UserRes,
