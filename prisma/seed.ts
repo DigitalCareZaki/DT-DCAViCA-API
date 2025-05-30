@@ -702,18 +702,64 @@ async function createMedication() {
   const start_date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const end_date = new Date(start_date.getTime() + millisecondsToAdd);
 
-  await prisma.medication.create({
-    data: {
-      name: 'Panadol',
-      start_date,
-      end_date,
-      time: now,
-      dosage: '10mg',
-      frequency: 2,
-      unit: 'TABLET',
-      patient_id: patient.id,
-      doctor_id: doctor.id,
-    },
+  await this.prisma.medication.createMany({
+    data: [
+      {
+        name: 'Aspirin',
+        start_date,
+        end_date,
+        time: now,
+        dosage: '10mg',
+        frequency: 2,
+        unit: 'TABLET',
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+      },
+      {
+        name: 'Paracetamol',
+        start_date,
+        end_date,
+        time: now,
+        dosage: '500mg',
+        frequency: 3,
+        unit: 'TABLET',
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+      },
+      {
+        name: 'Ibuprofen',
+        start_date,
+        end_date,
+        time: now,
+        dosage: '200mg',
+        frequency: 1,
+        unit: 'TABLET',
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+      },
+      {
+        name: 'Amoxicillin',
+        start_date,
+        end_date,
+        time: now,
+        dosage: '250mg',
+        frequency: 2,
+        unit: 'CAPSULE',
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+      },
+      {
+        name: 'Metformin',
+        start_date,
+        end_date,
+        time: now,
+        dosage: '500mg',
+        frequency: 2,
+        unit: 'TABLET',
+        patient_id: patient.id,
+        doctor_id: doctor.id,
+      },
+    ]
   });
 }
 

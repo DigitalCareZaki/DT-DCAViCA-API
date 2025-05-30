@@ -39,12 +39,16 @@ export class MedicationWebController {
     @GetUser() user: UserRes,
     @Param('id') id: string,
     @Query('search') search: string,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
   ): Promise<ModifiedMedication[]> {
     return this.medicationService.getPatientMedication(
       id,
       user.id,
       user.role,
       search || '',
+      page ? +page : 1,
+      limit ? +limit : 10,
     );
   }
 
@@ -53,13 +57,15 @@ export class MedicationWebController {
   public async createPatientMedication(
     @GetUser() user: UserRes,
     @Param('id') id: string,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
     @Body() data: MedicationDTO,
   ): Promise<ModifiedMedication> {
     return this.medicationService.createPatientMedication(
       id,
       user.id,
       user.role,
-      data,
+      data
     );
   }
 }
