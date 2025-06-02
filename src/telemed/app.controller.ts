@@ -1,13 +1,16 @@
 import {
   Controller,
   Get,
+  Param,
+  HttpStatus,
   Query,
-  UseGuards,
+  UseGuards
 } from '@nestjs/common';
 import { TelemedService } from './telemed.service';
 import { GetUser } from 'src/auth/decorators';
 import type { UserRes } from '@types';
 import { JwtGuard } from 'src/auth/guards';
+import AppError from 'src/errors/AppError';
 
 @Controller('app/telemed')
 @UseGuards(JwtGuard)
@@ -24,4 +27,19 @@ export class TelemedAppController {
       list: appointments.data,
     };
   }
+
+  @Get('/report/:appointmentId')
+  public async getAppointmentReport(@Param('appointmentId') appointmentId: string) {
+    const appointment = await this.telemedService.details(appointmentId);
+    if (!appointment) {
+      throw new AppError('Appointment not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (!appointment.appointmentObservation) {
+      throw new AppError('Report not found', HttpStatus.NOT_FOUND);
+    }
+
+    return appointment.appointmentObservation;
+  }
+
 }

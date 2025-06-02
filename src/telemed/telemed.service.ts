@@ -852,7 +852,7 @@ export class TelemedService {
     };
   }
 
-  public async details(id: string): Promise<TelemedViewProps> {
+  public async details(id: string) {
     return this.prisma.appointment.findUnique({
       where: {
         id,
@@ -888,6 +888,16 @@ export class TelemedService {
             first_name: true,
             last_name: true,
             middle_name: true,
+          },
+        },
+        appointmentObservation: {
+          select: {
+            id: true,
+            observations: true,
+            diagnosis: true,
+            medications: true,
+            procedure: true,
+            follow_up_date: true,
           },
         },
       },
