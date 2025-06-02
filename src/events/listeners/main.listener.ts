@@ -8,7 +8,7 @@ import type { MeasurementCreatedEvent, MedicationCreatedEvent } from '../types';
 
 @Injectable()
 export class EventListener {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   @OnEvent('measurement.created')
   public async handleMeasurementCreatedEvent(payload: MeasurementCreatedEvent) {
@@ -17,8 +17,7 @@ export class EventListener {
       return;
     }
 
-    const patientReadingRange =
-      await this.prisma.patientMeasurementRange.findFirst({
+    const patientReadingRange = await this.prisma.patientMeasurementRange.findFirst({
         where: {
           patient: {
             user: {

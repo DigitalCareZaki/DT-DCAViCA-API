@@ -109,26 +109,60 @@ export class PatientService {
       where: {
         id,
       },
+      // select: {
+      //   first_name: true,
+      //   middle_name: true,
+      //   last_name: true,
+      //   dob: true,
+      //   uri: true,
+      //   gender: true,
+      //   title: true,
+      //   email: true,
+      //   phone_number: true,
+      //   username: true,
+      //   created_at: true,
+      //   updated_at: true,
+      //   patient: {
+      //     select: {
+      //       emr: true,
+      //       weight: true,
+      //       height: true,
+      //     },
+      //   },
+      // },
       select: {
+        id: true,
         first_name: true,
         middle_name: true,
         last_name: true,
         dob: true,
         uri: true,
+        role: true,
         gender: true,
         title: true,
         email: true,
         phone_number: true,
         username: true,
-        created_at: true,
-        updated_at: true,
+        pincode: true,
         patient: {
           select: {
             emr: true,
             weight: true,
             height: true,
+          }
+        },
+        location: {
+          include: {
+            city: {
+              include: {
+                country: true,
+              },
+            },
           },
         },
+        created_at: true,
+        updated_at: true,
+        active: true,
       },
     });
   }

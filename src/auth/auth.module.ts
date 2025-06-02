@@ -21,5 +21,6 @@ import { OtpService } from './otp.service';
   ],
   controllers: [AuthWebController, AuthAppController],
   providers: [AuthService, JwtStrategy, OtpService],
+  exports: [AuthService, JwtModule, OtpService],
 })
 export class AuthModule { }

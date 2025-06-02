@@ -11,8 +11,7 @@ export class NotificationsWebController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
   @Get('/')
-  public async getNotifications(
-    @GetUser() user: UserRes) {
+  public async getNotifications(@GetUser() user: UserRes) {
     return this.notificationService.getNotifications(user);
   }
 

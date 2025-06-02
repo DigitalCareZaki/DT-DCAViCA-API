@@ -8,16 +8,17 @@ import type { PostRes, Post } from './types';
 import { PostDTO } from './dto';
 
 import { AppError } from 'src/errors';
+import { Role } from 'src/auth/enums/role.enum';
 
 @Injectable()
 export class EducationService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  public async getPosts(): Promise<PostRes[]> {
+  public async getPosts(page: number, limit: number): Promise<PostRes[]> {
     return await this.prisma.post.findMany({
-      where: {
-        active: true,
-      },
+      where: { active: true },
+      skip: (page - 1) * limit,
+      take: limit,
       select: {
         id: true,
         uri: true,

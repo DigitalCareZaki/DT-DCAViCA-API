@@ -17,15 +17,16 @@ export class MedicationService {
   constructor(
     private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   public async getPatientMedication(
     patientId: string,
     userId: string,
     role: UserRole,
     search: string,
+    page: number = 1,
+    limit: number = 10
   ): Promise<ModifiedMedication[]> {
-    // Doctor and Nurse
     if (role === 'DOCTOR' || role === 'NURSE') {
       return await this.prisma.medication.findMany({
         where: {
@@ -52,6 +53,8 @@ export class MedicationService {
             },
           ],
         },
+        skip: (page - 1) * limit,
+        take: limit,
         select: {
           id: true,
           name: true,
@@ -88,10 +91,7 @@ export class MedicationService {
     } else {
       // Patient
       if (patientId !== userId) {
-        throw new AppError(
-          'Can not fetch information for this patient',
-          HttpStatus.FORBIDDEN,
-        );
+        throw new AppError('Can not fetch information for this patient', HttpStatus.FORBIDDEN);
       }
 
       return await this.prisma.medication.findMany({
@@ -110,6 +110,8 @@ export class MedicationService {
             },
           ],
         },
+        skip: (page - 1) * limit,
+        take: limit,
         select: {
           id: true,
           name: true,
@@ -140,6 +142,93 @@ export class MedicationService {
               end_date: true,
             },
           },
+          created_at: true,
+        },
+      });
+    }
+  }
+
+  public async getPatientMedicationForApp(
+    patientId: string,
+    userId: string,
+    role: UserRole,
+    search: string,
+    page: number = 1,
+    limit: number = 10
+  ) {
+    if (role === 'DOCTOR' || role === 'NURSE') {
+      return await this.prisma.medication.findMany({
+        where: {
+          AND: [
+            {
+              patient: {
+                [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
+                  some: {
+                    user_id: userId,
+                  },
+                },
+              },
+            },
+            {
+              patient: {
+                user_id: patientId,
+              },
+            },
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          name: true,
+          start_date: true,
+          end_date: true,
+          time: true,
+          dosage: true,
+          frequency: true,
+          unit: true,
+          created_at: true,
+        },
+      });
+    } else {
+      // Patient
+      if (patientId !== userId) {
+        throw new AppError('Can not fetch information for this patient', HttpStatus.FORBIDDEN);
+      }
+
+      return await this.prisma.medication.findMany({
+        where: {
+          AND: [
+            {
+              patient: {
+                user_id: patientId,
+              },
+            },
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          name: true,
+          start_date: true,
+          end_date: true,
+          time: true,
+          dosage: true,
+          frequency: true,
+          unit: true,
           created_at: true,
         },
       });

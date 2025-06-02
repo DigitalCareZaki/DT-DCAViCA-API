@@ -10,10 +10,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { MeasurementController } from './measurement.controller';
 import { MeasurementService } from './measurement.service';
 
-import { RolesGuard } from 'src/auth/guards';
+import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { Role } from 'src/auth/enums/role.enum';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 
@@ -25,14 +24,13 @@ import { PaginatedResult, UserRes } from '@types';
 import type { ModifiedMeasurement } from './types';
 
 @Controller('web/measurements')
-export class MeasurementWebController extends MeasurementController {
-  constructor(measurementService: MeasurementService) {
-    super(measurementService);
-  }
+@UseGuards(JwtGuard, RolesGuard)
+@RequirePermission(Role.DOCTOR, Role.NURSE, Role.PATIENT)
+export class MeasurementWebController {
+  constructor(private readonly measurementService: MeasurementService) { }
 
   @HttpCode(HttpStatus.OK)
   @Get('')
-
   @UseGuards(RolesGuard)
   @RequirePermission(Role.DOCTOR, Role.NURSE)
   public async getAllPatientMeasurements(
@@ -41,7 +39,7 @@ export class MeasurementWebController extends MeasurementController {
     @Query('page') page?: number,
     @Query('limit') limit?: number
   ): Promise<PaginatedResult<ModifiedMeasurement>> {
-    return this.getMeasurementService().getMeasurementsOfAllPatients(
+    return this.measurementService.getMeasurementsOfAllPatients(
       user.id,
       user.role,
       type || '',
@@ -59,7 +57,7 @@ export class MeasurementWebController extends MeasurementController {
     @Query('page') page?: number,
     @Query('limit') limit?: number
   ): Promise<PaginatedResult<ModifiedMeasurement>> {
-    return this.getMeasurementService().getPatientListWithLatestReadings(
+    return this.measurementService.getPatientListWithLatestReadings(
       user.id,
       user.role,
       page || 1,
@@ -76,7 +74,7 @@ export class MeasurementWebController extends MeasurementController {
     @Query('limit') limit?: number,
     @Query('type') type?: string,
   ): Promise<PaginatedResult<ModifiedMeasurement>> {
-    return this.getMeasurementService().patientMeasurements(
+    return this.measurementService.patientMeasurements(
       id,
       user.id,
       user.role,
@@ -88,12 +86,8 @@ export class MeasurementWebController extends MeasurementController {
 
   @HttpCode(HttpStatus.CREATED)
   @Post('/patients/:id') // :id -> patient -> user_id
-  public async createMeasurements(
-    @GetUser() user: UserRes,
-    @Param('id') id: string,
-    @Body() data: MeasurementDTO,
-  ): Promise<ModifiedMeasurement> {
-    return this.getMeasurementService().createPatientMeasurement(
+  public async createMeasurements(@GetUser() user: UserRes, @Param('id') id: string, @Body() data: MeasurementDTO) {
+    return this.measurementService.createPatientMeasurement(
       id,
       user.id,
       user.role,
@@ -108,7 +102,7 @@ export class MeasurementWebController extends MeasurementController {
     @Query('status') status: number,
     @Query('updated_by') updated_by: string
   ) {
-    return this.getMeasurementService().updateMeasurementStatus(
+    return this.measurementService.updateMeasurementStatus(
       id,
       status,
       updated_by
