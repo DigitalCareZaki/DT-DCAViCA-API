@@ -1,8 +1,39 @@
 import { PrismaClient, Role } from '@prisma/client';
 
 import * as argon from 'argon2';
-
+import fs from 'fs/promises';
+import path from 'path';
 const prisma = new PrismaClient();
+
+// async function createCountry() {
+//   const filePath = path.join(__dirname, '../countries.json'); // adjust if your file path is different
+//   const jsonData = await fs.readFile(filePath, 'utf-8');
+//   const countries = JSON.parse(jsonData);
+
+//   for (const country of countries) {
+//     const createdCountry = await prisma.country.create({
+//       data: {
+//         name: country.country,
+//         code: country.code || null,
+//         country_code: country.countryCode || null,
+//       },
+//     });
+
+//     const cityData = (country.cities || []).map((city: string) => ({
+//       name: city,
+//       country_id: createdCountry.id,
+//     }));
+
+//     if (cityData.length > 0) {
+//       await prisma.city.createMany({
+//         data: cityData,
+//         skipDuplicates: true,
+//       });
+//     }
+//   }
+
+//   console.log('✅ Seeding complete.');
+// }
 
 async function createCountry() {
   return await prisma.country.create({
