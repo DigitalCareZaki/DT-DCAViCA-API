@@ -1,60 +1,61 @@
 import { PrismaClient, Role } from '@prisma/client';
 
 import * as argon from 'argon2';
-import fs from 'fs/promises';
+import { promises as fs } from 'fs';
+
 import path from 'path';
 const prisma = new PrismaClient();
 
+async function createCountry() {
+  const filePath = './countries.json';// adjust if your file path is different
+  const jsonData = await fs.readFile(filePath, 'utf-8');
+  const countries = JSON.parse(jsonData);
+
+  for (const country of countries) {
+    const createdCountry = await prisma.country.create({
+      data: {
+        name: country.country,
+        code: country.code || null,
+        country_code: country.countryCode || null,
+      },
+    });
+
+    const cityData = (country.cities || []).map((city: string) => ({
+      name: city,
+      country_id: createdCountry.id,
+    }));
+
+    if (cityData.length > 0) {
+      await prisma.city.createMany({
+        data: cityData,
+        skipDuplicates: true,
+      });
+    }
+  }
+
+  console.log('✅ Seeding complete.');
+}
+
 // async function createCountry() {
-//   const filePath = path.join(__dirname, '../countries.json'); // adjust if your file path is different
-//   const jsonData = await fs.readFile(filePath, 'utf-8');
-//   const countries = JSON.parse(jsonData);
-
-//   for (const country of countries) {
-//     const createdCountry = await prisma.country.create({
-//       data: {
-//         name: country.country,
-//         code: country.code || null,
-//         country_code: country.countryCode || null,
-//       },
-//     });
-
-//     const cityData = (country.cities || []).map((city: string) => ({
-//       name: city,
-//       country_id: createdCountry.id,
-//     }));
-
-//     if (cityData.length > 0) {
-//       await prisma.city.createMany({
-//         data: cityData,
-//         skipDuplicates: true,
-//       });
-//     }
-//   }
-
-//   console.log('✅ Seeding complete.');
+//   return await prisma.country.create({
+//     data: {
+//       name: 'Pakistan',
+//       code: '+92',
+//       country_code: 'PK',
+//     },
+//   });
 // }
 
-async function createCountry() {
-  return await prisma.country.create({
-    data: {
-      name: 'Pakistan',
-      code: '+92',
-      country_code: 'PK',
-    },
-  });
-}
+// async function createCity() {
+//   const country = await prisma.country.findFirstOrThrow();
 
-async function createCity() {
-  const country = await prisma.country.findFirstOrThrow();
-
-  return await prisma.city.create({
-    data: {
-      name: 'Karachi',
-      country_id: country.id,
-    },
-  });
-}
+//   return await prisma.city.create({
+//     data: {
+//       name: 'Karachi',
+//       country_id: country.id,
+//     },
+//   });
+// }
 
 async function createLocation() {
   const city = await prisma.city.findFirstOrThrow({
@@ -733,7 +734,7 @@ async function createMedication() {
   const start_date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const end_date = new Date(start_date.getTime() + millisecondsToAdd);
 
-  await this.prisma.medication.createMany({
+  await prisma.medication.createMany({
     data: [
       {
         name: 'Aspirin',
@@ -872,19 +873,19 @@ async function sendSMS() {
 }
 
 async function createPosts() {
-  const doctor = await this.prisma.user.findFirstOrThrow({
+  const doctor = await prisma.user.findFirstOrThrow({
     where: {
       role: Role.DOCTOR,
     },
     orderBy: { created_at: 'desc' },
   });
 
-  const superadmin = await this.prisma.user.findFirstOrThrow({
+  const superadmin = await prisma.user.findFirstOrThrow({
     where: { role: Role.SUPERADMIN },
     orderBy: { created_at: 'desc' },
   });
 
-  await this.prisma.post.createMany({
+  await prisma.post.createMany({
     data: [
       {
         title: 'Understanding Heart Health: Tips for a Healthy Cardiovascular System',
@@ -989,7 +990,7 @@ async function createPosts() {
 
 async function main() {
   await createCountry();
-  await createCity();
+  // await createCity();
   await createLocation();
   await createOrganization();
   await createBranch();
