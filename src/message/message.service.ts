@@ -101,12 +101,8 @@ export class MessageService {
 
   public async compose(userId: string, data: ComposeDTO): Promise<Message> {
     const reciever = await this.prisma.user.findUniqueOrThrow({
-      where: {
-        email: data.send_to,
-      },
-      select: {
-        id: true,
-      },
+      where: { email: data.send_to },
+      select: { id: true },
     });
 
     let root_id: string | null = null;
@@ -121,6 +117,16 @@ export class MessageService {
         root_id = parent.root_id ?? parent.id;
       }
     }
+
+    console.log('Compose message data: ', {
+      sender_id: userId,
+      attachments: data.attachments ?? [],
+      subject: data.subject,
+      content: data.content,
+      reciever_id: reciever.id,
+      parent_id: data.parent_id ?? null,
+      root_id: root_id ?? null,
+    });
 
     return this.prisma.message.create({
       data: {
