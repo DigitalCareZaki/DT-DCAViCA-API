@@ -32,7 +32,7 @@ import { DoctorService } from 'src/doctor/doctor.service';
 import { AddAdminDTO } from './dto/addAdmin.dto';
 import { AdminService } from 'src/admin/admin.service';
 import { AddSuperadminDTO } from './dto/addSuperadmin.dto';
-import { AddMedicinesDTO } from './dto/addMedicines.dto';
+import { AddMedicineDTO, AddMedicinesDTO } from './dto/addMedicines.dto';
 
 @Controller('web/organization')
 export class OrganizationWebController extends OrganizationController {
@@ -318,6 +318,19 @@ export class OrganizationWebController extends OrganizationController {
     return this.getOrganizationService().addOrganizationMedicines(
       organizationId,
       data.names,
+    );
+  }
+
+  @HttpCode(HttpStatus.CREATED)
+  @Post('/add-medicine')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.SUPERADMIN, Role.ADMIN)
+  public async addOrganizationMedicine(@Body() data: AddMedicineDTO, @GetUser() user: UserRes) {
+    const organizationId = await this.getOrganizationService().getOrganizationId(user.id);
+
+    return this.getOrganizationService().addOrganizationMedicine(
+      organizationId,
+      data.name,
     );
   }
 

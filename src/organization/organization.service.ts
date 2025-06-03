@@ -435,6 +435,16 @@ export class OrganizationService {
     return 'Success';
   }
 
+  public async addOrganizationMedicine(organizationId: string, name: string) {
+    return await this.prisma.organizationMedication.create({
+      data: {
+        name,
+        organization_id: organizationId,
+      },
+    });
+
+  }
+
   public async getOrganizationMedicines(organizationId: string) {
     return await this.prisma.organizationMedication.findMany({
       where: {
