@@ -66,9 +66,7 @@ const getErrorResponseForPrismaClientKnownRequestError = (
   }
 };
 
-const getResponseMessage = (
-  exception: HttpException | PrismaClientKnownRequestError | unknown,
-): string | undefined => {
+const getResponseMessage = (exception: HttpException | PrismaClientKnownRequestError | unknown): string | undefined => {
   if (exception instanceof HttpException) {
     return getErrorResponseForHttpException(exception);
   } else if (exception instanceof PrismaClientKnownRequestError) {
@@ -81,9 +79,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
   constructor(private readonly httpAdapterHost: HttpAdapterHost) { }
 
   catch(
-    exception: HttpException | PrismaClientKnownRequestError | unknown,
-    host: ArgumentsHost,
-  ): void {
+    exception: HttpException | PrismaClientKnownRequestError | unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const request = ctx.getRequest();
     const response = ctx.getResponse();
@@ -93,7 +89,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (
       // @ts-ignore
-      typeof exception?.response?.message === 'object' &&
+      typeof exception?.response?.message === 'object' && 
       // @ts-ignore
       exception?.response?.statusCode
     ) {
