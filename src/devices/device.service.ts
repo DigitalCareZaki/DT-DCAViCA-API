@@ -94,7 +94,7 @@ export class DeviceService {
         },
       });
 
-      return await this.prisma.device.findMany({
+      const devices = await this.prisma.device.findMany({
         where: {
           OR: [
             {
@@ -163,7 +163,20 @@ export class DeviceService {
           created_at: 'desc',
         },
       });
+
+
+      const enrichedDevices = devices.map((device) => {
+        const isAssigned = device.patient_devices && device.patient_devices.length > 0;
+        return {
+          ...device,
+          assigned: isAssigned,
+        };
+      });
+
+      return enrichedDevices;
     }
+
+
   }
 
   public async getSingleDevice(

@@ -13,7 +13,7 @@ export class AdminService {
   constructor(
     private prisma: PrismaService,
     private helperService: HelpersService,
-  ) {}
+  ) { }
 
   public async addSuperAdmin(data: AddSuperadminDTO, locationId: string) {
     return await this.prisma.user.create({
@@ -84,7 +84,7 @@ export class AdminService {
     if (!currentOrganization.associated_branches[0]?.id)
       throw new Error('No branch is associated with this user');
 
-    const patients = this.prisma.user.findMany({
+    const patients = await this.prisma.user.findMany({
       where: {
         AND: [
           {
@@ -99,7 +99,6 @@ export class AdminService {
           },
         ],
       },
-
       select: {
         id: true,
         email: true,
@@ -108,6 +107,26 @@ export class AdminService {
             emr: true,
             height: true,
             weight: true,
+            doctors: {
+              select: {
+                specialities: {
+                  select: {
+                    title: true,
+                  },
+                },
+                user: {
+                  select: {
+                    id: true,
+                    first_name: true,
+                    last_name: true,
+                  },
+                }
+              },
+              orderBy: {
+                created_at: 'asc', // or any field that determines order
+              },
+              // Note: .take(1) is not allowed here for many-to-many relations
+            },
           },
         },
         first_name: true,
@@ -115,13 +134,40 @@ export class AdminService {
         middle_name: true,
         created_at: true,
       },
+      // select: {
+      //   id: true,
+      //   email: true,
+      //   patient: {
+      //     select: {
+      //       emr: true,
+      //       height: true,
+      //       weight: true,
+      //     },
+      //   },
+      //   first_name: true,
+      //   last_name: true,
+      //   middle_name: true,
+      //   created_at: true,
+      // },
 
       orderBy: {
         created_at: 'desc',
       },
     });
     console.log(patients, 'patients>>>>>>>>>>>>>>');
-    return patients;
+    const enrichedPatients = patients.map((p) => {
+      const firstDoctor = p.patient?.doctors?.[0] || null;
+
+      return {
+        ...p,
+        patient: {
+          ...p.patient,
+          first_assigned_doctor: firstDoctor,
+          department: firstDoctor.specialities[0],
+        },
+      };
+    });
+    return enrichedPatients;
   }
 
   public async getPatientProfile(id: string) {
