@@ -9,9 +9,7 @@ import {
 } from '@nestjs/common';
 
 import { RagService } from './rag.service';
-
 import { GetUser } from 'src/auth/decorators';
-
 import { HealthRes, UserRes } from '@types';
 import type { PatientRag } from './types';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
@@ -60,22 +58,5 @@ export class RagWebController {
       start_date,
       end_date,
     );
-  }
-
-  @Get('/measurement-analytic') // :id -> patient -> user_id
-  @UseGuards(JwtGuard, RolesGuard)
-  @RequirePermission(Role.PATIENT)
-  public async getMeasurementsAnalyticWithLatestReadinggs(
-    @GetUser() user: UserRes, @Param('id') id: string, @Query('start_date') start_date?: string, @Query('end_date') end_date?: string) {
-    const analytic = await this.ragService.getSinglePatientRag(
-      id,
-      user.id,
-      user.role,
-      start_date,
-      end_date,
-    );
-
-    return analytic
-
   }
 }
