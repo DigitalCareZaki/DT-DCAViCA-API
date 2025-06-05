@@ -8,7 +8,7 @@ import { RagService } from './rag.service';
 
 @Controller('app/rag')
 export class RagAppController {
-   constructor(private readonly ragService: RagService) { }
+  constructor(private readonly ragService: RagService) { }
 
   @HttpCode(HttpStatus.OK)
   @Get()
@@ -26,6 +26,17 @@ export class RagAppController {
   public async getMeasurementsAnalyticWithLatestReadings(@GetUser() user: UserRes) {
     const analytic = await this.ragService.getMeasurementsCountByPatientId(user.id);
     const latestReadings = await this.ragService.getPatientLatestReadings(user.id);
+
+    return { analytic, latestReadings };
+  }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @RequirePermission(Role.DOCTOR)
+  @HttpCode(HttpStatus.OK)
+  @Get('/analytic')
+  public async getMeasurementsAnalyticForDoctor(@GetUser() user: UserRes) {
+    const analytic = await this.ragService.getMeasurementsCountByDoctorId(user.id);
+    const latestReadings = await this.ragService.getPatientLatestReadingsForDoctor(user.id);
 
     return { analytic, latestReadings };
   }

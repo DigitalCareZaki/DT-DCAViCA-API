@@ -123,6 +123,24 @@ export class RagService {
     return await this.formatResults(null, null, result);
   }
 
+  public async getMeasurementsCountByDoctorId(doctorId: string) {
+    const result = await this.prisma.measurement.groupBy({
+      by: ['type', 'status'],
+      where: {
+        patient: {
+          doctors: {
+            some: {
+              user_id: doctorId,
+            },
+          },
+        },
+      },
+      _count: { _all: true },
+    });
+
+    return await this.formatResults(null, null, result);
+  }
+
   private validateDates(start_date: string, end_date: string): [string, string] {
     // start_date not provided and end_date provided
     if (!start_date && end_date) throw new AppError('Please provide a start_date if an end_date is specified', HttpStatus.BAD_REQUEST);
@@ -179,6 +197,42 @@ export class RagService {
         patient: {
           user: {
             id: patientId,
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    // Loop through the measurements and assign the first (latest) instance for each type
+    for (const measurement of measurements) {
+      const type = measurement.type.toLowerCase();
+      if (readingTypes.hasOwnProperty(type) && Object.keys(readingTypes[type]).length === 0) {
+        readingTypes[type] = measurement;
+      }
+    }
+
+    return readingTypes;
+  }
+
+  public async getPatientLatestReadingsForDoctor(doctorId: string) {
+    const readingTypes = {
+      ecg: {},
+      spo2: {},
+      bloodpressure: {},
+      bloodglucose: {},
+      temperature: {},
+    };
+
+    // Get all measurements for the patient ordered by created_at descending
+    const measurements = await this.prisma.measurement.findMany({
+      where: {
+        patient: {
+          doctors: {
+            some: {
+              user_id: doctorId,
+            },
           },
         },
       },
