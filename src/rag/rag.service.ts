@@ -86,7 +86,7 @@ export class RagService {
       if (patientId !== userId) throw new AppError('Can not fetch information for this patient', HttpStatus.FORBIDDEN);
     }
 
-    [start_date, end_date] = await this.validateDates(start_date, end_date);
+    // [start_date, end_date] = await this.validateDates(start_date, end_date);
 
     const result = await this.prisma.measurement.groupBy({
       by: ['type', 'status'],
@@ -148,5 +148,39 @@ export class RagService {
     });
 
     return formattedResult;
+  }
+
+  public async getPatientLatestReadings(patientId: string) {
+    const readingTypes = {
+      ECG: {},
+      SPO2: {},
+      BLOODPRESSURE: {},
+      BLOODGLUCOSE: {},
+      TEMPERATURE: {},
+    };
+
+    // Get all measurements for the patient ordered by created_at descending
+    const measurements = await this.prisma.measurement.findMany({
+      where: {
+        patient: {
+          user: {
+            id: patientId,
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    // Loop through the measurements and assign the first (latest) instance for each type
+    for (const measurement of measurements) {
+      const type = measurement.type.toUpperCase();
+      if (readingTypes.hasOwnProperty(type) && Object.keys(readingTypes[type]).length === 0) {
+        readingTypes[type] = measurement;
+      }
+    }
+
+    return readingTypes;
   }
 }

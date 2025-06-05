@@ -19,8 +19,6 @@ import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { Role } from 'src/auth/enums/role.enum';
 
 @Controller('web/rag')
-@UseGuards(JwtGuard, RolesGuard)
-@RequirePermission(Role.DOCTOR, Role.NURSE, Role.PATIENT)
 export class RagWebController {
   constructor(private readonly ragService: RagService) { }
 
@@ -33,6 +31,8 @@ export class RagWebController {
     };
   }
 
+  @UseGuards(JwtGuard, RolesGuard)
+  @RequirePermission(Role.DOCTOR, Role.NURSE, Role.PATIENT)
   @HttpCode(HttpStatus.OK)
   @Get()
   public async getAllPatientsRag(
@@ -48,6 +48,8 @@ export class RagWebController {
     );
   }
 
+  @UseGuards(JwtGuard, RolesGuard)
+  @RequirePermission(Role.DOCTOR, Role.NURSE, Role.PATIENT)
   @HttpCode(HttpStatus.OK)
   @Get('/patients/:id') // :id -> patient -> user_id
   public async getSinglePatientRag(@GetUser() user: UserRes, @Param('id') id: string, @Query('start_date') start_date?: string, @Query('end_date') end_date?: string) {
@@ -58,5 +60,22 @@ export class RagWebController {
       start_date,
       end_date,
     );
+  }
+
+  @Get('/measurement-analytic') // :id -> patient -> user_id
+  @UseGuards(JwtGuard, RolesGuard)
+  @RequirePermission(Role.PATIENT)
+  public async getMeasurementsAnalyticWithLatestReadinggs(
+    @GetUser() user: UserRes, @Param('id') id: string, @Query('start_date') start_date?: string, @Query('end_date') end_date?: string) {
+    const analytic = await this.ragService.getSinglePatientRag(
+      id,
+      user.id,
+      user.role,
+      start_date,
+      end_date,
+    );
+
+    return analytic
+
   }
 }
