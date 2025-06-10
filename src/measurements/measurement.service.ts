@@ -40,13 +40,7 @@ export class MeasurementService {
   }
 
   // this is the new one for pagination implementation
-  public async getMeasurementsOfAllPatients(
-    userId: string,
-    role: UserRole,
-    type: string,
-    page: number,
-    limit: number
-  ): Promise<PaginatedResult<ModifiedMeasurement>> {
+  public async getMeasurementsOfAllPatients(userId: string, role: UserRole, type: string, page: number, limit: number): Promise<PaginatedResult<ModifiedMeasurement>> {
     // Calculate pagination parameters
     const skip = (page - 1) * limit;
 
@@ -980,7 +974,7 @@ export class MeasurementService {
     return measurement;
   }
 
-   public async addMultiValueMeasurement(patientId: string, userId: string, role: UserRole, data: MultiValueMeasurementDTO) {
+  public async addMultiValueMeasurement(patientId: string, userId: string, role: UserRole, data: MultiValueMeasurementDTO) {
     const user = await this.prisma.user.findFirst({
       where: {
         id: userId,
