@@ -93,7 +93,7 @@ export class TabletService {
         },
       });
 
-      return await this.prisma.tablet.findMany({
+      const tablets = await this.prisma.tablet.findMany({
         where: {
           OR: [
             {
@@ -161,6 +161,18 @@ export class TabletService {
           created_at: 'desc',
         },
       });
+
+
+
+      const enrichedtablet = tablets.map((tablet) => {
+        const isAssigned = tablet.patient_tablets && tablet.patient_tablets.length > 0;
+        return {
+          ...tablet,
+          assigned: isAssigned,
+        };
+      });
+
+      return enrichedtablet;
     }
   }
 
