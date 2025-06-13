@@ -18,6 +18,9 @@ export class DoctorProfileUpdateDto {
   address: string;
 
   @IsString()
+  phone_number: string;
+
+  @IsString()
   @IsOptional()
   uri: string;
 }

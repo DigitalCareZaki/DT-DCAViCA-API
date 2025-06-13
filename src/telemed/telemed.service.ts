@@ -21,10 +21,11 @@ import type {
 } from './types';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
 import { SENDGRID_TEMPLATES } from 'src/constant';
+import { TwilioService } from 'src/twilio/twilio.service';
 
 @Injectable()
 export class TelemedService {
-  constructor(private prisma: PrismaService, private mail: SendgridService) { }
+  constructor(private prisma: PrismaService, private mail: SendgridService, private sms: TwilioService) { }
 
   public async createAppointment(user: UserRes, dto: TelemedCreateDTO) {
     const appointment = await this.prisma.appointment.create({
@@ -66,13 +67,29 @@ export class TelemedService {
         id: { in: dto.users },
         role: 'DOCTOR',
       },
-      select: { email: true, username: true },
+      select: { id: true, email: true, username: true, phone_number: true },
     });
 
     console.log('doctor >>>>>>>>>>>', doctors);
 
     if (doctors.length > 0) {
       doctors.forEach(async (doctor) => {
+
+        // send sms to doctor via Twilio
+        const message = `New appointment request. Please check AViCA`;
+        await this.sms.sendSMS(doctor.phone_number, message);
+
+        // Save the SMS log to the database
+        await this.prisma.sms.create({
+          data: {
+            receiver_id: doctor.id,
+            sender_id: user.id,
+            to: doctor.phone_number,
+            body: message,
+          },
+        });
+
+        // send email to doctor via Sendgrid
         const mailPayload = {
           to: [doctor.email],
           // to: [doctor.email],

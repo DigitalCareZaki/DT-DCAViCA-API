@@ -16,10 +16,11 @@ import { ReadingRangeDTO } from './dto';
 
 import type { HealthRes, UserRes } from '@types';
 import type { PatientReadingRangeAlert } from './types';
+import { TwilioService } from 'src/twilio/twilio.service';
 
 @Controller('web/measurements/ranges')
 export class ReadingRangeWebController extends ReadingRangeController {
-  constructor(readingRange: ReadingRangeService) {
+  constructor(readingRange: ReadingRangeService, private sms: TwilioService) {
     super(readingRange);
   }
 
@@ -42,7 +43,7 @@ export class ReadingRangeWebController extends ReadingRangeController {
   }
 
   @HttpCode(HttpStatus.CREATED)
-  @Post()
+  @Post('/')
   public async createOrUpdatePatientAlert(
     @GetUser() user: UserRes,
     @Body() data: ReadingRangeDTO,

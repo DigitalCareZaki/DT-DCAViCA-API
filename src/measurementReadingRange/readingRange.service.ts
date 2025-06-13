@@ -288,7 +288,7 @@ export class ReadingRangeService {
           contacts.forEach(async (contact) => {
             const message = `Your patient ${alert.patient.user.first_name} has an alert for ${alert.type} of ${alert.range[0]}/${alert.range[1]}`;
             await this.sms.sendSMS(contact.number, message);
-            
+
             // Save the SMS log to the database
             await this.prisma.sms.create({
               data: {
