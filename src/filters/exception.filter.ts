@@ -89,7 +89,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (
       // @ts-ignore
-      typeof exception?.response?.message === 'object' && 
+      typeof exception?.response?.message === 'object' &&
       // @ts-ignore
       exception?.response?.statusCode
     ) {
@@ -110,11 +110,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       responseBody = {
         statusCode: httpStatus,
         success: false,
-        data: {
-          timestamp: new Date().toISOString(),
-          path: httpAdapter.getRequestUrl(request),
-          message: getResponseMessage(exception) || 'Something went wrong',
-        },
+        message: (Array.isArray(getResponseMessage(exception)) && getResponseMessage(exception).length > 0) ?
+          getResponseMessage(exception)[0] :
+          'Something went wrong',
+        data: {},
+        //   timestamp: new Date().toISOString(),
+        //   path: httpAdapter.getRequestUrl(request),
+        //   message: getResponseMessage(exception) || 'Something went wrong',
+        // },
       };
     else
       responseBody = {
