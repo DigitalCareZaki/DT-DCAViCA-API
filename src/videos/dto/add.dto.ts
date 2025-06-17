@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsUrl, Validate } from 'class-validator';
 
-import { ValidateVideoPriority, ValidateVideoCategory } from 'src/validators';
+import { ValidateVideoPriority, ValidateVideoCategory, ValidateMeasurementType } from 'src/validators';
 
 export class AddVideosDTO {
   @IsString()
@@ -22,6 +22,6 @@ export class AddVideosDTO {
 
   @IsString()
   @IsNotEmpty()
-  @Validate(ValidateVideoCategory)
+  @Validate(ValidateMeasurementType)
   category: string;
 }

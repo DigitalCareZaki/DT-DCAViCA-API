@@ -819,7 +819,7 @@ model Videos {
 
   uri String
 
-  category VideoCategory
+  category MeasurementType
   priority VideoPriority @default(UNDEFINED)
 
   author_id String

@@ -4,11 +4,11 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 import { AddVideosDTO } from './dto/add.dto';
 
-import type { VideoPriority, VideoCategory } from '@prisma/client';
+import type { VideoPriority, VideoCategory, MeasurementType } from '@prisma/client';
 
 @Injectable()
 export class VideosService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   public async getVideos(organizationId: string) {
     return await this.prisma.videos.findMany({
@@ -43,7 +43,7 @@ export class VideosService {
         description: data.description,
         uri: data.uri,
         priority: data.priority as VideoPriority,
-        category: data.category as VideoCategory,
+        category: data.category as MeasurementType,
         author: {
           connect: {
             id: userId,
