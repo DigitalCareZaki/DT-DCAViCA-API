@@ -43,11 +43,8 @@ export class ReadingRangeWebController extends ReadingRangeController {
   }
 
   @HttpCode(HttpStatus.CREATED)
-  @Post('/')
-  public async createOrUpdatePatientAlert(
-    @GetUser() user: UserRes,
-    @Body() data: ReadingRangeDTO,
-  ): Promise<PatientReadingRangeAlert> {
+  @Post('/create')
+  public async createOrUpdatePatientAlert(@GetUser() user: UserRes, @Body() data: ReadingRangeDTO): Promise<PatientReadingRangeAlert> {
     return this.getReadingRangeService().createOrUpdateAlertForPatient(
       user,
       data,
