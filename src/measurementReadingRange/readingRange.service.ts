@@ -64,11 +64,7 @@ export class ReadingRangeService {
     });
   }
 
-  public async createOrUpdateAlertForPatient(
-    user: UserRes,
-    data: ReadingRangeDTO,
-  ): Promise<PatientReadingRangeAlert> {
-
+  public async createOrUpdateAlertForPatient(user: UserRes, data: ReadingRangeDTO): Promise<PatientReadingRangeAlert> {
     const doesPatientExistAndIsAssignedToUser = await this.prisma.patient.findFirst({
       where: {
         AND: [
@@ -106,16 +102,26 @@ export class ReadingRangeService {
 
     const alertAlreadyExists = await this.prisma.patientMeasurementRange.findFirst({
       where: {
-        patient: {
-          user_id: data.patient_id,
-        },
-        user_id: user.id,
-        type: data.type as MeasurementType,
+        AND: [
+          {
+            patient: {
+              user_id: data.patient_id,
+            }
+          },
+          {
+            user_id: user.id,
+          },
+          {
+            type: data.type as MeasurementType,
+          }
+        ]
       },
       select: {
         id: true,
       },
     });
+
+    console.log('Alert check result:', alertAlreadyExists); // Add logging to debug
 
     if (!alertAlreadyExists) {
       const alt = await this.prisma.patientMeasurementRange.create({
@@ -167,6 +173,8 @@ export class ReadingRangeService {
           updated_at: true,
         },
       });
+
+
       if (alt.send_sms) {
         const message = `Your patient ${alt.patient.user.first_name} has an alert for ${alt.type} of ${alt.range[0]}/${alt.range[1]}`;
         await this.sms.sendSMS(user.phone_number, message);
