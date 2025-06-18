@@ -38,7 +38,7 @@ export class UsersController {
     if (dto.password.length < 8) throw new AppError('Password must be at least 8 characters long', 400);
     if (!dto.email.includes('@') || !dto.email.includes('.')) throw new AppError('Email must be a valid email address', 400);
 
-    return this.authService.appResetPassword(dto);
+    return this.authService.resetPassword(dto);
   }
 
   @UseGuards(JwtGuard, RolesGuard)
