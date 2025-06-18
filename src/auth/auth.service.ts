@@ -18,6 +18,7 @@ import {
 import { AppError } from 'src/errors';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
 import { SENDGRID_TEMPLATES } from 'src/constant';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -279,6 +280,87 @@ export class AuthService {
 
     return { success: true, message: 'Password reset successful' };
   }
+
+  public async appResetPassword(payload: ResetPasswordDTO) {
+    const user = await this.prisma.user.findFirst({
+      where: { email: payload.email },
+      select: { id: true },
+    });
+
+    if (!user) throw new AppError('User not found', HttpStatus.NOT_FOUND);
+
+    const hash = this.otpService.encryptOtp(payload.otp);
+
+    const otpDB = await this.prisma.oTP.findFirst({
+      where: {
+        AND: [
+          {
+            user_id: user.id,
+          },
+          {
+            used: false,
+          },
+          {
+            expired: false,
+          },
+        ],
+      },
+
+      select: {
+        id: true,
+        otp: true,
+        attempts: true,
+        life: true,
+      },
+    });
+
+    if (!otpDB) throw new AppError('Please generate new reset password request', HttpStatus.BAD_REQUEST);
+    if (otpDB.attempts >= 3) throw new AppError('Too many attempts', HttpStatus.BAD_REQUEST);
+    if (otpDB.life < new Date(Date.now())) throw new AppError('OTP expired', HttpStatus.BAD_REQUEST);
+
+    console.log('testign >>>>>> ');
+
+    if (otpDB.otp !== hash) {
+      await this.prisma.oTP.update({
+        where: {
+          id: otpDB.id,
+        },
+        data: {
+          attempts: {
+            increment: 1,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      throw new AppError('Invalid OTP', HttpStatus.BAD_REQUEST);
+    }
+
+    const otp = await this.prisma.oTP.update({
+      where: {
+        id: otpDB.id,
+      },
+      data: {
+        used: true,
+      },
+    });
+
+    console.log('otp >>>>>>>>>>>>>', otp);
+
+    const userObj = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: await argon.hash(payload.password),
+      },
+    });
+
+    console.log('userObj >>>>>>>>>>>>>', userObj);
+
+    return { success: true, message: 'Password reset successful' };
+  }
+
 
   public async existsPincode(user: UserRes) {
     return await this.prisma.user.findFirstOrThrow({
