@@ -81,24 +81,55 @@ export class DoctorService {
     id: string,
     data: DoctorProfileUpdateDto,
   ): Promise<any> {
-    return await this.prisma.user.update({
-      where: {
-        id,
-      },
 
-      data: {
-        title: data.title,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        middle_name: data.middle_name,
-        uri: data.uri,
-        location: {
-          update: {
-            address: data.address,
+    console.log(data, 'data in updateProfile');
+    try {
+      const user = await this.prisma.user.update({
+        where: {
+          id,
+        },
+
+        data: {
+          title: data.title,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          middle_name: data.middle_name,
+          phone_number: data.phone_number,
+          uri: data.uri,
+          location: {
+            update: {
+              address: data.address,
+            },
           },
         },
-      },
-    });
+      });
+      console.log('User profile updated successfully:', user);
+      return user
+
+
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+    }
+
+    // return await this.prisma.user.update({
+    //   where: {
+    //     id,
+    //   },
+
+    //   data: {
+    //     title: data.title,
+    //     first_name: data.first_name,
+    //     last_name: data.last_name,
+    //     middle_name: data.middle_name,
+    //     phone_number: data.phone_number,
+    //     uri: data.uri,
+    //     location: {
+    //       update: {
+    //         address: data.address,
+    //       },
+    //     },
+    //   },
+    // });
   }
 
   public async current(id: string): Promise<CurrentRes> {

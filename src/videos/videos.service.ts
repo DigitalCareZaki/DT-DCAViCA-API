@@ -37,19 +37,27 @@ export class VideosService {
   }
 
   public async addVideo(data: AddVideosDTO, userId: string) {
-    return await this.prisma.videos.create({
-      data: {
-        title: data.title,
-        description: data.description,
-        uri: data.uri,
-        priority: data.priority as VideoPriority,
-        category: data.category as MeasurementType,
-        author: {
-          connect: {
-            id: userId,
+
+    try {
+      const video = await this.prisma.videos.create({
+        data: {
+          title: data.title,
+          description: data.description,
+          uri: data.uri,
+          priority: data.priority as VideoPriority,
+          category: data.category as MeasurementType,
+          author: {
+            connect: {
+              id: userId,
+            },
           },
         },
-      },
-    });
+      });
+      return video;
+
+    } catch (error) {
+      console.log('error', error);
+    }
+
   }
 }

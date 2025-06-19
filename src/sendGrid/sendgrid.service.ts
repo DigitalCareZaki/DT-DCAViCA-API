@@ -3,7 +3,7 @@ import sgMail = require('@sendgrid/mail');
 import * as sgClient from '@sendgrid/client';
 import { SendMailPayload } from '@types';
 import { PrismaService } from 'src/prisma/prisma.service';
-
+import { MailDataRequired } from '@sendgrid/mail';
 @Injectable()
 export class SendgridService {
   constructor(private readonly prisma: PrismaService) {
@@ -11,15 +11,29 @@ export class SendgridService {
     sgClient.setApiKey(process.env.SENDGRID_API_KEY);
   }
 
+
+
   async sendSgMail({ to, data, templateId }: any): Promise<void> {
     console.log('sendSgMail data >>>>>> ', data);
 
-    const recipientEmail = to;
 
+    const recipientEmail = to;
+    console.log('recipientEmail >>>>>> ', recipientEmail);
     // Check if user with this email exists
+
     const user = await this.prisma.user.findUnique({
-      where: { email: recipientEmail },
+      where: { email: recipientEmail[0] },
     });
+
+    if (!user) {
+      console.warn('User not found with email:', to);
+      // Optionally return or allow sending anyway
+    } else {
+      console.log('User found:', user.id);
+    }
+    // const user = await this.prisma.user.findUnique({
+    //   where: { email: recipientEmail },
+    // });
 
     console.log('userExists >>>>>> ', user.id);
 
@@ -28,7 +42,7 @@ export class SendgridService {
       console.log('Template not found');
       return;
     }
-
+    console.log('userExists >>>>>> ', template);
     const rawHtml = template.versions?.[0].html_content || '';
     const renderedHtml = this.renderDynamicTemplate(rawHtml, data);
 
@@ -46,7 +60,7 @@ export class SendgridService {
       await this.prisma.emails.create({
         data: {
           subject: template.versions?.[0].subject,
-          to: recipientEmail,
+          to: recipientEmail[0],
           sended: true,
           html: renderedHtml,
         },
@@ -55,7 +69,7 @@ export class SendgridService {
       console.log('sgMail.send error >>>>>>>> ', err);
       await this.prisma.emails.create({
         data: {
-          to: recipientEmail,
+          to: recipientEmail[0],
           sended: false,
           subject: template.versions?.[0].subject,
           html: renderedHtml,

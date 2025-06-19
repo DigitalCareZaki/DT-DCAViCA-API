@@ -93,18 +93,6 @@ CREATE TABLE "SlotParent" (
 );
 
 -- CreateTable
-CREATE TABLE "EmailTemplate" (
-    "id" TEXT NOT NULL,
-    "key" TEXT NOT NULL,
-    "active" BOOLEAN NOT NULL DEFAULT true,
-    "subject" TEXT NOT NULL,
-    "html" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "EmailTemplate_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Emails" (
     "id" TEXT NOT NULL,
     "subject" TEXT NOT NULL,
@@ -581,8 +569,11 @@ CREATE TABLE "Message" (
     "attachments" TEXT[],
     "starred" BOOLEAN NOT NULL DEFAULT false,
     "deleted" BOOLEAN NOT NULL DEFAULT false,
+    "is_read" BOOLEAN NOT NULL DEFAULT false,
     "sender_id" TEXT NOT NULL,
     "reciever_id" TEXT NOT NULL,
+    "parent_id" TEXT,
+    "root_id" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -644,7 +635,7 @@ CREATE TABLE "Videos" (
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "uri" TEXT NOT NULL,
-    "category" "VideoCategory" NOT NULL,
+    "category" "MeasurementType" NOT NULL,
     "priority" "VideoPriority" NOT NULL DEFAULT 'UNDEFINED',
     "author_id" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -653,13 +644,15 @@ CREATE TABLE "Videos" (
 );
 
 -- CreateTable
-CREATE TABLE "SmsLog" (
+CREATE TABLE "Sms" (
     "id" TEXT NOT NULL,
     "to" TEXT NOT NULL,
     "body" TEXT NOT NULL,
+    "sender_id" TEXT NOT NULL,
+    "receiver_id" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "SmsLog_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Sms_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -684,6 +677,14 @@ CREATE TABLE "_patientDoctors" (
     "B" TEXT NOT NULL,
 
     CONSTRAINT "_patientDoctors_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateTable
+CREATE TABLE "_nurseSpecilization" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_nurseSpecilization_AB_pkey" PRIMARY KEY ("A","B")
 );
 
 -- CreateTable
@@ -811,6 +812,9 @@ CREATE INDEX "_doctorSpecilization_B_index" ON "_doctorSpecilization"("B");
 
 -- CreateIndex
 CREATE INDEX "_patientDoctors_B_index" ON "_patientDoctors"("B");
+
+-- CreateIndex
+CREATE INDEX "_nurseSpecilization_B_index" ON "_nurseSpecilization"("B");
 
 -- CreateIndex
 CREATE INDEX "_patientNurses_B_index" ON "_patientNurses"("B");
@@ -984,6 +988,9 @@ ALTER TABLE "Message" ADD CONSTRAINT "Message_sender_id_fkey" FOREIGN KEY ("send
 ALTER TABLE "Message" ADD CONSTRAINT "Message_reciever_id_fkey" FOREIGN KEY ("reciever_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Message" ADD CONSTRAINT "Message_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "Message"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Chat" ADD CONSTRAINT "Chat_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1005,6 +1012,12 @@ ALTER TABLE "Notification" ADD CONSTRAINT "Notification_reciever_id_fkey" FOREIG
 ALTER TABLE "Videos" ADD CONSTRAINT "Videos_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Sms" ADD CONSTRAINT "Sms_sender_id_fkey" FOREIGN KEY ("sender_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Sms" ADD CONSTRAINT "Sms_receiver_id_fkey" FOREIGN KEY ("receiver_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "_doctorDepartment" ADD CONSTRAINT "_doctorDepartment_A_fkey" FOREIGN KEY ("A") REFERENCES "Department"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1021,6 +1034,12 @@ ALTER TABLE "_patientDoctors" ADD CONSTRAINT "_patientDoctors_A_fkey" FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE "_patientDoctors" ADD CONSTRAINT "_patientDoctors_B_fkey" FOREIGN KEY ("B") REFERENCES "Patient"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_nurseSpecilization" ADD CONSTRAINT "_nurseSpecilization_A_fkey" FOREIGN KEY ("A") REFERENCES "Nurse"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_nurseSpecilization" ADD CONSTRAINT "_nurseSpecilization_B_fkey" FOREIGN KEY ("B") REFERENCES "Specialization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_patientNurses" ADD CONSTRAINT "_patientNurses_A_fkey" FOREIGN KEY ("A") REFERENCES "Nurse"("id") ON DELETE CASCADE ON UPDATE CASCADE;
