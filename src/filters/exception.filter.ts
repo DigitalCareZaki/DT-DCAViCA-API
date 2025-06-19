@@ -84,12 +84,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest();
     const response = ctx.getResponse();
     const isMobile = request.headers?.ismobile;
-
     const { httpAdapter } = this.httpAdapterHost;
 
     if (
       // @ts-ignore
-      typeof exception?.response?.message === 'object' && 
+      typeof exception?.response?.message === 'object' &&
       // @ts-ignore
       exception?.response?.statusCode
     ) {
@@ -110,11 +109,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       responseBody = {
         statusCode: httpStatus,
         success: false,
-        data: {
-          timestamp: new Date().toISOString(),
-          path: httpAdapter.getRequestUrl(request),
-          message: getResponseMessage(exception) || 'Something went wrong',
-        },
+        message: (Array.isArray(getResponseMessage(exception)) && getResponseMessage(exception).length > 0)
+          ? getResponseMessage(exception)[0]
+          : getResponseMessage(exception) || 'Something went wrong',
+        data: {},
       };
     else
       responseBody = {

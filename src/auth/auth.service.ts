@@ -18,6 +18,7 @@ import {
 import { AppError } from 'src/errors';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
 import { SENDGRID_TEMPLATES } from 'src/constant';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService {

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { AppError } from '../errors';
 import { AuthService } from 'src/auth/auth.service';
@@ -10,6 +10,7 @@ import { MultiValueMeasurementDTO, SingleValueMeasurementDTO } from 'src/measure
 import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 import { Role } from 'src/auth/enums/role.enum';
+import { Response } from 'express';
 
 @Controller('users')
 export class UsersController {
@@ -31,9 +32,12 @@ export class UsersController {
     return this.usersService.getProfile(id);
   }
 
-  @HttpCode(HttpStatus.OK)
   @Post('reset-password')
-  public async resetPassword(@Body() dto: ResetPasswordDTO) {
+  public async resetPassword(@Body() dto: { otp: string; email: string; password: string }) {
+    if (!dto.otp || !dto.email || !dto.password) throw new AppError('OTP, email, and password are required', 400);
+    if (dto.password.length < 8) throw new AppError('Password must be at least 8 characters long', 400);
+    if (!dto.email.includes('@') || !dto.email.includes('.')) throw new AppError('Email must be a valid email address', 400);
+
     return this.authService.resetPassword(dto);
   }
 
@@ -49,7 +53,7 @@ export class UsersController {
     );
   }
 
-   @UseGuards(JwtGuard, RolesGuard)
+  @UseGuards(JwtGuard, RolesGuard)
   @RequirePermission(Role.DOCTOR, Role.NURSE, Role.PATIENT)
   @Post('/multi-value-measurement/:patientId')
   public async createMultiValueMeasurement(@GetUser() user: UserRes, @Param('patientId') patientId: string, @Body() data: MultiValueMeasurementDTO) {
