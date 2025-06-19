@@ -918,14 +918,14 @@ export class DoctorService {
   }
 
   public async getSpecialityList() {
-    const specializationList = await this.prisma.specialization.findMany({
+    const departmentList = await this.prisma.department.findMany({
       select: {
         id: true,
         title: true,
       },
     });
 
-    return specializationList;
+    return departmentList;
   }
 
   public async getDoctorsBySpeciality(specialityId: string) {
