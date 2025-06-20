@@ -8,7 +8,7 @@ export interface HealthRes {
 export * from './pagination';
 
 export interface SendMailPayload {
-  to: string[];
+  to: string | string[];
   data: any;
   templateId: string;
 };

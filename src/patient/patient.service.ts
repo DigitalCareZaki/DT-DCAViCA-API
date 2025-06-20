@@ -46,6 +46,8 @@ export class PatientService {
       },
     });
 
+    console.log('res>>>>>>>>>>>>>>>>>>>>>>>>', res);
+
     const patient = await this.prisma.patient.create({
       data: {
         height: data.height,
@@ -88,18 +90,18 @@ export class PatientService {
       });
     }
 
-    const mailPayload = {
-      to: [patient.user.email],
-      data: {
-        subject: 'Welcome to AViCA',
-        patientName: patient.user.username,
-        patientEmail: patient.user.email,
-        patientPassword: data.password,
-      },
-      templateId: SENDGRID_TEMPLATES.PATIENT_REGISTRATION,
-    } satisfies SendMailPayload;
+    // const mailPayload = {
+    //   to: [patient.user.email],
+    //   data: {
+    //     subject: 'Welcome to AViCA',
+    //     patientName: patient.user.username,
+    //     patientEmail: patient.user.email,
+    //     patientPassword: data.password,
+    //   },
+    //   templateId: SENDGRID_TEMPLATES.PATIENT_REGISTRATION,
+    // } satisfies SendMailPayload;
 
-    await this.mail.sendSgMail(mailPayload);
+    // await this.mail.sendSgMail(mailPayload);
 
     return true;
   }

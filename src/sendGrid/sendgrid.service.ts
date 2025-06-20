@@ -4,6 +4,7 @@ import * as sgClient from '@sendgrid/client';
 import { SendMailPayload } from '@types';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MailDataRequired } from '@sendgrid/mail';
+import { AppError } from '@errors';
 @Injectable()
 export class SendgridService {
   constructor(private readonly prisma: PrismaService) {
@@ -22,10 +23,13 @@ export class SendgridService {
     // Check if user with this email exists
 
     const user = await this.prisma.user.findUnique({
-      where: { email: recipientEmail[0] },
+      where: { email: recipientEmail },
     });
 
+    console.log('object user >>>>>> ', user);
+
     if (!user) {
+      // throw new AppError('User not found', 404)
       console.warn('User not found with email:', to);
       // Optionally return or allow sending anyway
     } else {
@@ -38,6 +42,8 @@ export class SendgridService {
     console.log('userExists >>>>>> ', user.id);
 
     const template = await this.fetchTemplateById(templateId);
+
+    console.log('object template >>>>>> ', template);
     if (!template) {
       console.log('Template not found');
       return;
@@ -60,7 +66,7 @@ export class SendgridService {
       await this.prisma.emails.create({
         data: {
           subject: template.versions?.[0].subject,
-          to: recipientEmail[0],
+          to: recipientEmail,
           sended: true,
           html: renderedHtml,
         },
@@ -69,7 +75,7 @@ export class SendgridService {
       console.log('sgMail.send error >>>>>>>> ', err);
       await this.prisma.emails.create({
         data: {
-          to: recipientEmail[0],
+          to: recipientEmail,
           sended: false,
           subject: template.versions?.[0].subject,
           html: renderedHtml,

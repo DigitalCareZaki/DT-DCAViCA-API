@@ -124,31 +124,29 @@ export class OrganizationWebController extends OrganizationController {
   @Post('/patient')
   @UseGuards(RolesGuard)
   @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER)
-  public async createPatient(
-    @Body() data: AddPatientDTO,
-    @GetUser() user: UserRes,
-  ): Promise<boolean> {
-    const organizationId =
-      await this.getOrganizationService().getOrganizationId(user.id);
+  public async createPatient(@Body() data: AddPatientDTO, @GetUser() user: UserRes): Promise<boolean> {
+    const organizationId = await this.getOrganizationService().getOrganizationId(user.id);
+    console.log('organizationId <<<<< >>>>> ', organizationId);
 
     const locationId = await this.getLocationService().createLocation(
       data.address,
       data.city_id,
     );
 
-    const res = this.getPatientService().addPatient(
+    const res = await this.getPatientService().addPatient(
       data,
       organizationId,
       locationId,
     );
 
-    this.getOrganizationService().sendOnBoardEmail({
+    await this.getOrganizationService().sendOnBoardEmail({
       email: data.email,
       first_name: data.first_name,
-      last_name: data.last_name,
       middle_name: data.middle_name,
+      last_name: data.last_name,
       role: 'PATIENT',
       title: data.title,
+      password: data.password,
     });
 
     return res;
@@ -183,6 +181,7 @@ export class OrganizationWebController extends OrganizationController {
       middle_name: data.middle_name,
       role: 'DOCTOR',
       title: data.title,
+      password: data.password,
     });
 
     return res;
@@ -217,6 +216,7 @@ export class OrganizationWebController extends OrganizationController {
       middle_name: data.middle_name,
       role: 'NURSE',
       title: data.title,
+      password: data.password,
     });
 
     return res;
@@ -241,6 +241,7 @@ export class OrganizationWebController extends OrganizationController {
       middle_name: data.middle_name,
       role: 'SUPERADMIN',
       title: data.title,
+      password: data.password,
     });
 
     return true;
@@ -274,6 +275,7 @@ export class OrganizationWebController extends OrganizationController {
       middle_name: data.middle_name,
       role: 'ADMIN',
       title: data.title,
+      password: data.password,
     });
 
     return res;

@@ -8,16 +8,18 @@ import type {
   SelectOrganizationDepartmentProps,
 } from './types';
 import AppError from '../errors/AppError';
-import { UserRes, UserRole } from '@types';
-import { allowedQueryRoles } from 'src/constant';
+import { SendMailPayload, UserRes, UserRole } from '@types';
+import { allowedQueryRoles, SENDGRID_TEMPLATES } from 'src/constant';
 import { Role } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { SendgridService } from 'src/sendGrid/sendgrid.service';
 
 @Injectable()
 export class OrganizationService {
   constructor(
     private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
+    private readonly sendgridService: SendgridService
   ) { }
 
   public async getOrganization(userId: string): Promise<CurrentOrganization> {
@@ -472,26 +474,31 @@ export class OrganizationService {
     email,
     first_name,
     middle_name,
-    last_name,
     role,
     title,
+    last_name,
+    password
   }: {
     email: string;
     first_name: string;
-    middle_name: string;
+    middle_name?: string;
     last_name: string;
     role: UserRole;
-    title: string;
-  }): Promise<void> {
-    const payload = {
+    title?: string;
+    password: string;
+  }) {
+    const mailPayload = {
       to: email,
       data: {
-        name: this.getName(first_name, middle_name, last_name, role, title),
+        subject: 'Welcome to AViCA',
+        patientName: `${first_name}, ${last_name}`,
+        patientEmail: email,
+        patientPassword: password,
       },
-      template: 'template:onboarding',
-    };
+      templateId: SENDGRID_TEMPLATES.ONBOARDING,
+    } satisfies SendMailPayload;
 
-    this.eventEmitter.emitAsync('send_email', payload);
+    await this.sendgridService.sendSgMail(mailPayload);
   }
 
   private getName(
