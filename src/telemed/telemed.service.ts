@@ -41,7 +41,15 @@ export class TelemedService {
     });
 
     console.log('appointment >>>>>>>>>>>', appointment.id);
-
+    if (user.role == 'PATIENT') {
+      return this.prisma.appointmentParticipants.create({
+        data: {
+          status: 'PENDING',
+          user_id: user.id,
+          appointment_id: appointment.id,
+        },
+      });
+    }
     // dto.users is doctor id
     const records = dto.users.map((user) => {
       return this.prisma.appointmentParticipants.create({
@@ -266,6 +274,9 @@ export class TelemedService {
       },
     });
   }
+
+
+
 
   public async patientAppointments(
     patientId: string,

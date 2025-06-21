@@ -84,6 +84,8 @@ export class TelemedWebController {
   ): Promise<RequestedAppointmentProps[]> {
     return this.telemedService.requested(user);
   }
+
+
   // @HttpCode(HttpStatus.OK)
   // @Get('/patientappointments')
   // public async patientAppointments(
