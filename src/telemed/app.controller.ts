@@ -19,18 +19,19 @@ export class TelemedAppController {
 
   @Get('/appointments')
   public async getAppointments(@GetUser() user: UserRes, @Query('page') page?: number, @Query('limit') limit?: number) {
-    const appointments = await this.telemedService.appointmentAnalytics(user, page ? +page : 1, limit ? +limit : 10);
+    let appointments = await this.telemedService.appointmentAnalytics(user, page ? +page : 1, limit ? +limit : 10);
     const analytics = await this.telemedService.appointmentAnalyticsGroup(user);
 
     return {
       analytics,
-      list: appointments.data,
+      Appointmentlist: appointments.Appointmentlist,
     };
   }
 
   @Get('/report/:appointmentId')
   public async getAppointmentReport(@Param('appointmentId') appointmentId: string) {
     const appointment = await this.telemedService.details(appointmentId);
+    console.log(appointment, '=================>>>>');
     if (!appointment) {
       throw new AppError('Appointment not found', HttpStatus.NOT_FOUND);
     }
