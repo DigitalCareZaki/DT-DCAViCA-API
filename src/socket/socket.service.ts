@@ -9,7 +9,7 @@ export class SocketService {
   private appointments = new Map<string, AppointmentProps[]>();
   private appointmentChat = new Map<string, MeetingChatProps[]>();
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   public onAppointmentJoin(payload: AppointmentProps): any {
     if (!payload.appointment_id) return;
@@ -50,24 +50,30 @@ export class SocketService {
     key: string;
     participants: AppointmentProps[];
   } {
-    if (!user_id) return;
+    try {
+      if (!user_id) return;
 
-    let appointment_id: string | null = null;
+      let appointment_id: string | null = null;
 
-    this.appointments.forEach((users, key) => {
-      const existedUser = users.find((user) => user.user_id === user_id);
-      if (!existedUser) return;
+      this.appointments.forEach((users, key) => {
+        const existedUser = users.find((user) => user.user_id === user_id);
+        if (!existedUser) return;
 
-      const data = this.appointments.get(key);
-      const computed = data.filter((user) => user.user_id !== user_id);
-      this.appointments.set(key, computed);
-      appointment_id = key;
-    });
+        const data = this.appointments.get(key);
+        const computed = data.filter((user) => user.user_id !== user_id);
+        this.appointments.set(key, computed);
+        appointment_id = key;
+      });
 
-    return {
-      key: appointment_id,
-      participants: this.appointments.get(appointment_id),
-    };
+      return {
+        key: appointment_id,
+        participants: this.appointments.get(appointment_id),
+      };
+    } catch (err) {
+      console.error('Error in onParticipantLeft:', err);
+      return { key: '', participants: [] };
+    }
+
   }
 
   public OnmeetingControlls(
