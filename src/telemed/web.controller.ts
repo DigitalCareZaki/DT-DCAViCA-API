@@ -144,6 +144,7 @@ export class TelemedWebController {
   ): Promise<SlotParent> {
     // console.log(`Updating calendar for user: ${user.id}`);
     // console.log('Data: ', data);
+    
     return this.telemedService.updateCalendar(user, data);
   }
 

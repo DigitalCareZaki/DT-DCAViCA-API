@@ -41,28 +41,31 @@ export class TelemedService {
     });
 
     console.log('appointment >>>>>>>>>>>', appointment.id);
-    if (user.role == 'PATIENT') {
-      return this.prisma.appointmentParticipants.create({
-        data: {
-          status: 'PENDING',
-          user_id: user.id,
-          appointment_id: appointment.id,
-        },
-      });
-    }
-    // dto.users is doctor id
-    const records = dto.users.map((user) => {
-      return this.prisma.appointmentParticipants.create({
-        data: {
-          status: 'PENDING',
-          user_id: user,
-          appointment_id: appointment.id,
-        },
-      });
+
+    await this.prisma.appointmentParticipants.create({
+      data: {
+        status: 'PENDING',
+        user_id: user.id,
+        appointment_id: appointment.id,
+      },
     });
 
-    await this.prisma.$transaction(records);
+    // dto.users is doctor id
+    if (dto.users.length > 0) {
+      dto.users.forEach(async (user) => {
+        console.log(user, '===========>>>user')
+        await this.prisma.appointmentParticipants.create({
+          data: {
+            status: 'PENDING',
+            user_id: user,
+            appointment_id: appointment.id,
+          },
+        });
 
+      });
+
+      // await this.prisma.$transaction(records);
+    }
     await this.prisma.room.create({
       data: {
         appointment_id: appointment.id,
@@ -431,32 +434,25 @@ export class TelemedService {
     }
 
     if (user.role === 'PATIENT') {
+
       [data, totalItems] = await this.prisma.$transaction([
-        this.prisma.appointment.findMany({
-          where: { organizer_id: user.id },
+        this.prisma.appointmentParticipants.findMany({
+          where: { user_id: user.id },
           skip,
           take: limit,
           select: {
             id: true,
-            title: true,
-            description: true,
-            about: true,
-            type: true,
             status: true,
-            start_date: true,
-            organizer: {
+            appointment: {
               select: {
                 id: true,
-                first_name: true,
-                last_name: true,
-                middle_name: true,
-                role: true,
-              },
-            },
-            participants: {
-              select: {
-                id: true,
-                user: {
+                title: true,
+                description: true,
+                about: true,
+                type: true,
+                status: true,
+                start_date: true,
+                organizer: {
                   select: {
                     id: true,
                     first_name: true,
@@ -465,16 +461,31 @@ export class TelemedService {
                     role: true,
                   },
                 },
+                participants: {
+                  select: {
+                    id: true,
+                    user: {
+                      select: {
+                        id: true,
+                        first_name: true,
+                        last_name: true,
+                        middle_name: true,
+                        role: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },
         }),
         this.prisma.appointment.count({ where: { organizer_id: user.id } }),
       ]);
-
+      console.log('data:===========>>', JSON.stringify(data, null, 2));
       // Normalize for patient
       data = data.map(item => {
-        const doctor = item.participants.find(p => p.user.role === 'DOCTOR')?.user;
+        // console.log(JSON.stringify(item.appointment.participants, null, 2), 'item======<>')
+        const doctor = item.appointment.participants.find(p => p.user.role === 'DOCTOR')?.user;
         return {
           id: item.id,
           status: item.status,
@@ -715,13 +726,10 @@ export class TelemedService {
       'Canceled': '0',
     };
 
-    const appointments = await this.prisma.appointment.groupBy({
+    const appointments = await this.prisma.appointmentParticipants.groupBy({
       by: ['status'],
       where: {
-        OR: [
-          { organizer: { id: user.id } },
-          { participants: { some: { user_id: user.id } } },
-        ],
+        user_id: user.id,
       },
       _count: {
         status: true,
@@ -737,6 +745,44 @@ export class TelemedService {
 
     return result;
   }
+  // public async appointmentAnalyticsGroup(user: UserRes) {
+  //   const statusLabels: Record<string, string> = {
+  //     'ACTIVE': 'Active',
+  //     'COMPLETED': 'Complete',
+  //     'PENDING': 'Pending',
+  //     'CANCELLED': 'Canceled',
+  //     // Add other statuses if needed
+  //   };
+
+  //   const result: Record<string, string> = {
+  //     'Active': '0',
+  //     'Complete': '0',
+  //     'Pending': '0',
+  //     'Canceled': '0',
+  //   };
+
+  //   const appointments = await this.prisma.appointment.groupBy({
+  //     by: ['status'],
+  //     where: {
+  //       OR: [
+  //         { organizer: { id: user.id } },
+  //         { participants: { some: { user_id: user.id } } },
+  //       ],
+  //     },
+  //     _count: {
+  //       status: true,
+  //     },
+  //   });
+
+  //   appointments.forEach(item => {
+  //     const label = statusLabels[item.status];
+  //     if (label) {
+  //       result[label] = item._count.status.toString();
+  //     }
+  //   });
+
+  //   return result;
+  // }
 
   public async todayappointments(user: UserRes) {
     const todayStart = new Date();

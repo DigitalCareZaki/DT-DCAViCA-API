@@ -23,7 +23,7 @@ export class SendgridService {
     // Check if user with this email exists
 
     const user = await this.prisma.user.findUnique({
-      where: { email: recipientEmail },
+      where: { email: recipientEmail?.[0] },
     });
 
     console.log('object user >>>>>> ', user);
@@ -66,7 +66,7 @@ export class SendgridService {
       await this.prisma.emails.create({
         data: {
           subject: template.versions?.[0].subject,
-          to: recipientEmail,
+          to: recipientEmail?.[0],
           sended: true,
           html: renderedHtml,
         },
