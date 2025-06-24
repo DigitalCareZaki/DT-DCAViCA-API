@@ -79,7 +79,7 @@ import { UsersModule } from './users/users.module';
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
     },
-    SocketGateway,
+    // SocketGateway,
   ],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),

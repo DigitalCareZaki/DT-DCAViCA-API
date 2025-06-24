@@ -14,7 +14,7 @@ import type {
 
 @Injectable()
 export class ChatService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   public async getChatRooms(user: UserRes): Promise<GetRoomsProps[]> {
     return await this.prisma.room.findMany({
@@ -61,11 +61,13 @@ export class ChatService {
   ): Promise<CreateRoomProps> {
     const res = await this.isRoomExisted(user.id, data.user_id);
 
+    console.log('res >>>>>>>>> ', res);
+
     if (res) {
       return res;
     }
 
-    return await this.prisma.room.create({
+    const result = await this.prisma.room.create({
       data: {
         users: {
           connect: [
@@ -100,6 +102,10 @@ export class ChatService {
         },
       },
     });
+
+    console.log('result >>>>>>>>> ', result);
+
+    return result;
   }
 
   public async searchRooms(

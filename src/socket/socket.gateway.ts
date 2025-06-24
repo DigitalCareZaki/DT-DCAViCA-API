@@ -18,8 +18,7 @@ import { NotificationService } from './notification.service';
 @WebSocketGateway()
 @Injectable()
 export class SocketGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly clients = new Map<string, UserRes>();
   private readonly socketService: SocketService;
   private readonly chatService: ChatService;
@@ -49,10 +48,7 @@ export class SocketGateway
   }
 
   handleDisconnect(client: Socket) {
-    console.log(
-      'client disconnected: ',
-      client.handshake.query?.id?.toString(),
-    );
+    console.log('client disconnected: ', client.handshake.query?.id?.toString());
 
     this.clients.delete(client.handshake.query?.id?.toString());
 
@@ -117,10 +113,12 @@ export class SocketGateway
   }
 
   @SubscribeMessage('message')
-  handleChat(client: Socket, payload: any): void {
+  async handleChat(client: Socket, payload: any): Promise<void> {
+    console.log('payload <<<<<<<<<<<<< >>>>>>>>>>>>>>> ', payload);
+
     if (!payload.room_id) return;
 
-    const chats = this.chatService.incormingMessage(payload);
+    const chats = await this.chatService.incomingMessage(payload);
 
     const data = {
       [payload.room_id]: chats,
