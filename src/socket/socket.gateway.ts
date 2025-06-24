@@ -56,7 +56,7 @@ export class SocketGateway
       client.handshake.query?.id?.toString(),
     );
 
-    this.emitTotalParticiapnts(participants, key);
+    this.emitTotalParticipants(participants, key);
 
     console.log('total clients: ', this.clients.size);
   }
@@ -73,7 +73,7 @@ export class SocketGateway
 
     const participants = this.socketService.onAppointmentJoin(payload);
 
-    this.emitTotalParticiapnts(participants, payload.appointment_id);
+    this.emitTotalParticipants(participants, payload.appointment_id);
 
     const chats = this.socketService.getMeetingChat(payload.appointment_id);
     this.emitChat(chats, payload.appointment_id);
@@ -91,7 +91,7 @@ export class SocketGateway
         },
       );
 
-      this.emitTotalParticiapnts(participants, payload.appointment_id);
+      this.emitTotalParticipants(participants, payload.appointment_id);
     });
 
     client.on(`${payload.appointment_id}:meeting-chat`, (payload) => {
@@ -109,23 +109,26 @@ export class SocketGateway
 
     if (!payload.appointment_id) return;
 
-    this.emitTotalParticiapnts(participants, payload.appointment_id);
+    this.emitTotalParticipants(participants, payload.appointment_id);
   }
 
   @SubscribeMessage('message')
   async handleChat(client: Socket, payload: any): Promise<void> {
-    console.log('payload <<<<<<<<<<<<< >>>>>>>>>>>>>>> ', payload);
-
     if (!payload.room_id) return;
 
-    const chats = await this.chatService.incomingMessage(payload);
+    try {
+      const chats = await this.chatService.incomingMessage(payload);
 
-    const data = {
-      [payload.room_id]: chats,
-    };
+      const data = {
+        [payload.room_id]: chats,
+      };
 
-    this.emitRoomChats(data, payload.room_id);
+      this.emitRoomChats(data, payload.room_id);
+    } catch (error) {
+      console.error('Error handling chat message: ', error);
+    }
   }
+
 
   @SubscribeMessage('room-init')
   handleRoomInit(client: Socket, payload: any): void {
@@ -143,15 +146,16 @@ export class SocketGateway
   @SubscribeMessage('send_notification')
   async handleNotification(client: Socket, payload: any) {
     if (!payload?.reciever_id) return;
-    const notification =
-      await this.notificationService.createNotification(payload);
-    this.server.emit(
-      `${notification.reciever_id}:recieve_notification`,
-      notification,
-    );
+
+    try {
+      const notification = await this.notificationService.createNotification(payload);
+      this.server.emit(`${notification.reciever_id}:recieve_notification`, notification);
+    } catch (error) {
+      console.error('Error sending notification: ', error);
+    }
   }
 
-  private emitTotalParticiapnts(participants: any, appointment_id: string) {
+  private emitTotalParticipants(participants: any, appointment_id: string) {
     console.log('emitting: ', `${appointment_id}:totalParticiapnts`);
     this.server.emit(`${appointment_id}:totalParticiapnts`, participants);
   }

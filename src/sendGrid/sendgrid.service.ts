@@ -12,12 +12,7 @@ export class SendgridService {
     sgClient.setApiKey(process.env.SENDGRID_API_KEY);
   }
 
-
-
   async sendSgMail({ to, data, templateId }: any): Promise<void> {
-    console.log('sendSgMail data >>>>>> ', data);
-
-
     const recipientEmail = to;
     console.log('recipientEmail >>>>>> ', recipientEmail);
     // Check if user with this email exists
@@ -25,8 +20,6 @@ export class SendgridService {
     const user = await this.prisma.user.findUnique({
       where: { email: recipientEmail?.[0] },
     });
-
-    console.log('object user >>>>>> ', user);
 
     if (!user) {
       // throw new AppError('User not found', 404)
@@ -48,7 +41,7 @@ export class SendgridService {
       console.log('Template not found');
       return;
     }
-    console.log('userExists >>>>>> ', template);
+
     const rawHtml = template.versions?.[0].html_content || '';
     const renderedHtml = this.renderDynamicTemplate(rawHtml, data);
 
@@ -61,7 +54,7 @@ export class SendgridService {
 
     try {
       const res = await sgMail.send(msg);
-      console.log('sgMail.send res ======>>>>', JSON.stringify(res));
+      console.log('sgMail.send res ======>>>>', JSON.stringify(res, null, 2));
 
       await this.prisma.emails.create({
         data: {
@@ -75,7 +68,7 @@ export class SendgridService {
       console.log('sgMail.send error >>>>>>>> ', err);
       await this.prisma.emails.create({
         data: {
-          to: recipientEmail,
+          to: recipientEmail?.[0],
           sended: false,
           subject: template.versions?.[0].subject,
           html: renderedHtml,

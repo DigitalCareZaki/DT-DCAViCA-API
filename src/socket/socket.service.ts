@@ -36,9 +36,7 @@ export class SocketService {
     return prev;
   }
 
-  public onAppointmentParticipants(
-    payload: AppointmentProps,
-  ): AppointmentProps[] {
+  public onAppointmentParticipants(payload: AppointmentProps): AppointmentProps[] {
     if (!payload.appointment_id) return;
 
     const appointmentId = payload.appointment_id.toString();
@@ -46,10 +44,7 @@ export class SocketService {
     return this.appointments.get(appointmentId) ?? [];
   }
 
-  public onParticipantLeft(user_id: string): {
-    key: string;
-    participants: AppointmentProps[];
-  } {
+  public onParticipantLeft(user_id: string): { key: string; participants: AppointmentProps[]; } {
     try {
       if (!user_id) return;
 
