@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import sgMail = require('@sendgrid/mail');
 import * as sgClient from '@sendgrid/client';
-import { SendMailPayload } from '@types';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { MailDataRequired } from '@sendgrid/mail';
-import { AppError } from '@errors';
+
 @Injectable()
 export class SendgridService {
   constructor(private readonly prisma: PrismaService) {
@@ -13,30 +11,12 @@ export class SendgridService {
   }
 
   async sendSgMail({ to, data, templateId }: any): Promise<void> {
-    const recipientEmail = to;
+    const recipientEmail = typeof to === 'string' ? [to] : to;
     console.log('recipientEmail >>>>>> ', recipientEmail);
     // Check if user with this email exists
 
-    const user = await this.prisma.user.findUnique({
-      where: { email: recipientEmail?.[0] },
-    });
-
-    if (!user) {
-      // throw new AppError('User not found', 404)
-      console.warn('User not found with email:', to);
-      // Optionally return or allow sending anyway
-    } else {
-      console.log('User found:', user.id);
-    }
-    // const user = await this.prisma.user.findUnique({
-    //   where: { email: recipientEmail },
-    // });
-
-    console.log('userExists >>>>>> ', user.id);
-
     const template = await this.fetchTemplateById(templateId);
 
-    console.log('object template >>>>>> ', template);
     if (!template) {
       console.log('Template not found');
       return;
