@@ -208,9 +208,9 @@ export class ChatService {
             message: true,
             media: true,
             read: true,
-            user_id: true,  // Keep as user_id in DB
+            user_id: true,
             created_at: true,
-            auhor: {         // Keep as auhor if typo exists in DB/schema
+            auhor: {
               select: {
                 first_name: true,
                 last_name: true,
@@ -225,18 +225,19 @@ export class ChatService {
       },
     });
 
-
     const modifiedChats = room?.chats.map(chat => ({
       id: chat.id,
       message: chat.message,
       media: chat.media,
       read: chat.read,
-      author_id: chat.user_id,   // Rename user_id to auth_id
+      author_id: chat.user_id,
       created_at: chat.created_at,
-      author: chat.auhor,      // Correct auhor to author
-    }));
+      author: chat.auhor,
+    })) ?? [];
 
-    return modifiedChats;
+    return {
+      chats: modifiedChats,
+    };
   }
   private async isRoomExisted(
     currentUserId: string,
