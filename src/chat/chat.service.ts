@@ -163,13 +163,44 @@ export class ChatService {
     });
   }
 
+  // public async getRoomChats(roomId: string) {
+  //   console.log('roomId: ', roomId);
+  //   return await this.prisma.room.findUnique({
+  //     where: {
+  //       id: roomId,
+  //     },
+
+  //     select: {
+  //       chats: {
+  //         select: {
+  //           id: true,
+  //           message: true,
+  //           media: true,
+  //           read: true,
+  //           user_id: true,
+  //           created_at: true,
+  //           auhor: {
+  //             select: {
+  //               first_name: true,
+  //               last_name: true,
+  //               middle_name: true,
+  //               uri: true,
+  //               role: true,
+  //               id: true,
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   });
+  // }
   public async getRoomChats(roomId: string) {
     console.log('roomId: ', roomId);
-    return await this.prisma.room.findUnique({
+
+    const room = await this.prisma.room.findUnique({
       where: {
         id: roomId,
       },
-
       select: {
         chats: {
           select: {
@@ -177,9 +208,9 @@ export class ChatService {
             message: true,
             media: true,
             read: true,
-            user_id: true,
+            user_id: true,  // Keep as user_id in DB
             created_at: true,
-            auhor: {
+            auhor: {         // Keep as auhor if typo exists in DB/schema
               select: {
                 first_name: true,
                 last_name: true,
@@ -193,8 +224,20 @@ export class ChatService {
         },
       },
     });
-  }
 
+
+    const modifiedChats = room?.chats.map(chat => ({
+      id: chat.id,
+      message: chat.message,
+      media: chat.media,
+      read: chat.read,
+      author_id: chat.user_id,   // Rename user_id to auth_id
+      created_at: chat.created_at,
+      author: chat.auhor,      // Correct auhor to author
+    }));
+
+    return modifiedChats;
+  }
   private async isRoomExisted(
     currentUserId: string,
     participantUserId: string,
