@@ -19,6 +19,9 @@ export class FirebaseService implements OnModuleInit {
             } catch (error) {
                 console.error('Firebase Admin Initialization Error', error.stack);
             }
+        } else {
+            this.firebaseApp = admin.apps[0];
+            console.log('Firebase Admin App already initialized');
         }
     }
 
@@ -108,6 +111,7 @@ export class FirebaseService implements OnModuleInit {
                 console.log('User not found or device token not found');
                 return;
             }
+            // const token = 'd77cWARJPNaGPQJ5q9Ko9_:APA91bF9i0oWLOJ-D-HeTJml6nBfB5uGpJb5EcscYIbp6nlW-koiv1rMlJCY6OCTZsWAWW_H-GEVbCjDmJvecVItYkoCS2S7ec6eHTuTqIcTUsKmm25278c';
             const token = user.device_token;
 
             const message = {
