@@ -19,8 +19,9 @@ export class TelemedAppController {
 
   @Get('/appointments')
   public async getAppointments(@GetUser() user: UserRes, @Query('page') page?: number, @Query('limit') limit?: number) {
-    console.log('User:===========>>', user);
+
     const appointments = await this.telemedService.appointmentAnalytics(user, page ? +page : 1, limit ? +limit : 10);
+    console.log('appointments:===========>>', appointments);
     const analytics = await this.telemedService.appointmentAnalyticsGroup(user);
 
     return {

@@ -481,27 +481,27 @@ export class TelemedService {
         }),
         this.prisma.appointment.count({ where: { organizer_id: user.id } }),
       ]);
-      console.log('data:===========>>', JSON.stringify(data, null, 2));
+      //console.log('data:===========>>', JSON.stringify(data, null, 2));
       // Normalize for patient
       data = data.map(item => {
-        // console.log(JSON.stringify(item.appointment.participants, null, 2), 'item======<>')
         const doctor = item.appointment.participants.find(p => p.user.role === 'DOCTOR')?.user;
+
         return {
-          id: item.id,
+          id: item.appointment.id,
           status: item.status,
-          title: item.title,
-          description: item.description,
-          about: item.about,
-          type: item.type,
-          patientId: item.organizer.id,
-          patient_name: `${item.organizer.first_name} ${item.organizer.last_name}`,
+          title: item.appointment.title,
+          description: item.appointment.description,
+          about: item.appointment.about,
+          type: item.appointment.type,
+          patientId: item.appointment.organizer.id,
+          patient_name: `${item.appointment.organizer.first_name} ${item.appointment.organizer.last_name}`,
           doctorid: doctor?.id || null,
           doctor_name: doctor ? `${doctor.first_name} ${doctor.last_name}` : null,
-          AppointmetDate: item.start_date,
+          AppointmetDate: item.appointment.start_date,
         };
       });
     }
-
+    console.log(data, 'data:===========>>');
     const totalPages = Math.ceil(totalItems / limit);
 
     return {
