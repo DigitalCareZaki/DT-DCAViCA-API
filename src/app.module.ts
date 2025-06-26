@@ -70,16 +70,18 @@ import { SendgridModule } from './sendGrid/sendgrid.module';
 import { TwilioModule } from './twilio/twilio.module';
 import { FirebaseModule } from './firebaseNotification/firebase.module';
 import { EmailsModule } from './emails/emails.module';
-// import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { UsersModule } from './users/users.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
+  controllers: [AppController],
   providers: [
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
     },
-    // SocketGateway,
+    AppService
   ],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -134,6 +136,7 @@ import { UsersModule } from './users/users.module';
     // CloudinaryModule,
   ],
 })
+
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggerMiddleware, LogsMiddleware).forRoutes('*');

@@ -115,12 +115,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
         data: {},
       };
     else
-      responseBody = {
-        statusCode: httpStatus,
-        timestamp: new Date().toISOString(),
-        path: httpAdapter.getRequestUrl(request),
-        message: getResponseMessage(exception) || 'Something went wrong',
-      };
+      console.log('JSON.stringify(exception) >>>>>>>>> ', JSON.stringify(exception, null, 2));
+    responseBody = {
+      statusCode: httpStatus,
+      timestamp: new Date().toISOString(),
+      path: httpAdapter.getRequestUrl(request),
+      message: getResponseMessage(exception) || 'Something went wrong',
+    };
 
     httpAdapter.reply(response, responseBody, httpStatus);
   }
