@@ -50,6 +50,8 @@ export class SocketGateway
   handleDisconnect(client: Socket) {
     console.log('client disconnected: ', client.handshake.query?.id?.toString());
 
+    if (!client.handshake.query?.id) return;
+
     this.clients.delete(client.handshake.query?.id?.toString());
 
     const { key, participants } = this.socketService.onParticipantLeft(
