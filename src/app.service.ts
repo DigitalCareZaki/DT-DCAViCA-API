@@ -18,13 +18,13 @@ export class AppService {
         const expirationTimeInSeconds = 3600;
         const currentTimestamp = Math.floor(Date.now() / 1000);
         const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
-        const uid = userId || 0;
 
-        const agoraToken = RtcTokenBuilder.buildTokenWithUid(
+        // Use buildTokenWithUserAccount for string user IDs
+        const agoraToken = RtcTokenBuilder.buildTokenWithUserAccount(
             appId,
             appCertificate,
             channelName,
-            uid,
+            userId,
             RtcRole.PUBLISHER,
             expirationTimeInSeconds,
             privilegeExpiredTs
