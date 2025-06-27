@@ -236,12 +236,15 @@ export class TelemedService {
   public async requested(user: UserRes): Promise<RequestedAppointmentProps[]> {
     return this.prisma.appointmentParticipants.findMany({
       where: {
-        user_id: user.id,
-        appointment: {
-          status: 'ACTIVE',
-        },
+        AND: [
+          {
+            user_id: user.id,
+          },
+          {
+            status: 'PENDING',
+          },
+        ],
       },
-
       select: {
         status: true,
         id: true,
