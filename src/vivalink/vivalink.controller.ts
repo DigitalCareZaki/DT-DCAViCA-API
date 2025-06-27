@@ -10,12 +10,9 @@ import {
 
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 import { VivalinkService } from './vivalink.service';
-
 import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { Role } from 'src/auth/enums/role.enum';
-
 import type { VLAllPatients, VLSinglePatientECGData } from './types';
-import { query } from 'express';
 
 @Controller('vl')
 @UseGuards(JwtGuard, RolesGuard)
