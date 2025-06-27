@@ -50,6 +50,7 @@ export class AuthService {
         active: true,
         organization_id: true,
         pincode: true,
+        device_token: true,
         doctor: {
           select: {
             specialities: {
