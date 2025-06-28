@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, Validate } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, Validate } from 'class-validator';
 import { ValidateAdditionalUri, ValidateRefrences } from 'src/validators';
 
 export class PostDTO {
@@ -14,9 +14,11 @@ export class PostDTO {
   @IsNotEmpty()
   uri: string;
 
+  @IsOptional()
   @Validate(ValidateAdditionalUri)
   additional_uri: Array<string>;
 
+  @IsOptional()
   @Validate(ValidateRefrences)
   refrence: Array<string>;
 }
