@@ -11,7 +11,7 @@ export class EMR_DTO {
   title: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   uri: string;
 
   @IsString()
