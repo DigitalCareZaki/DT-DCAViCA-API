@@ -79,10 +79,9 @@ export class TelemedWebController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/requested')
-  public async requested(
-    @GetUser() user: UserRes,
-  ): Promise<RequestedAppointmentProps[]> {
-    return this.telemedService.requested(user);
+  public async requested(@GetUser() user: UserRes, @Query('pending') pending: boolean): Promise<RequestedAppointmentProps[]> {
+    const isPending = pending ? true : false; // Convert string to boolean
+    return this.telemedService.requested(user, isPending);
   }
 
 
