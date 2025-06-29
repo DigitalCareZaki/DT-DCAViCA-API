@@ -877,6 +877,7 @@ enum MeasurementStatus {
   HIGH
   LOW
   NORMAL
+  ALERT_NOT_SET
 }
 
 enum MeasurementMode {

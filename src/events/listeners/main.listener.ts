@@ -11,6 +11,7 @@ export class EventListener {
   constructor(private prisma: PrismaService) { }
 
   @OnEvent('measurement.created')
+
   public async handleMeasurementCreatedEvent(payload: MeasurementCreatedEvent) {
     if (payload.measurement.type === 'ECG') {
       // ECG not supported yet
@@ -18,42 +19,41 @@ export class EventListener {
     }
 
     const patientReadingRange = await this.prisma.patientMeasurementRange.findFirst({
-        where: {
-          patient: {
-            user: {
-              id: payload.patientId,
-            },
+      where: {
+        patient: {
+          user: {
+            id: payload.patientId,
           },
-          type: payload.measurement.type,
         },
-        select: {
-          range: true,
-        },
-        orderBy: {
-          created_at: 'desc',
-        },
-      });
+        type: payload.measurement.type,
+      },
+      select: {
+        range: true,
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
 
-    if (!patientReadingRange || patientReadingRange.range.length === 0) return;
+    let category: MeasurementStatus = 'ALERT_NOT_SET';
 
-    let category: MeasurementStatus | undefined = undefined;
+    if (patientReadingRange && patientReadingRange.range.length > 0) {
+      if (payload.measurement.type === 'BLOODPRESSURE') {
+        const [systolic, diastolic] = payload.measurement.values;
+        const [systolic_low, systolic_high, diastolic_low, diastolic_high] = patientReadingRange.range;
 
-    if (payload.measurement.type === 'BLOODPRESSURE') {
-      const [systolic, diastolic] = payload.measurement.values;
-      const [systolic_low, systolic_high, diastolic_low, diastolic_high] =
-        patientReadingRange.range;
+        category =
+          systolic <= systolic_low || diastolic <= diastolic_low
+            ? 'LOW'
+            : systolic >= systolic_high || diastolic >= diastolic_high
+              ? 'HIGH'
+              : 'NORMAL';
+      } else {
+        const value = payload.measurement.values[0];
+        const [low, high] = patientReadingRange.range;
 
-      category =
-        systolic <= systolic_low || diastolic <= diastolic_low
-          ? 'LOW'
-          : systolic >= systolic_high || diastolic >= diastolic_high
-            ? 'HIGH'
-            : 'NORMAL';
-    } else {
-      const value = payload.measurement.values[0];
-      const [low, high] = patientReadingRange.range;
-
-      category = value <= low ? 'LOW' : value >= high ? 'HIGH' : 'NORMAL';
+        category = value <= low ? 'LOW' : value >= high ? 'HIGH' : 'NORMAL';
+      }
     }
 
     await this.prisma.measurement.update({
@@ -65,6 +65,60 @@ export class EventListener {
       },
     });
   }
+  // public async handleMeasurementCreatedEvent(payload: MeasurementCreatedEvent) {
+  //   if (payload.measurement.type === 'ECG') {
+  //     // ECG not supported yet
+  //     return;
+  //   }
+
+  //   const patientReadingRange = await this.prisma.patientMeasurementRange.findFirst({
+  //       where: {
+  //         patient: {
+  //           user: {
+  //             id: payload.patientId,
+  //           },
+  //         },
+  //         type: payload.measurement.type,
+  //       },
+  //       select: {
+  //         range: true,
+  //       },
+  //       orderBy: {
+  //         created_at: 'desc',
+  //       },
+  //     });
+
+  //   if (!patientReadingRange || patientReadingRange.range.length === 0) return;
+
+  //   let category: MeasurementStatus | undefined = undefined;
+
+  //   if (payload.measurement.type === 'BLOODPRESSURE') {
+  //     const [systolic, diastolic] = payload.measurement.values;
+  //     const [systolic_low, systolic_high, diastolic_low, diastolic_high] =
+  //       patientReadingRange.range;
+
+  //     category =
+  //       systolic <= systolic_low || diastolic <= diastolic_low
+  //         ? 'LOW'
+  //         : systolic >= systolic_high || diastolic >= diastolic_high
+  //           ? 'HIGH'
+  //           : 'NORMAL';
+  //   } else {
+  //     const value = payload.measurement.values[0];
+  //     const [low, high] = patientReadingRange.range;
+
+  //     category = value <= low ? 'LOW' : value >= high ? 'HIGH' : 'NORMAL';
+  //   }
+
+  //   await this.prisma.measurement.update({
+  //     where: {
+  //       id: payload.measurement.id,
+  //     },
+  //     data: {
+  //       status: category,
+  //     },
+  //   });
+  // }
 
   @OnEvent('medication.created')
   public async handleMedicationCreatedEvent(payload: MedicationCreatedEvent) {
