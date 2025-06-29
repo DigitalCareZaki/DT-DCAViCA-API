@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { VideosController } from './videos.controller';
@@ -15,6 +16,7 @@ import { UserRes } from '@types';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 import { RolesGuard } from 'src/auth/guards';
 import { Role } from 'src/auth/enums/role.enum';
+import { MeasurementType } from '@prisma/client';
 
 @Controller('web/videos')
 export class WebVideosController extends VideosController {
@@ -24,8 +26,8 @@ export class WebVideosController extends VideosController {
 
   @Get('/')
   @HttpCode(HttpStatus.OK)
-  public async getVideos(@GetUser() user: UserRes) {
-    return this.getVideosService().getVideos(user.organization_id);
+  public async getVideos(@GetUser() user: UserRes, @Query('category') category?: string) {
+    return this.getVideosService().getVideos(user.organization_id, category);
   }
 
   @Post('/')
