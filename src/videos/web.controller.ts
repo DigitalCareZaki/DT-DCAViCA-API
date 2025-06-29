@@ -8,26 +8,23 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { VideosController } from './videos.controller';
 import { VideosService } from './videos.service';
 import { AddVideosDTO } from './dto/add.dto';
 import { GetUser } from 'src/auth/decorators';
 import { UserRes } from '@types';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
-import { RolesGuard } from 'src/auth/guards';
+import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { Role } from 'src/auth/enums/role.enum';
-import { MeasurementType } from '@prisma/client';
 
+@UseGuards(JwtGuard)
 @Controller('web/videos')
-export class WebVideosController extends VideosController {
-  constructor(videosService: VideosService) {
-    super(videosService);
-  }
+export class WebVideosController {
+  constructor(private readonly videosService: VideosService) { }
 
   @Get('/')
   @HttpCode(HttpStatus.OK)
   public async getVideos(@GetUser() user: UserRes, @Query('category') category?: string) {
-    return this.getVideosService().getVideos(user.organization_id, category);
+    return this.videosService.getVideos(user.organization_id, category);
   }
 
   @Post('/')
@@ -35,6 +32,6 @@ export class WebVideosController extends VideosController {
   @UseGuards(RolesGuard)
   @RequirePermission(Role.ADMIN, Role.SUPERADMIN)
   public async addVideos(@Body() body: AddVideosDTO, @GetUser() user: UserRes) {
-    return this.getVideosService().addVideo(body, user.id);
+    return this.videosService.addVideo(body, user.id);
   }
 }
