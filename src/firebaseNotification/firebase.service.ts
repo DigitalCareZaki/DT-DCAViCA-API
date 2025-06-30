@@ -27,7 +27,7 @@ export class FirebaseService implements OnModuleInit {
 
     constructor(private readonly prisma: PrismaService) { }
 
-    @Cron('0 0 * * *', {
+    @Cron('* * * * *', {
         name: 'MedicationReminders',
         timeZone: 'UTC',
     })
