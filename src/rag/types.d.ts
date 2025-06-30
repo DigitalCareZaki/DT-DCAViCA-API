@@ -2,7 +2,7 @@ type PatientRagValue = {
   high: number;
   normal: number;
   low: number;
-  pending: number;
+  alert_not_set: number;
 };
 
 export type PatientRag = {

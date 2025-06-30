@@ -166,17 +166,17 @@ export class RagService {
 
   private async formatResults(start_date: string | null, end_date: string | null, result: any[]): Promise<PatientRag> {
     const formattedResult: PatientRag = {
-      ecg: { high: 0, normal: 0, low: 0, pending: 0 },
-      spo2: { high: 0, normal: 0, low: 0, pending: 0 },
-      bloodpressure: { high: 0, normal: 0, low: 0, pending: 0 },
-      bloodglucose: { high: 0, normal: 0, low: 0, pending: 0 },
-      temperature: { high: 0, normal: 0, low: 0, pending: 0 },
+      ecg: { high: 0, normal: 0, low: 0, alert_not_set: 0 },
+      spo2: { high: 0, normal: 0, low: 0, alert_not_set: 0 },
+      bloodpressure: { high: 0, normal: 0, low: 0, alert_not_set: 0 },
+      bloodglucose: { high: 0, normal: 0, low: 0, alert_not_set: 0 },
+      temperature: { high: 0, normal: 0, low: 0, alert_not_set: 0 },
       start_date: start_date ?? null,
       end_date: end_date ?? null,
     };
 
     result.forEach((item) => {
-      formattedResult[item.type.toLowerCase()][item?.status?.toLowerCase() ?? 'pending'] = item._count._all;
+      formattedResult[item.type.toLowerCase()][item?.status?.toLowerCase() ?? 'alert_not_set'] = item._count._all;
     });
 
     return formattedResult;
