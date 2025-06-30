@@ -23,7 +23,7 @@ export class AppController {
 
         const { channelName } = data;
 
-        console.log('req.agent >>>>>>>>>>>> ', req['agent']);
+        console.log('req.agent >>>>>>>>>>>> ', req.headers['user-agent']);
 
         // Extract platform info from user agent
         const userAgent = req.headers['user-agent'];
