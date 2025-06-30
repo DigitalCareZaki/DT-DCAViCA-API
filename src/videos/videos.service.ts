@@ -10,28 +10,29 @@ import type { VideoPriority, VideoCategory, MeasurementType } from '@prisma/clie
 export class VideosService {
   constructor(private prisma: PrismaService) { }
 
-  public async getVideos(organizationId: string) {
+  public async getVideos(organizationId: string, category?: string) {
     return await this.prisma.videos.findMany({
       where: {
-        author: {
-          organization_id: organizationId,
-        },
+      author: {
+        organization_id: organizationId,
+      },
+      ...(category ? { category: category as MeasurementType } : {}),
       },
       select: {
-        title: true,
-        description: true,
-        uri: true,
-        category: true,
-        priority: true,
-        author: {
-          select: {
-            first_name: true,
-            middle_name: true,
-            last_name: true,
-            email: true,
-          },
+      title: true,
+      description: true,
+      uri: true,
+      category: true,
+      priority: true,
+      author: {
+        select: {
+        first_name: true,
+        middle_name: true,
+        last_name: true,
+        email: true,
         },
-        created_at: true,
+      },
+      created_at: true,
       },
     });
   }

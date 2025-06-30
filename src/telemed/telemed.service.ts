@@ -233,18 +233,11 @@ export class TelemedService {
     });
   }
 
-  public async requested(user: UserRes): Promise<RequestedAppointmentProps[]> {
+  public async requested(user: UserRes, isPending: boolean): Promise<RequestedAppointmentProps[]> {
     return this.prisma.appointmentParticipants.findMany({
-      where: {
-        AND: [
-          {
-            user_id: user.id,
-          },
-          {
-            status: 'PENDING',
-          },
-        ],
-      },
+      where: isPending
+        ? { AND: [{ user_id: user.id }, { status: 'PENDING' }] }
+        : { AND: [{ user_id: user.id }, { NOT: { status: 'PENDING' } }] },
       select: {
         status: true,
         id: true,
@@ -267,13 +260,11 @@ export class TelemedService {
                 role: true,
               },
             },
-
             participants: {
               select: {
                 id: true,
               },
             },
-
             created_at: true,
           },
         },
