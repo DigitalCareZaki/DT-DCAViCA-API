@@ -11,6 +11,9 @@ export class AppService {
         const appId = this.config.get<string>('AGORA_APP_ID');
         const appCertificate = this.config.get<string>('AGORA_APP_CERTIFICATE');
 
+        console.log('appId:', appId);
+        console.log('appCertificate:', appCertificate);
+
         if (!appId || !appCertificate) {
             throw new AppError('AGORA_APP_ID and AGORA_APP_CERTIFICATE must be set in the environment variables.', 500);
         }
@@ -29,6 +32,12 @@ export class AppService {
             expirationTimeInSeconds,
             privilegeExpiredTs
         );
+
+        console.log(" channelName>>>>>>>>>>>>>>>>>>>> ", channelName);
+        console.log(" userId>>>>>>>>>>>>>>>>>>>> ", userId);
+        console.log(" RtcRole.PUBLISHER>>>>>>>>>>>>>>>>>>>> ", RtcRole.PUBLISHER);
+        console.log(" expirationTimeInSeconds>>>>>>>>>>>>>>>>>>>> ", expirationTimeInSeconds);
+        console.log(" privilegeExpiredTs>>>>>>>>>>>>>>>>>>>> ", privilegeExpiredTs);
 
         if (!agoraToken) {
             throw new AppError('Failed to generate Agora token', 500);
