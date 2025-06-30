@@ -28,7 +28,7 @@ export class AppController {
         // Extract platform info from user agent
         const userAgent = req.headers['user-agent'];
         const platform = userAgent
-            ? /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
+            ? /Android|webOS|iPhone|iOS|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
                 ? 'mobile'
                 : 'desktop'
             : 'unknown';
