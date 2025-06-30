@@ -24,7 +24,7 @@ export class WebVideosController {
   @Get('/')
   @HttpCode(HttpStatus.OK)
   public async getVideos(@GetUser() user: UserRes, @Query('category') category?: string) {
-    return this.videosService.getVideos(user.organization_id, category);
+    return this.videosService.getLatestVideo(user.organization_id, category);
   }
 
   @Post('/')
