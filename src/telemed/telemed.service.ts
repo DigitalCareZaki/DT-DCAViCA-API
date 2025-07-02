@@ -512,197 +512,85 @@ export class TelemedService {
       },
     };
   }
-  // public async appointmentAnalytics(user: UserRes, page = 1, limit = 10) {
-  //   const skip = (page - 1) * limit;
 
-  //   let data: any[] = [];
-  //   let totalItems = 0;
+  public async appointmentList(user: UserRes, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    let data: any[] = [];
+    let totalItems = 0;
 
-  //   if (user.role === 'DOCTOR') {
-  //     [data, totalItems] = await this.prisma.$transaction([
-  //       this.prisma.appointmentParticipants.findMany({
-  //         where: { user_id: user.id },
-  //         skip,
-  //         take: limit,
-  //         select: {
-  //           id: true,
-  //           status: true,
-  //           appointment: {
-  //             select: {
-  //               id: true,
-  //               title: true,
-  //               description: true,
-  //               about: true,
-  //               type: true,
-  //               status: true,
-  //               start_date: true,
-  //               end_date: true,
-  //               created_at: true,
-  //               organizer: {
-  //                 select: {
-  //                   id: true,
-  //                   first_name: true,
-  //                   last_name: true,
-  //                   middle_name: true,
-  //                   uri: true,
-  //                   role: true,
-  //                 },
-  //               },
-  //               participants: {
-  //                 select: {
-  //                   id: true,
-  //                   user: {
-  //                     select: {
-  //                       id: true,
-  //                       first_name: true,
-  //                       last_name: true,
-  //                       middle_name: true,
-  //                       uri: true,
-  //                       role: true,
-  //                     },
-  //                   },
-  //                 },
-  //               },
-  //               appointmentObservation: {
-  //                 select: {
-  //                   id: true,
-  //                   observations: true,
-  //                   diagnosis: true,
-  //                   medications: true,
-  //                   procedure: true,
-  //                   follow_up_date: true,
-  //                 },
-  //               },
-  //             },
-  //           },
-  //         },
-  //       }),
-  //       this.prisma.appointmentParticipants.count({ where: { user_id: user.id } }),
-  //     ]);
+    [data, totalItems] = await this.prisma.$transaction([
+      this.prisma.appointmentParticipants.findMany({
+        where: { user_id: user.id },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          status: true,
+          appointment: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              about: true,
+              type: true,
+              status: true,
+              start_date: true,
+              organizer: {
+                select: {
+                  id: true,
+                  first_name: true,
+                  last_name: true,
+                  middle_name: true,
+                  role: true,
+                },
+              },
+              participants: {
+                select: {
+                  id: true,
+                  user: {
+                    select: {
+                      id: true,
+                      first_name: true,
+                      last_name: true,
+                      middle_name: true,
+                      role: true,
+                    },
+                  },
+                },
+              },
+              appointmentObservation: {
+                select: {
+                  id: true,
+                  observations: true,
+                  diagnosis: true,
+                  medications: true,
+                  procedure: true,
+                  follow_up_date: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.appointmentParticipants.count({ where: { user_id: user.id } }),
+    ]);
 
-  //     // normalize for doctor
-  //     data = data.map((item) => ({
-  //       id: item.id,
-  //       status: item.status,
-  //       ...item.appointment,
-  //     }));
-  //   }
+    const totalPages = Math.ceil(totalItems / limit);
 
-  //   if (user.role === 'PATIENT') {
-  //     [data, totalItems] = await this.prisma.$transaction([
-  //       this.prisma.appointment.findMany({
-  //         where: { organizer_id: user.id },
-  //         skip,
-  //         take: limit,
-  //         select: {
-  //           id: true,
-  //           title: true,
-  //           description: true,
-  //           about: true,
-  //           type: true,
-  //           status: true,
-  //           start_date: true,
-  //           end_date: true,
-  //           created_at: true,
-  //           organizer: {
-  //             select: {
-  //               id: true,
-  //               first_name: true,
-  //               last_name: true,
-  //               middle_name: true,
-  //               uri: true,
-  //               role: true,
-  //             },
-  //           },
-  //           participants: {
-  //             select: {
-  //               id: true,
-  //               user: {
-  //                 select: {
-  //                   first_name: true,
-  //                   last_name: true,
-  //                   middle_name: true,
-  //                   uri: true,
-  //                   role: true,
-  //                 },
-  //               },
-
-  //             },
-  //           },
-  //           appointmentObservation: {
-  //             select: {
-  //               id: true,
-  //               observations: true,
-  //               diagnosis: true,
-  //               medications: true,
-  //               procedure: true,
-  //               follow_up_date: true,
-  //             },
-  //           },
-  //         },
-  //       }),
-  //       this.prisma.appointment.count({ where: { organizer_id: user.id } }),
-  //     ]);
-  //   }
-
-  //   const totalPages = Math.ceil(totalItems / limit);
-
-  //   return {
-  //     data,
-  //     pagination: {
-  //       totalItems,
-  //       totalPages,
-  //       currentPage: page,
-  //       perPage: limit,
-  //       hasNextPage: page < totalPages,
-  //       hasPrevPage: page > 1,
-  //       nextPage: page < totalPages ? page + 1 : null,
-  //       prevPage: page > 1 ? page - 1 : null,
-  //     },
-  //   };
-  // }
-
-  // public async appointmentAnalyticsGroup(user: UserRes) {
-  //   let data: any[] = [];
-
-  //   const appointments = await this.prisma.appointment.groupBy({
-  //     by: ['status'],
-  //     where: {
-  //       OR: [
-  //         {
-  //           organizer: { id: user.id },
-  //         },
-  //         {
-  //           participants: {
-  //             some: { user_id: user.id },
-  //           },
-  //         },
-  //       ],
-  //     },
-  //     _count: {
-  //       status: true,
-  //     },
-  //   });
-
-  //   data = appointments.map(item => ({
-  //     status: item.status,
-  //     count: item._count.status
-  //   }));
-
-  //   // Add any missing statuses with count 0
-  //   const allStatuses = ['HOLD', 'CANCELLED', 'ONGOING', 'ACTIVE', 'COMPLETED', 'PENDING'];
-  //   const existingStatuses = data.map(item => item.status);
-
-  //   console.log('existingStatuses >>>>>>>>', existingStatuses);
-
-  //   allStatuses.forEach((status: string) => {
-  //     if (!existingStatuses.includes(status)) {
-  //       data.push({ status, count: 0 });
-  //     }
-  //   });
-
-  //   return data;
-  // }
+    return {
+      data,
+      pagination: {
+        totalItems,
+        totalPages,
+        currentPage: page,
+        perPage: limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        nextPage: page < totalPages ? page + 1 : null,
+        prevPage: page > 1 ? page - 1 : null,
+      },
+    };
+  }
 
   public async appointmentAnalyticsGroup(user: UserRes) {
     const statusLabels: Record<string, string> = {

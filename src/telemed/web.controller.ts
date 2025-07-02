@@ -115,6 +115,13 @@ export class TelemedWebController {
   ) {
     return this.telemedService.appointmentAnalytics(user, +page, +limit);
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/appointment-list')
+  public async appointmentList(@GetUser() user: UserRes, @Query('page') page = 1, @Query('limit') limit = 10) {
+    return this.telemedService.appointmentList(user, +page, +limit);
+  }
+
   @HttpCode(HttpStatus.OK)
   @Get('/todayappointments')
   public async todayappointments(
