@@ -2,7 +2,6 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Cron } from '@nestjs/schedule';
-import * as path from 'path';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
@@ -12,7 +11,9 @@ export class FirebaseService implements OnModuleInit {
         if (!admin.apps.length) {
             try {
                 this.firebaseApp = admin.initializeApp({
-                    credential: admin.credential.cert(path.resolve('./firebase-service-account.json') as admin.ServiceAccount),
+                    credential: admin.credential.cert(JSON.parse(
+                        process.env.FIREBASE_SERVICE_ACCOUNT_JSON as string,
+                    ) as admin.ServiceAccount),
                 });
 
                 console.log('Firebase Admin Initialized');

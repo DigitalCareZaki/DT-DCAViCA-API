@@ -5,7 +5,10 @@ import { AppError } from 'src/errors';
 
 @Injectable()
 export class AppService {
-    constructor(private readonly config: ConfigService) { }
+    constructor(private readonly config: ConfigService) {
+        console.log('FIREBASE_SERVICE_ACCOUNT_JSON:', this.config.get<string>('FIREBASE_SERVICE_ACCOUNT_JSON'));
+
+    }
 
     public async createAgoraToken(channelName: string, userId: string, platform: string) {
         const appId = this.config.get<string>('AGORA_APP_ID');
