@@ -69,19 +69,21 @@ export class EventListener {
 
   @OnEvent('medication.created')
   public async handleMedicationCreatedEvent(payload: MedicationCreatedEvent) {
+    console.log('Medication Created Event:======>>>', payload);
     const startDate = new Date(payload.medication.start_date);
     const medicationTime = new Date(payload.medication.time);
 
     const timeDiff =
       new Date(payload.medication.end_date).getTime() - startDate.getTime();
     const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
+    console.log('dayDiff:======>>>', dayDiff);
     const alertsToCreate: {
       medication_id: string;
       alert_time: Date;
     }[] = [];
 
     for (let i = 0; i <= dayDiff; i++) {
+      console.log('index:======>>>', i);
       const alertDate = new Date(
         startDate.getFullYear(),
         startDate.getMonth(),
@@ -98,7 +100,7 @@ export class EventListener {
         alert_time: alertDate,
       });
     }
-
+    console.log('alertsToCreate:======>>>', alertsToCreate);
     await this.prisma.patientMedicationAlerts.createMany({
       data: alertsToCreate,
     });

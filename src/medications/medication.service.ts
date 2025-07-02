@@ -401,4 +401,34 @@ export class MedicationService {
 
     return medication;
   }
+
+  public async updateMedication(
+    medicationId: string,
+    data: any,
+  ) {
+    console.log('Updating medication with data:', data);
+    try {
+      const medicine = await this.prisma.patientMedicationAlerts.findFirst({
+        where: { medication_id: medicationId }
+      });
+
+      if (!medicine) {
+        throw new AppError('Medication alert not found', HttpStatus.NOT_FOUND);
+      }
+
+      const medication = await this.prisma.patientMedicationAlerts.update({
+        where: {
+          id: medicine.id,
+        },
+        data: {
+          taken: data.taken
+        },
+      });
+      console.log('Medication updated successfully:', medication);
+      return medication;
+    } catch (error) {
+      console.error('Error updating medication:', error);
+    }
+
+  }
 }
