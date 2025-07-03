@@ -150,7 +150,7 @@ export class TelemedWebController {
   ): Promise<SlotParent> {
     // console.log(`Updating calendar for user: ${user.id}`);
     // console.log('Data: ', data);
-    
+
     return this.telemedService.updateCalendar(user, data);
   }
 
@@ -171,6 +171,16 @@ export class TelemedWebController {
     @Body() data: TelemedActionDTO,
   ) {
     return this.telemedService.action(user, data);
+  }
+
+
+  @HttpCode(HttpStatus.OK)
+  @Patch('/update-status')
+  public async updateMeeting(
+    @GetUser() user: UserRes,
+
+  ) {
+    return this.telemedService.markPastAppointmentsCompleted();
   }
 
   @HttpCode(HttpStatus.OK)

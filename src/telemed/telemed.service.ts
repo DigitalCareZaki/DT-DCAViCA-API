@@ -234,6 +234,7 @@ export class TelemedService {
   }
 
   public async requested(user: UserRes, isPending: boolean): Promise<RequestedAppointmentProps[]> {
+    this.markPastAppointmentsCompleted();
     return this.prisma.appointmentParticipants.findMany({
       where: isPending
         ? { AND: [{ user_id: user.id }, { status: 'PENDING' }] }
@@ -995,6 +996,53 @@ export class TelemedService {
       updated: true,
     };
   }
+
+
+  public async markPastAppointmentsCompleted(): Promise<{ updatedCount: number }> {
+    try {
+      const nowUTC = new Date(new Date().toISOString());
+      const result = await this.prisma.appointment.updateMany({
+        where: {
+          start_date: { lt: nowUTC },
+          end_date: { lt: nowUTC },
+          status: { not: 'COMPLETED' },
+        },
+        data: {
+          status: 'COMPLETED',
+        },
+      });
+      if (result.count > 0) {
+        const pastAppointments = await this.prisma.appointment.findMany({
+          where: {
+            start_date: { lt: nowUTC },
+            end_date: { lt: nowUTC },
+          },
+          select: { id: true },
+        });
+
+        const appointmentIds = pastAppointments.map(a => a.id);
+        console.log('Past Appointment IDs:', appointmentIds);
+        if (appointmentIds.length > 0) {
+          const result = await this.prisma.appointmentParticipants.updateMany({
+            where: {
+              appointment_id: { in: appointmentIds },
+              status: { not: 'COMPLETED' },
+            },
+            data: {
+              status: 'COMPLETED',
+            },
+          });
+
+        }
+        return {
+          updatedCount: result.count,
+        };
+      }
+    } catch (error) {
+      console.error('Error marking past appointments as completed:', error);
+    }
+  }
+
 
   public async details(id: string) {
     return this.prisma.appointment.findUnique({

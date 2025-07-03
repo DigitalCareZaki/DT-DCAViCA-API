@@ -9,7 +9,7 @@ import type { PatientCompliance, PatientCompliancePerPill } from './types';
 
 @Injectable()
 export class ComplianceService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   public async getAllPatientsCompliance(
     userId: string,
@@ -64,14 +64,14 @@ export class ComplianceService {
         },
       });
 
-    const formattedResults = patientMedications.reduce((acc, patient) => {
+    const Results = patientMedications.reduce((acc, patient) => {
       patient.medication.forEach((med) => {
         med.patient_medication_alerts.forEach((alert) => {
           const dateSting = new Date(alert.alert_time).toISOString();
-          const datePart = dateSting.slice(0, 10);
+          const date = dateSting.slice(0, 10);
 
-          if (!acc[datePart]) {
-            acc[datePart] = {
+          if (!acc[date]) {
+            acc[date] = {
               total: 0,
               taken: 0,
               not_taken: 0,
@@ -79,12 +79,12 @@ export class ComplianceService {
           }
 
           // adding total
-          acc[datePart].total++;
+          acc[date].total++;
 
           if (alert.taken === 'TAKEN') {
-            acc[datePart].taken++;
+            acc[date].taken++;
           } else {
-            acc[datePart].not_taken++;
+            acc[date].not_taken++;
           }
         });
       });
@@ -92,7 +92,7 @@ export class ComplianceService {
       return acc;
     }, {});
 
-    return formattedResults;
+    return Results;
   }
 
   public async getPatientCompliancePerPill(
