@@ -170,6 +170,7 @@ export class TelemedWebController {
     @GetUser() user: UserRes,
     @Body() data: TelemedActionDTO,
   ) {
+
     return this.telemedService.action(user, data);
   }
 

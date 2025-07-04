@@ -964,37 +964,34 @@ export class TelemedService {
     user: UserRes,
     data: TelemedActionDTO,
   ): Promise<TelemedActionProps> {
-    const appointment =
-      await this.prisma.appointmentParticipants.findFirstOrThrow({
-        where: {
-          AND: [
-            {
-              id: data.id,
-            },
-            {
-              user_id: user.id,
-            },
-          ],
-        },
 
-        select: {
-          id: true,
-        },
-      });
 
-    await this.prisma.appointmentParticipants.update({
+    const appointments = await this.prisma.appointmentParticipants.findMany({
       where: {
-        id: appointment.id,
+        appointment_id: data.id,
       },
-
-      data: {
-        status: data.status,
+      select: {
+        id: true,
       },
     });
+    console.log('appointments: >>>>>>>>', appointments);
+    if (appointments.length > 0) {
+      const updatePromises = appointments.map(appoint =>
+        this.prisma.appointmentParticipants.update({
+          where: { id: appoint.id },
+          data: { status: data.status },
+        })
+      );
 
+      await Promise.allSettled(updatePromises);
+      return {
+        updated: true,
+      };
+    }
     return {
-      updated: true,
+      updated: false,
     };
+
   }
 
 
