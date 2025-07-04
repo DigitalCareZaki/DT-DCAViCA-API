@@ -18,7 +18,6 @@ import { NotificationService } from './notification.service';
 @WebSocketGateway({
   cors: {
     origin: '*',
-    credentials: true,
   },
 })
 @Injectable()
