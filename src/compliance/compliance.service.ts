@@ -117,14 +117,16 @@ export class ComplianceService {
       },
       select: {
         user: {
-          select: {
-            id: true,
-          },
+          select: { id: true },
         },
         medication: {
           select: {
             id: true,
             name: true,
+            start_date: true,
+            end_date: true,
+            frequency: true, // doses per day
+            time: true,      // base time for the first dose
             patient_medication_alerts: {
               select: {
                 taken: true,
@@ -136,31 +138,59 @@ export class ComplianceService {
       },
     });
 
-    const formattedResults = patientMedications.medication.map((med) => ({
-      id: med.id,
-      name: med.name,
-      compliance: med.patient_medication_alerts.reduce((acc, item) => {
-        const date = new Date(item.alert_time).toISOString();
+    const formattedResults = patientMedications.medication.map((med) => {
+      const complianceByDay: Record<string, {
+        total: number;
+        taken: number;
+        not_taken: number;
+      }> = {};
 
-        if (!acc[date]) {
-          acc[date] = {
-            total: 0,
-            taken: 0,
-            not_taken: 0,
-          };
+      const startDate = new Date(med.start_date);
+      const endDate = new Date(med.end_date);
+      const frequency = med.frequency;
+      const alerts = med.patient_medication_alerts;
+
+      // Iterate each day in the medication period
+      for (
+        let date = new Date(startDate);
+        date <= endDate;
+        date.setUTCDate(date.getUTCDate() + 1)
+      ) {
+        const dayString = date.toISOString().slice(0, 10); // YYYY-MM-DD
+        complianceByDay[dayString] = {
+          total: frequency,
+          taken: 0,
+          not_taken: 0,
+        };
+
+        // For each expected dose, calculate scheduled time
+        for (let i = 0; i < frequency; i++) {
+          const scheduledDose = new Date(date);
+          const baseTime = new Date(med.time);
+
+          scheduledDose.setUTCHours(baseTime.getUTCHours(), baseTime.getUTCMinutes(), baseTime.getUTCSeconds());
+          scheduledDose.setUTCMinutes(scheduledDose.getUTCMinutes() + (i * (24 * 60) / frequency)); // spread doses equally
+
+          // Check if a matching alert exists within ±15 minutes of scheduled time
+          const matchingAlert = alerts.find(alert => {
+            const diff = Math.abs(new Date(alert.alert_time).getTime() - scheduledDose.getTime());
+            return diff <= 15 * 60 * 1000; // 15 minutes tolerance
+          });
+
+          if (matchingAlert && matchingAlert.taken === 'TAKEN') {
+            complianceByDay[dayString].taken++;
+          } else {
+            complianceByDay[dayString].not_taken++;
+          }
         }
+      }
 
-        acc[date].total++;
-
-        if (item.taken === 'TAKEN') {
-          acc[date].taken++;
-        } else {
-          acc[date].not_taken++;
-        }
-
-        return acc;
-      }, {}),
-    }));
+      return {
+        id: med.id,
+        name: med.name,
+        compliance: complianceByDay,
+      };
+    });
 
     return {
       user: {
@@ -169,4 +199,79 @@ export class ComplianceService {
       medications: formattedResults,
     };
   }
+
+  // public async getPatientCompliancePerPill(
+  //   patientId: string,
+  //   userId: string,
+  //   role: UserRole,
+  // ): Promise<PatientCompliancePerPill> {
+  //   const patientMedications = await this.prisma.patient.findFirst({
+  //     where: {
+  //       AND: [
+  //         {
+  //           [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
+  //             some: {
+  //               user_id: userId,
+  //             },
+  //           },
+  //         },
+  //         {
+  //           user_id: patientId,
+  //         },
+  //       ],
+  //     },
+  //     select: {
+  //       user: {
+  //         select: {
+  //           id: true,
+  //         },
+  //       },
+  //       medication: {
+  //         select: {
+  //           id: true,
+  //           name: true,
+  //           patient_medication_alerts: {
+  //             select: {
+  //               taken: true,
+  //               alert_time: true,
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   const formattedResults = patientMedications.medication.map((med) => ({
+  //     id: med.id,
+  //     name: med.name,
+  //     compliance: med.patient_medication_alerts.reduce((acc, item) => {
+  //       const date = new Date(item.alert_time).toISOString();
+
+  //       if (!acc[date]) {
+  //         acc[date] = {
+  //           total: 0,
+  //           taken: 0,
+  //           not_taken: 0,
+  //         };
+  //       }
+
+  //       acc[date].total++;
+
+  //       if (item.taken === 'TAKEN') {
+  //         acc[date].taken++;
+  //       } else {
+  //         acc[date].not_taken++;
+  //       }
+
+  //       return acc;
+  //     }, {}),
+  //   }));
+
+  //   return {
+  //     user: {
+  //       id: patientId,
+  //     },
+  //     medications: formattedResults,
+  //   };
+  // }
 }

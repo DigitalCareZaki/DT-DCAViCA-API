@@ -70,39 +70,91 @@ export class EventListener {
   @OnEvent('medication.created')
   public async handleMedicationCreatedEvent(payload: MedicationCreatedEvent) {
     console.log('Medication Created Event:======>>>', payload);
-    const startDate = new Date(payload.medication.start_date);
-    const medicationTime = new Date(payload.medication.time);
 
-    const timeDiff =
-      new Date(payload.medication.end_date).getTime() - startDate.getTime();
-    const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    console.log('dayDiff:======>>>', dayDiff);
+    const startDate = new Date(payload.medication.start_date);
+    const endDate = new Date(payload.medication.end_date);
+    const medicationTime = new Date(payload.medication.time);
+    const frequency = payload.medication.frequency;
+
     const alertsToCreate: {
       medication_id: string;
       alert_time: Date;
     }[] = [];
 
+    const timeDiff = endDate.getTime() - startDate.getTime();
+    const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+    console.log('Total Days: ', dayDiff);
+    console.log('Frequency per Day: ', frequency);
+
     for (let i = 0; i <= dayDiff; i++) {
-      console.log('index:======>>>', i);
-      const alertDate = new Date(
+      const currentDay = new Date(
         startDate.getFullYear(),
         startDate.getMonth(),
-        startDate.getDate(),
-        medicationTime.getHours(),
-        medicationTime.getMinutes(),
-        0,
-        0,
+        startDate.getDate() + i,
+        0, 0, 0, 0
       );
-      alertDate.setDate(alertDate.getDate() + i);
 
-      alertsToCreate.push({
-        medication_id: payload.medication.id,
-        alert_time: alertDate,
+      for (let j = 0; j < frequency; j++) {
+        const alertDate = new Date(currentDay);
+
+        // Base time for first dose, then evenly spread next doses
+        alertDate.setUTCHours(medicationTime.getUTCHours(), medicationTime.getUTCMinutes(), 0, 0);
+
+        // Spread doses equally over 24 hours (example logic)
+        const intervalMinutes = (24 * 60) / frequency;
+        alertDate.setUTCMinutes(alertDate.getUTCMinutes() + (j * intervalMinutes));
+
+        alertsToCreate.push({
+          medication_id: payload.medication.id,
+          alert_time: alertDate,
+        });
+      }
+    }
+
+    console.log('alertsToCreate:======>>>', alertsToCreate);
+
+    if (alertsToCreate.length > 0) {
+      await this.prisma.patientMedicationAlerts.createMany({
+        data: alertsToCreate,
       });
     }
-    console.log('alertsToCreate:======>>>', alertsToCreate);
-    await this.prisma.patientMedicationAlerts.createMany({
-      data: alertsToCreate,
-    });
   }
+  // public async handleMedicationCreatedEvent(payload: MedicationCreatedEvent) {
+  //   console.log('Medication Created Event:======>>>', payload);
+  //   const startDate = new Date(payload.medication.start_date);
+  //   const medicationTime = new Date(payload.medication.time);
+
+  //   const timeDiff =
+  //     new Date(payload.medication.end_date).getTime() - startDate.getTime();
+  //   const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+  //   console.log('dayDiff:======>>>', dayDiff);
+  //   const alertsToCreate: {
+  //     medication_id: string;
+  //     alert_time: Date;
+  //   }[] = [];
+
+  //   for (let i = 0; i <= dayDiff; i++) {
+  //     console.log('index:======>>>', i);
+  //     const alertDate = new Date(
+  //       startDate.getFullYear(),
+  //       startDate.getMonth(),
+  //       startDate.getDate(),
+  //       medicationTime.getHours(),
+  //       medicationTime.getMinutes(),
+  //       0,
+  //       0,
+  //     );
+  //     alertDate.setDate(alertDate.getDate() + i);
+
+  //     alertsToCreate.push({
+  //       medication_id: payload.medication.id,
+  //       alert_time: alertDate,
+  //     });
+  //   }
+  //   console.log('alertsToCreate:======>>>', alertsToCreate);
+  //   await this.prisma.patientMedicationAlerts.createMany({
+  //     data: alertsToCreate,
+  //   });
+  // }
 }
