@@ -15,7 +15,12 @@ import type { AppointmentProps, MeetingChatProps } from './types';
 import { ChatService } from './chat.service';
 import { NotificationService } from './notification.service';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+    credentials: true,
+  },
+})
 @Injectable()
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
