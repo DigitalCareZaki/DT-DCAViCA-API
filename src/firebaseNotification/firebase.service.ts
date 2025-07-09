@@ -28,7 +28,7 @@ export class FirebaseService implements OnModuleInit {
 
     constructor(private readonly prisma: PrismaService) { }
 
-    @Cron('0 1 * * *', {
+    @Cron('* * * * *', {
         name: 'MedicationReminders',
         timeZone: 'UTC',
     })
@@ -37,68 +37,66 @@ export class FirebaseService implements OnModuleInit {
             await this.sendMedicationReminders();
         })();
     }
-
-    public async sendMedicationReminders() {
-        console.log('Running Medication Reminders Cron Job');
+    async sendMedicationReminders() {
         const now = new Date();
-        const medications = await this.prisma.medication.findMany({
+        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+
+        const alerts = await this.prisma.patientMedicationAlerts.findMany({
             where: {
-                start_date: { lte: now },
-                end_date: { gte: now },
+                alert_time: {
+                    lte: fiveMinutesAgo,
+                },
+                taken: 'PENDING',
+                notification_sent: false,
             },
-            select: {
-                id: true,
-                patient_id: true,
-                doctor_id: true,
-                time: true,
-                start_date: true,
-                end_date: true,
-                name: true,
-                dosage: true,
-                frequency: true,
-                unit: true,
-                patient: {
+            include: {
+                medication: {
                     select: {
-                        user_id: true,
-                        user: {
+                        name: true,
+                        id: true,
+                        doctor_id: true,
+                        patient: {
                             select: {
-                                email: true,
-                                first_name: true,
-                                phone_number: true,
-                                device_token: true,
+                                user_id: true,
+                                user: {
+                                    select: {
+                                        first_name: true,
+                                        device_token: true,
+                                        phone_number: true,
+                                    },
+                                },
+                            },
+                        },
+                        doctor: {
+                            select: {
+                                user_id: true,
+
                             },
                         },
                     },
                 },
-            }
+            },
         });
-        console.log('Medications found for reminders:', medications.length);
-        for (const medication of medications) {
-            const now = new Date();
-            const medTime = new Date(now);
-            medTime.setUTCHours(medication.time.getUTCHours(), medication.time.getUTCMinutes(), medication.time.getUTCSeconds(), 0);
+        console.log('Alerts found for reminders:', alerts.length);
+        console.log('Alerts found for reminders:', alerts);
+        for (const alert of alerts) {
+            const patientUser = alert.medication.patient.user;
+            const patientId = alert.medication.patient.user_id;
+            const name = patientUser?.first_name || 'Patient';
 
-            const notificationTime = new Date(medTime.getTime() + 30 * 60 * 1000); // 30 minutes after medication time
-            // const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
-            // console.log(`Medication Scheduled Time (Today): ${medTime.toISOString()}`);
-            // console.log(`Notification Time: ${notificationTime.toISOString()}`);
-            // console.log(`Now: ${now.toISOString()}`);
-            //console.log(`Thirty Minutes Ago: ${thirtyMinutesAgo.toISOString()}`);
+            await this.sendNotification(
+                alert.medication.doctor.user_id,
+                alert.medication.patient.user_id,
+                'Medication Reminder',
+                `Hello, ${name}, have you taken your medicine? (Medicine ID: ${alert.medication.id})`
+            );
 
-            if (now.getUTCHours() === notificationTime.getUTCHours() &&
-                now.getUTCMinutes() === notificationTime.getUTCMinutes()) {
-                console.log('alert set ==============>', medication);
-                //Send notification
-                await this.sendNotification(
-                    medication.doctor_id,
-                    medication.patient.user_id,
-                    'Medication Reminder',
-                    `Hello, ${medication.patient?.user?.first_name}, have you taken your medicine? (Medicine ID: ${medication.id})`
-                );
-            }
 
+            await this.prisma.patientMedicationAlerts.update({
+                where: { id: alert.id },
+                data: { notification_sent: true },
+            });
         }
-
     }
 
     public async sendNotification(sender: string, receiver: string, title: string, body: string) {

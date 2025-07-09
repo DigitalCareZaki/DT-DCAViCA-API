@@ -437,8 +437,8 @@ model Medication {
 
   start_date DateTime // YYYY-MM-DDT00:00:00Z
   end_date   DateTime // YYYY-MM-DDT00:00:00Z
-  time       DateTime // only the time part HH:MM:SS is to be used
-
+  //time       DateTime // only the time part HH:MM:SS is to be used
+  time String []
   dosage    String
   frequency Int
 
@@ -471,6 +471,7 @@ model PatientMedicationAlerts {
   taken MedicationTaken @default(PENDING)
 
   medication_id String
+  notification_sent Boolean @default(false)
   medication    Medication @relation(name: "patientMedicationAlerts", fields: [medication_id], references: [id], onDelete: Cascade)
 
   created_at DateTime @default(now())

@@ -7,6 +7,8 @@ import {
   IsOptional,
   IsISO8601,
   Validate,
+  IsArray,
+  Matches,
 } from 'class-validator';
 import {
   ValidateMedicationUnit,
@@ -72,9 +74,13 @@ export class MedicationDTO {
   @Transform(({ value }: { value: string }) => getDate(value))
   end_date: string;
 
-  @IsISO8601()
-  @IsNotEmpty()
-  time: string;
+  // @IsISO8601()
+  // @IsNotEmpty()
+  // time: string;
+  @IsArray()
+  @IsString({ each: true })
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/, { each: true }) // ensures HH:MM format
+  time: string[];
 
   @IsString()
   @IsNotEmpty()

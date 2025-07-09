@@ -100,6 +100,9 @@ export class ComplianceService {
     userId: string,
     role: UserRole,
   ): Promise<PatientCompliancePerPill> {
+
+
+    console.log('patientId:========>>>>', patientId)
     const patientMedications = await this.prisma.patient.findFirst({
       where: {
         AND: [
@@ -137,6 +140,7 @@ export class ComplianceService {
         },
       },
     });
+    console.log('patientMedications:========>>>>', patientMedications)
 
     const formattedResults = patientMedications.medication.map((med) => {
       const complianceByDay: Record<string, {
@@ -147,7 +151,8 @@ export class ComplianceService {
 
       const startDate = new Date(med.start_date);
       const endDate = new Date(med.end_date);
-      const frequency = med.frequency;
+      const scheduledTimes: string[] = med.time || []; // <-- updated
+
       const alerts = med.patient_medication_alerts;
 
       // Iterate each day in the medication period
@@ -158,23 +163,27 @@ export class ComplianceService {
       ) {
         const dayString = date.toISOString().slice(0, 10); // YYYY-MM-DD
         complianceByDay[dayString] = {
-          total: frequency,
+          total: scheduledTimes.length,
           taken: 0,
           not_taken: 0,
         };
 
-        // For each expected dose, calculate scheduled time
-        for (let i = 0; i < frequency; i++) {
-          const scheduledDose = new Date(date);
-          const baseTime = new Date(med.time);
+        // For each scheduled time
+        for (const timeStr of scheduledTimes) {
+          const [hour, minute] = timeStr.split(':').map(Number);
+          const scheduledDose = new Date(Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            hour,
+            minute,
+            0,
+            0
+          ));
 
-          scheduledDose.setUTCHours(baseTime.getUTCHours(), baseTime.getUTCMinutes(), baseTime.getUTCSeconds());
-          scheduledDose.setUTCMinutes(scheduledDose.getUTCMinutes() + (i * (24 * 60) / frequency)); // spread doses equally
-
-          // Check if a matching alert exists within ±15 minutes of scheduled time
           const matchingAlert = alerts.find(alert => {
             const diff = Math.abs(new Date(alert.alert_time).getTime() - scheduledDose.getTime());
-            return diff <= 15 * 60 * 1000; // 15 minutes tolerance
+            return diff <= 15 * 60 * 1000; // ±15 minutes
           });
 
           if (matchingAlert && matchingAlert.taken === 'TAKEN') {
@@ -191,7 +200,6 @@ export class ComplianceService {
         compliance: complianceByDay,
       };
     });
-
     return {
       user: {
         id: patientId,

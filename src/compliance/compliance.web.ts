@@ -49,6 +49,7 @@ export class ComplianceWebController extends ComplianceController {
     @GetUser() user: UserRes,
     @Param('id') id: string,
   ): Promise<PatientCompliancePerPill> {
+
     return this.getComplianceService().getPatientCompliancePerPill(
       id,
       user.id,
