@@ -391,7 +391,7 @@ model ElectronicMedicalReport {
   patient    Patient @relation(name: "patientElectronicMedicalReport", fields: [patient_id], references: [id])
   
   type           EMRType
-  uri            String
+  uri            String?
   title          String
   description    String?
 
