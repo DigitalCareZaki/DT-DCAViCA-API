@@ -140,7 +140,7 @@ export class ComplianceService {
         },
       },
     });
-    console.log('patientMedications:========>>>>', patientMedications)
+    console.log('patientMedications:========>>>>', JSON.stringify(patientMedications.medication[0].patient_medication_alerts))
 
     const formattedResults = patientMedications.medication.map((med) => {
       const complianceByDay: Record<string, {
@@ -186,11 +186,24 @@ export class ComplianceService {
             return diff <= 15 * 60 * 1000; // ±15 minutes
           });
 
+
           if (matchingAlert && matchingAlert.taken === 'TAKEN') {
             complianceByDay[dayString].taken++;
           } else {
             complianceByDay[dayString].not_taken++;
           }
+          // const matchingAlerts = alerts.filter(alert => {
+          //   const diff = Math.abs(new Date(alert.alert_time).getTime() - scheduledDose.getTime());
+          //   return diff <= 15 * 60 * 1000;
+          // });
+
+          // const takenAlert = matchingAlerts.find(a => a.taken === 'TAKEN');
+
+          // if (takenAlert) {
+          //   complianceByDay[dayString].taken++;
+          // } else {
+          //   complianceByDay[dayString].not_taken++;
+          // }
         }
       }
 
