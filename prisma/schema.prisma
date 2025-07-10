@@ -388,7 +388,7 @@ model ElectronicMedicalReport {
   id String @id @default(uuid())
 
   patient_id String
-  patient    Patient @relation(name: "patientElectronicMedic", fields: [patient_id], references: [id])
+  patient    Patient @relation(name: "patientElectronicMedicalReport", fields: [patient_id], references: [id])
   
   type           EMRType
   uri            String?
