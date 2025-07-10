@@ -11,7 +11,7 @@ CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'TRANS', 'UNKNOWN');
 CREATE TYPE "Title" AS ENUM ('MR', 'MS', 'MRS', 'MISS', 'MASTER', 'MADAM');
 
 -- CreateEnum
-CREATE TYPE "MeasurementStatus" AS ENUM ('HIGH', 'LOW', 'NORMAL');
+CREATE TYPE "MeasurementStatus" AS ENUM ('HIGH', 'LOW', 'NORMAL', 'ALERT_NOT_SET');
 
 -- CreateEnum
 CREATE TYPE "MeasurementMode" AS ENUM ('METRIC');
@@ -47,7 +47,7 @@ CREATE TYPE "VideoPriority" AS ENUM ('HIGH', 'LOW', 'UNDEFINED');
 CREATE TYPE "VideoCategory" AS ENUM ('INFORMATIONAL', 'MARKETING');
 
 -- CreateEnum
-CREATE TYPE "EMRType" AS ENUM ('FAMILY_HISTORY', 'PARENT_HISTORY', 'SURGICAL_HISTORY', 'MEDICATION_HISTORY', 'DIAGNOSIS', 'RECORD');
+CREATE TYPE "EMRType" AS ENUM ('FAMILY_HISTORY', 'PATIENT_HISTORY', 'SURGICAL_HISTORY', 'MEDICATION_HISTORY', 'DIAGNOSIS', 'RECORD');
 
 -- CreateTable
 CREATE TABLE "UserMetaData" (
@@ -308,7 +308,7 @@ CREATE TABLE "ElectronicMedicalReport" (
     "id" TEXT NOT NULL,
     "patient_id" TEXT NOT NULL,
     "type" "EMRType" NOT NULL,
-    "uri" TEXT NOT NULL,
+    "uri" TEXT,
     "title" TEXT NOT NULL,
     "description" TEXT,
     "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -345,7 +345,7 @@ CREATE TABLE "Medication" (
     "name" TEXT NOT NULL,
     "start_date" TIMESTAMP(3) NOT NULL,
     "end_date" TIMESTAMP(3) NOT NULL,
-    "time" TIMESTAMP(3) NOT NULL,
+    "time" TEXT[],
     "dosage" TEXT NOT NULL,
     "frequency" INTEGER NOT NULL,
     "unit" "MedicationUnit" NOT NULL,
@@ -364,6 +364,7 @@ CREATE TABLE "PatientMedicationAlerts" (
     "alert_time" TIMESTAMP(3) NOT NULL,
     "taken" "MedicationTaken" NOT NULL DEFAULT 'PENDING',
     "medication_id" TEXT NOT NULL,
+    "notification_sent" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "PatientMedicationAlerts_pkey" PRIMARY KEY ("id")
