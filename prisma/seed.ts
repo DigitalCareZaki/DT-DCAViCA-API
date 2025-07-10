@@ -724,76 +724,76 @@ async function createOrganizationMedications() {
   });
 }
 
-async function createMedication() {
-  const now = new Date();
-  const millisecondsToAdd = 7 * 24 * 60 * 60 * 1000; // 7 days
+// async function createMedication() {
+//   const now = new Date();
+//   const millisecondsToAdd = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-  const patient = await prisma.patient.findFirstOrThrow();
-  const doctor = await prisma.doctor.findFirstOrThrow();
+//   const patient = await prisma.patient.findFirstOrThrow();
+//   const doctor = await prisma.doctor.findFirstOrThrow();
 
-  const start_date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const end_date = new Date(start_date.getTime() + millisecondsToAdd);
+//   const start_date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+//   const end_date = new Date(start_date.getTime() + millisecondsToAdd);
 
-  await prisma.medication.createMany({
-    data: [
-      {
-        name: 'Aspirin',
-        start_date,
-        end_date,
-        time: ["13:00", "19:00"],
-        dosage: '10mg',
-        frequency: 2,
-        unit: 'TABLET',
-        patient_id: patient.id,
-        doctor_id: doctor.id,
-      },
-      {
-        name: 'Paracetamol',
-        start_date,
-        end_date,
-        time: ["13:00", "19:00", "21:00"],
-        dosage: '500mg',
-        frequency: 3,
-        unit: 'TABLET',
-        patient_id: patient.id,
-        doctor_id: doctor.id,
-      },
-      {
-        name: 'Ibuprofen',
-        start_date,
-        end_date,
-        time: ["08:00"],
-        dosage: '200mg',
-        frequency: 1,
-        unit: 'TABLET',
-        patient_id: patient.id,
-        doctor_id: doctor.id,
-      },
-      {
-        name: 'Amoxicillin',
-        start_date,
-        end_date,
-        time: ["09:00", "15:00"],
-        dosage: '250mg',
-        frequency: 2,
-        unit: 'CAPSULE',
-        patient_id: patient.id,
-        doctor_id: doctor.id,
-      },
-      {
-        name: 'Metformin',
-        start_date,
-        end_date,
-        time: ["08:00", "20:00"],
-        dosage: '500mg',
-        frequency: 2,
-        unit: 'TABLET',
-        patient_id: patient.id,
-        doctor_id: doctor.id,
-      },
-    ]
-  });
-}
+//   await prisma.medication.createMany({
+//     data: [
+//       {
+//         name: 'Aspirin',
+//         start_date,
+//         end_date,
+//         time: ["13:00", "19:00"],
+//         dosage: '10mg',
+//         frequency: 2,
+//         unit: 'TABLET',
+//         patient_id: patient.id,
+//         doctor_id: doctor.id,
+//       },
+//       {
+//         name: 'Paracetamol',
+//         start_date,
+//         end_date,
+//         time: ["13:00", "19:00", "21:00"],
+//         dosage: '500mg',
+//         frequency: 3,
+//         unit: 'TABLET',
+//         patient_id: patient.id,
+//         doctor_id: doctor.id,
+//       },
+//       {
+//         name: 'Ibuprofen',
+//         start_date,
+//         end_date,
+//         time: ["08:00"],
+//         dosage: '200mg',
+//         frequency: 1,
+//         unit: 'TABLET',
+//         patient_id: patient.id,
+//         doctor_id: doctor.id,
+//       },
+//       {
+//         name: 'Amoxicillin',
+//         start_date,
+//         end_date,
+//         time: ["09:00", "15:00"],
+//         dosage: '250mg',
+//         frequency: 2,
+//         unit: 'CAPSULE',
+//         patient_id: patient.id,
+//         doctor_id: doctor.id,
+//       },
+//       {
+//         name: 'Metformin',
+//         start_date,
+//         end_date,
+//         time: ["08:00", "20:00"],
+//         dosage: '500mg',
+//         frequency: 2,
+//         unit: 'TABLET',
+//         patient_id: patient.id,
+//         doctor_id: doctor.id,
+//       },
+//     ]
+//   });
+// }
 
 async function createNotifications() {
 
@@ -1004,7 +1004,7 @@ async function main() {
   await connectPatientToNurse();
   await patientMeasurements();
   await createOrganizationMedications();
-  await createMedication();
+  // await createMedication();
   await createMaster();
   await createNotifications();
   await sendSMS();
