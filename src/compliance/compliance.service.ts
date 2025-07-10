@@ -130,6 +130,7 @@ export class ComplianceService {
             end_date: true,
             frequency: true, // doses per day
             time: true,      // base time for the first dose
+            created_at: true,
             patient_medication_alerts: {
               select: {
                 taken: true,
@@ -197,9 +198,11 @@ export class ComplianceService {
       return {
         id: med.id,
         name: med.name,
+        created_at: med.created_at,
         compliance: complianceByDay,
       };
     });
+
     return {
       user: {
         id: patientId,
