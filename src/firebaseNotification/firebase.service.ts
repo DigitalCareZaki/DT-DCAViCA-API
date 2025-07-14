@@ -131,7 +131,8 @@ export class FirebaseService implements OnModuleInit {
                     title,
                     body,
                 },
-                token,
+                token
+                // token: 'cIOt-g6YPkn5n0kT4xqi25:APA91bHrFH8ebsH9opPUapJHRof7vf04cqDBQG8whZgeNs6h9chZz1WMywmNfLHGVvhGmVwqWlOIJgQJ_ZRzfio5SfAbSc0Wr1gYhRAOMzYd7yDpkH3swuY'
             };
             console.log(message, '=============>message')
             const response = await this.firebaseApp.messaging().send(message);
