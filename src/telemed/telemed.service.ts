@@ -267,9 +267,15 @@ export class TelemedService {
               },
             },
             created_at: true,
+            updated_at: true,
           },
         },
       },
+      orderBy: {
+        appointment: {
+          updated_at: 'desc'  // Order by the most recently updated appointment
+        }
+      }
     });
   }
 
