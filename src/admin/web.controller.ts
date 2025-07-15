@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
@@ -22,8 +23,8 @@ export class WebAdminController extends AdminController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/patient')
-  public async getPatient(@GetUser() user: UserRes) {
-    return this.getAdminService().getPatients(user);
+  public async getPatient(@Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes) {
+    return this.getAdminService().getPatients(user, +page, +limit);
   }
 
   @HttpCode(HttpStatus.OK)

@@ -66,109 +66,208 @@ export class AdminService {
     return true;
   }
 
-  public async getPatients(user: UserRes) {
+  public async getPatients(user: UserRes, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
     const currentOrganization = await this.prisma.user.findUniqueOrThrow({
-      where: {
-        id: user.id,
-      },
+      where: { id: user.id },
       select: {
         organization_id: true,
-        associated_branches: {
-          select: {
-            id: true,
-          },
-        },
+        associated_branches: { select: { id: true } },
       },
     });
 
-    if (!currentOrganization.associated_branches[0]?.id)
-      throw new Error('No branch is associated with this user');
+    const branchId = currentOrganization.associated_branches[0]?.id;
+    if (!branchId) throw new Error('No branch is associated with this user');
 
-    const patients = await this.prisma.user.findMany({
-      where: {
-        AND: [
-          {
-            role: 'PATIENT',
-          },
-          {
-            associated_branches: {
-              some: {
-                id: currentOrganization.associated_branches[0]?.id,
-              },
-            },
-          },
-        ],
-      },
-      select: {
-        id: true,
-        email: true,
-        patient: {
-          select: {
-            emr: true,
-            height: true,
-            weight: true,
-            doctors: {
-              select: {
-                specialities: {
-                  select: {
-                    title: true,
+    const [patients, totalItems] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        skip,
+        take: limit,
+        where: {
+          AND: [
+            { role: 'PATIENT' },
+            { associated_branches: { some: { id: branchId } } },
+          ],
+        },
+        select: {
+          id: true,
+          email: true,
+          patient: {
+            select: {
+              emr: true,
+              height: true,
+              weight: true,
+              doctors: {
+                select: {
+                  specialities: { select: { title: true } },
+                  user: {
+                    select: { id: true, first_name: true, last_name: true },
                   },
                 },
-                user: {
-                  select: {
-                    id: true,
-                    first_name: true,
-                    last_name: true,
-                  },
-                }
+                orderBy: { created_at: 'asc' },
               },
-              orderBy: {
-                created_at: 'asc', // or any field that determines order
-              },
-              // Note: .take(1) is not allowed here for many-to-many relations
             },
           },
+          first_name: true,
+          last_name: true,
+          middle_name: true,
+          created_at: true,
         },
-        first_name: true,
-        last_name: true,
-        middle_name: true,
-        created_at: true,
-      },
-      // select: {
-      //   id: true,
-      //   email: true,
-      //   patient: {
-      //     select: {
-      //       emr: true,
-      //       height: true,
-      //       weight: true,
-      //     },
-      //   },
-      //   first_name: true,
-      //   last_name: true,
-      //   middle_name: true,
-      //   created_at: true,
-      // },
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.user.count({
+        where: {
+          AND: [
+            { role: 'PATIENT' },
+            { associated_branches: { some: { id: branchId } } },
+          ],
+        },
+      }),
+    ]);
 
-      orderBy: {
-        created_at: 'desc',
-      },
-    });
-    console.log(patients, 'patients>>>>>>>>>>>>>>');
     const enrichedPatients = patients.map((p) => {
       const firstDoctor = p.patient?.doctors?.[0] || null;
-
       return {
         ...p,
         patient: {
           ...p.patient,
           first_assigned_doctor: firstDoctor,
-          department: firstDoctor.specialities[0],
+          department: firstDoctor?.specialities?.[0] || null,
         },
       };
     });
-    return enrichedPatients;
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return {
+      data: enrichedPatients,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+      },
+    };
   }
+
+
+
+  // old code without pagination
+  // public async getPatients(user: UserRes, page: number, limit: number) {
+  //   const skip = (page - 1) * limit;
+
+  //   const currentOrganization = await this.prisma.user.findUniqueOrThrow({
+  //     where: {
+  //       id: user.id,
+  //     },
+  //     select: {
+  //       organization_id: true,
+  //       associated_branches: {
+  //         select: {
+  //           id: true,
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   if (!currentOrganization.associated_branches[0]?.id)
+  //     throw new Error('No branch is associated with this user');
+
+  //   const patients = await this.prisma.user.findMany({
+  //     where: {
+  //       AND: [
+  //         {
+  //           role: 'PATIENT',
+  //         },
+  //         {
+  //           associated_branches: {
+  //             some: {
+  //               id: currentOrganization.associated_branches[0]?.id,
+  //             },
+  //           },
+  //         },
+  //       ],
+  //     },
+  //     select: {
+  //       id: true,
+  //       email: true,
+  //       patient: {
+  //         select: {
+  //           emr: true,
+  //           height: true,
+  //           weight: true,
+  //           doctors: {
+  //             select: {
+  //               specialities: {
+  //                 select: {
+  //                   title: true,
+  //                 },
+  //               },
+  //               user: {
+  //                 select: {
+  //                   id: true,
+  //                   first_name: true,
+  //                   last_name: true,
+  //                 },
+  //               }
+  //             },
+  //             orderBy: {
+  //               created_at: 'asc', // or any field that determines order
+  //             },
+  //             // Note: .take(1) is not allowed here for many-to-many relations
+  //           },
+  //         },
+  //       },
+  //       first_name: true,
+  //       last_name: true,
+  //       middle_name: true,
+  //       created_at: true,
+  //     },
+  //     // select: {
+  //     //   id: true,
+  //     //   email: true,
+  //     //   patient: {
+  //     //     select: {
+  //     //       emr: true,
+  //     //       height: true,
+  //     //       weight: true,
+  //     //     },
+  //     //   },
+  //     //   first_name: true,
+  //     //   last_name: true,
+  //     //   middle_name: true,
+  //     //   created_at: true,
+  //     // },
+
+  //     orderBy: {
+  //       created_at: 'desc',
+  //     },
+  //   });
+
+
+
+  //   console.log(patients, 'patients>>>>>>>>>>>>>>');
+  //   const enrichedPatients = patients.map((p) => {
+  //     const firstDoctor = p.patient?.doctors?.[0] || null;
+
+  //     return {
+  //       ...p,
+  //       patient: {
+  //         ...p.patient,
+  //         first_assigned_doctor: firstDoctor,
+  //         department: firstDoctor.specialities[0],
+  //       },
+  //     };
+  //   });
+  //   return enrichedPatients;
+  // }
 
   public async getPatientProfile(id: string) {
     const patient = await this.prisma.patient.findFirstOrThrow({
