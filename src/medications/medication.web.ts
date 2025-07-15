@@ -5,7 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  Patch,
   Post,
   Query,
   UseGuards,
@@ -71,8 +70,8 @@ export class MedicationWebController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Patch('/:medication_id')
-  public async updateMedication(
+  @Post('/:medication_id')
+  public async updatePatientMedication(
     @Param('medication_id') medicationId: string,
     @Body() data: any,
   ) {

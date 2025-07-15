@@ -459,10 +459,10 @@ export class MedicationService {
 
     // console.log('medications >>> ', medication);
     if (!medication) {
-      return res.status(HttpStatus.NOT_FOUND).json({
-        statusCode: HttpStatus.NOT_FOUND,
-        success: false,
-        data: null,
+      return res.status(HttpStatus.OK).json({
+        statusCode: HttpStatus.OK,
+        success: true,
+        data: {},
       });
     }
 
@@ -485,10 +485,10 @@ export class MedicationService {
     console.log('patientMedicationAlert >>> ', patientMedicationAlert);
 
     if (!patientMedicationAlert) {
-      return res.status(HttpStatus.NOT_FOUND).json({
-        statusCode: HttpStatus.NOT_FOUND,
-        success: false,
-        data: null,
+      return res.status(HttpStatus.OK).json({
+        statusCode: HttpStatus.OK,
+        success: true,
+        data: {},
       });
     }
 

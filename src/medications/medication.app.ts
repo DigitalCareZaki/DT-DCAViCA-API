@@ -41,10 +41,8 @@ export class MedicationAppController {
     );
   }
 
-  @Get('/check-patient/:id')
+  @Get('/check-pending')
   public async checkPatientCurrentMedication(@GetUser() user: UserRes, @Res() res: Response) {
-    console.log('user', user);
-  
     return this.medicationService.checkPatientCurrentMedication(user.id, res);
   }
 }
