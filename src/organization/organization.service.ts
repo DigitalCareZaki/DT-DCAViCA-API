@@ -81,60 +81,147 @@ export class OrganizationService {
     });
   }
 
-  // This method is changed due to the need to flatten user properties into a new "patient" object request by abdullah. 
-  public async getOrganizationPatientsForWeb(userId: string) {
+  public async getOrganizationPatientsForWeb(userId: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
     const organization = await this.validateOrganization(userId);
 
-    const patients = await this.prisma.patient.findMany({
-      where: {
-        user: {
-          organization: {
-            id: organization.organization_id,
+    const [patients, totalItems] = await this.prisma.$transaction([
+      this.prisma.patient.findMany({
+        skip,
+        take: limit,
+        where: {
+          user: {
+            organization: {
+              id: organization.organization_id,
+            },
           },
         },
-      },
-      select: {
-        id: true,
-        emr: true,
-        weight: true,
-        height: true,
-        user: {
-          select: {
-            id: true,
-            first_name: true,
-            middle_name: true,
-            last_name: true,
-            dob: true,
-            uri: true,
-            role: true,
-            gender: true,
-            title: true,
-            email: true,
-            phone_number: true,
-            username: true,
-            created_at: true,
-            updated_at: true,
+        select: {
+          id: true,
+          emr: true,
+          weight: true,
+          height: true,
+          created_at: true,
+          updated_at: true,
+          user: {
+            select: {
+              id: true,
+              first_name: true,
+              middle_name: true,
+              last_name: true,
+              dob: true,
+              uri: true,
+              role: true,
+              gender: true,
+              title: true,
+              email: true,
+              phone_number: true,
+              username: true,
+              created_at: true,
+              updated_at: true,
+            },
           },
         },
-        created_at: true,
-        updated_at: true,
-      },
-    });
+        orderBy: {
+          created_at: 'desc',
+        },
+      }),
+      this.prisma.patient.count({
+        where: {
+          user: {
+            organization: {
+              id: organization.organization_id,
+            },
+          },
+        },
+      }),
+    ]);
 
-    // Flatten user properties into a new "patient" object
-    return patients.map((patient) => ({
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
 
+    const transformedPatients = patients.map((patient) => ({
       emr: patient.emr,
       weight: patient.weight,
       height: patient.height,
       created_at: patient.created_at,
       updated_at: patient.updated_at,
       patient: {
-        ...patient.user
-      }
-
+        ...patient.user,
+      },
     }));
+
+    return {
+      data: transformedPatients,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+      },
+    };
   }
+
+  // 1 This method is changed due to the need to flatten user properties into a new "patient" object request by abdullah.  
+  // 2 change abdullah old code without pagination
+  // public async getOrganizationPatientsForWeb(userId: string) {
+  //   const organization = await this.validateOrganization(userId);
+
+  //   const patients = await this.prisma.patient.findMany({
+  //     where: {
+  //       user: {
+  //         organization: {
+  //           id: organization.organization_id,
+  //         },
+  //       },
+  //     },
+  //     select: {
+  //       id: true,
+  //       emr: true,
+  //       weight: true,
+  //       height: true,
+  //       user: {
+  //         select: {
+  //           id: true,
+  //           first_name: true,
+  //           middle_name: true,
+  //           last_name: true,
+  //           dob: true,
+  //           uri: true,
+  //           role: true,
+  //           gender: true,
+  //           title: true,
+  //           email: true,
+  //           phone_number: true,
+  //           username: true,
+  //           created_at: true,
+  //           updated_at: true,
+  //         },
+  //       },
+  //       created_at: true,
+  //       updated_at: true,
+  //     },
+  //   });
+
+  //   // Flatten user properties into a new "patient" object
+  //   return patients.map((patient) => ({
+
+  //     emr: patient.emr,
+  //     weight: patient.weight,
+  //     height: patient.height,
+  //     created_at: patient.created_at,
+  //     updated_at: patient.updated_at,
+  //     patient: {
+  //       ...patient.user
+  //     }
+
+  //   }));
+  // }
 
   private async getBranchUsers(
     user: UserRes,
