@@ -63,6 +63,15 @@ export class OrganizationWebController extends OrganizationController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @Get('/web-patients')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER, Role.DOCTOR)
+  public async getOrganizationPatientsForWeb(@GetUser() user: UserRes) {
+    return this.getOrganizationService().getOrganizationPatientsForWeb(user.id);
+  }
+
+
+  @HttpCode(HttpStatus.OK)
   @Get('/nurses')
   @UseGuards(RolesGuard)
   @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER)

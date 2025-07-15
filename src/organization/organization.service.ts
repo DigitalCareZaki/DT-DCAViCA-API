@@ -41,48 +41,48 @@ export class OrganizationService {
     });
   }
 
-  // public async getOrganizationPatients(userId: string) {
-  //   const organization = await this.validateOrganization(userId);
+  public async getOrganizationPatients(userId: string) {
+    const organization = await this.validateOrganization(userId);
 
-  //   return this.prisma.patient.findMany({
-  //     where: {
-  //       user: {
-  //         organization: {
-  //           id: organization.organization_id,
-  //         },
-  //       },
-  //     },
-  //     select: {
-  //       id: true,
-  //       emr: true,
-  //       weight: true,
-  //       height: true,
-  //       user: {
-  //         select: {
-  //           id: true,
-  //           first_name: true,
-  //           middle_name: true,
-  //           last_name: true,
-  //           dob: true,
-  //           uri: true,
-  //           role: true,
-  //           gender: true,
-  //           title: true,
-  //           email: true,
-  //           phone_number: true,
-  //           username: true,
-  //           created_at: true,
-  //           updated_at: true,
-  //         },
-  //       },
-  //       created_at: true,
-  //       updated_at: true,
-  //     },
-  //   });
-  // }
+    return this.prisma.patient.findMany({
+      where: {
+        user: {
+          organization: {
+            id: organization.organization_id,
+          },
+        },
+      },
+      select: {
+        id: true,
+        emr: true,
+        weight: true,
+        height: true,
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            middle_name: true,
+            last_name: true,
+            dob: true,
+            uri: true,
+            role: true,
+            gender: true,
+            title: true,
+            email: true,
+            phone_number: true,
+            username: true,
+            created_at: true,
+            updated_at: true,
+          },
+        },
+        created_at: true,
+        updated_at: true,
+      },
+    });
+  }
 
   // This method is changed due to the need to flatten user properties into a new "patient" object request by abdullah. 
-  public async getOrganizationPatients(userId: string) {
+  public async getOrganizationPatientsForWeb(userId: string) {
     const organization = await this.validateOrganization(userId);
 
     const patients = await this.prisma.patient.findMany({
@@ -444,16 +444,13 @@ export class OrganizationService {
     };
   }
 
-  private async validateOrganization(userId: string): Promise<{
-    organization_id: string;
-  }> {
+  private async validateOrganization(userId: string): Promise<{ organization_id: string; }> {
     const res = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { organization_id: true },
     });
 
-    if (!res?.organization_id)
-      throw new AppError('No Organization Found', HttpStatus.BAD_REQUEST);
+    if (!res?.organization_id) throw new AppError('No Organization Found', HttpStatus.BAD_REQUEST);
 
     return res;
   }
