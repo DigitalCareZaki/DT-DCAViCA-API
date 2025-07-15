@@ -1,10 +1,12 @@
-import { Controller, Get, HttpCode, HttpStatus, UseGuards, Param, Query } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, UseGuards, Param, Query, Res } from '@nestjs/common';
 import type { HealthRes, UserRes } from '@types';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 import { Role } from 'src/auth/enums/role.enum';
 import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { GetUser } from 'src/auth/decorators';
 import { MedicationService } from './medication.service';
+import { AppError } from '../errors';
+import { Response } from 'express';
 
 @Controller('app/medications')
 @UseGuards(JwtGuard, RolesGuard)
@@ -37,5 +39,12 @@ export class MedicationAppController {
       page ? +page : 1,
       limit ? +limit : 10,
     );
+  }
+
+  @Get('/check-patient/:id')
+  public async checkPatientCurrentMedication(@GetUser() user: UserRes, @Res() res: Response) {
+    console.log('user', user);
+  
+    return this.medicationService.checkPatientCurrentMedication(user.id, res);
   }
 }

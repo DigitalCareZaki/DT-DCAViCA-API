@@ -1,4 +1,4 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpStatus, HttpException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -11,6 +11,7 @@ import type { MedicationUnit } from '@prisma/client';
 import type { UserRole } from '@types';
 import type { ModifiedMedication } from './types';
 import type { MedicationCreatedEvent } from 'src/events/types';
+import { Response } from 'express';
 
 @Injectable()
 export class MedicationService {
@@ -430,5 +431,71 @@ export class MedicationService {
       console.error('Error updating medication:', error);
     }
 
+  }
+
+  public async checkPatientCurrentMedication(userId: string, res: Response) {
+    const patient = await this.prisma.patient.findFirst({
+      where: {
+        user_id: userId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const medication = await this.prisma.medication.findFirst({
+      where: {
+        start_date: {
+          lte: new Date(),
+        },
+        end_date: {
+          gte: new Date(),
+        },
+        patient: {
+          id: patient.id,
+        },
+      },
+    });
+
+    // console.log('medications >>> ', medication);
+    if (!medication) {
+      return res.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        success: false,
+        data: null,
+      });
+    }
+
+    const now = new Date();                             // current moment
+    const oneHourAgo = new Date(now.getTime() - 60 * 60_000);  // now − 1 h
+    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60_000);  // now − 5 min
+
+    const patientMedicationAlert = await this.prisma.patientMedicationAlerts.findFirst({
+      where: {
+        medication_id: medication.id,
+        taken: 'PENDING',
+        alert_time: {
+          gte: oneHourAgo,     // alert_time is **not older than** 1 hour
+          lte: fiveMinutesAgo, // alert_time is **at least** 5 min old
+        },
+      },
+      orderBy: { alert_time: 'asc' },  // earliest that fits the window
+    });
+
+    console.log('patientMedicationAlert >>> ', patientMedicationAlert);
+
+    if (!patientMedicationAlert) {
+      return res.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        success: false,
+        data: null,
+      });
+    }
+
+    return res.status(HttpStatus.OK).json({
+      statusCode: HttpStatus.OK,
+      success: true,
+      data: patientMedicationAlert,
+    });
   }
 }
