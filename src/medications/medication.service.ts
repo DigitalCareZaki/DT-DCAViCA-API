@@ -403,13 +403,13 @@ export class MedicationService {
   }
 
   public async updateMedication(
-    medicationId: string,
+    patientMedicationId: string,
     data: any,
   ) {
     console.log('Updating medication with data:', data);
     try {
       const medicine = await this.prisma.patientMedicationAlerts.findFirst({
-        where: { medication_id: medicationId }
+        where: { id: patientMedicationId }
       });
 
       if (!medicine) {
