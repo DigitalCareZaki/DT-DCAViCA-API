@@ -84,18 +84,17 @@ export class FirebaseService implements OnModuleInit {
             const patientId = alert.medication.patient.user_id;
             const name = patientUser?.first_name || 'Patient';
 
-            await this.sendNotification(
-                alert.medication.doctor.user_id,
-                alert.medication.patient.user_id,
-                'Medication Reminder',
-                `Hello, ${name}, have you taken your medicine? (Medicine ID: ${alert.medication.id})`
-            );
-
-
             await this.prisma.patientMedicationAlerts.update({
                 where: { id: alert.id },
                 data: { notification_sent: true },
             });
+
+            await this.sendNotification(
+                alert.medication.doctor.user_id,
+                alert.medication.patient.user_id,
+                'Medication Reminder',
+                `Hello, ${name}, have you taken your medicine? (Medicine ID: ${alert.id})`,
+            );
         }
     }
 
