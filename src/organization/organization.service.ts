@@ -656,4 +656,17 @@ export class OrganizationService {
 
     return user;
   }
+
+  public async updateOrganizationMedicine(medicineId: string, name: string) {
+    const medicine = await this.prisma.organizationMedication.findUnique({
+      where: { id: medicineId },
+    });
+
+    if (!medicine) throw new AppError('Medicine not found', HttpStatus.NOT_FOUND);
+
+    return await this.prisma.organizationMedication.update({
+      where: { id: medicineId },
+      data: { name },
+    });
+  }
 }

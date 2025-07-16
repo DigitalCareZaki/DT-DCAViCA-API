@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -361,4 +362,16 @@ export class OrganizationWebController extends OrganizationController {
       organizationId,
     );
   }
+
+  @HttpCode(HttpStatus.CREATED)
+  @Put('/update-medicine/:medicine_id')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.SUPERADMIN, Role.ADMIN)
+  public async updateOrganizationMedicine(@Param('medicine_id') medicineId: string, @Body('name') name: string) {
+    return this.getOrganizationService().updateOrganizationMedicine(
+      medicineId,
+      name,
+    );
+  }
+
 }

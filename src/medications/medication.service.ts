@@ -280,10 +280,7 @@ export class MedicationService {
       });
 
       if (!appointmentExists) {
-        throw new AppError(
-          'Appointment does not exist, or you do not have access to it',
-          HttpStatus.NOT_FOUND,
-        );
+        throw new AppError('Appointment does not exist, or you do not have access to it', HttpStatus.NOT_FOUND);
       }
 
       medication = await this.prisma.medication.create({
@@ -403,30 +400,30 @@ export class MedicationService {
     return medication;
   }
 
-  public async updateMedication(
+  public async updateMedicationAlert(
     patientMedicationId: string,
     data: any,
   ) {
     console.log('Updating medication with data:', data);
     try {
-      const medicine = await this.prisma.patientMedicationAlerts.findFirst({
+      const medicationAlert = await this.prisma.patientMedicationAlerts.findFirst({
         where: { id: patientMedicationId }
       });
 
-      if (!medicine) {
+      if (!medicationAlert) {
         throw new AppError('Medication alert not found', HttpStatus.NOT_FOUND);
       }
 
-      const medication = await this.prisma.patientMedicationAlerts.update({
+      const medicationAlertUpdate = await this.prisma.patientMedicationAlerts.update({
         where: {
-          id: medicine.id,
+          id: medicationAlert.id,
         },
         data: {
           taken: data.taken
         },
       });
-      console.log('Medication updated successfully:', medication);
-      return medication;
+      console.log('Medication updated successfully:', medicationAlertUpdate);
+      return medicationAlertUpdate;
     } catch (error) {
       console.error('Error updating medication:', error);
     }
@@ -498,4 +495,57 @@ export class MedicationService {
       data: patientMedicationAlert,
     });
   }
+
+  // public async updateMedication(medicationId: string, data: any) {
+  //   const medication = await this.prisma.medication.findFirst({
+  //     where: {
+  //       id: medicationId,
+  //       start_date: {
+  //         lte: new Date(),
+  //       },
+  //     },
+  //   });
+
+
+  //   // const medication = await this.prisma.medication.update({
+  //   //   where: {
+  //   //     id: medicationId,
+  //   //   },
+  //   //   data: {
+  //   //     name: data.name,
+  //   //     start_date: data.start_date,
+  //   //     end_date: data.end_date,
+  //   //     time: data.time,
+  //   //     dosage: data.dosage,
+  //   //     frequency: data.frequency,
+  //   //     unit: data.unit as MedicationUnit,
+  //   //   },
+  //   //   select: {
+  //   //     id: true,
+  //   //     name: true,
+  //   //     start_date: true,
+  //   //     end_date: true,
+  //   //     time: true,
+  //   //     dosage: true,
+  //   //     frequency: true,
+  //   //     unit: true,
+  //   //     doctor: {
+  //   //       select: {
+  //   //         user: {
+  //   //           select: {
+  //   //             id: true,
+  //   //             first_name: true,
+  //   //             middle_name: true,
+  //   //             last_name: true,
+  //   //             email: true,
+  //   //           },
+  //   //         },
+  //   //       },
+  //   //     },
+  //   //     created_at: true,
+  //   //   },
+  //   // });
+
+  //   return medication;
+  // }
 }

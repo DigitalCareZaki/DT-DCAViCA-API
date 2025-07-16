@@ -70,11 +70,14 @@ export class MedicationWebController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('/:medication_id')
-  public async updatePatientMedication(
-    @Param('medication_id') medicationId: string,
-    @Body() data: any,
-  ) {
-    return this.medicationService.updateMedication(medicationId, data);
+  @Post('/:medication_alert_id')
+  public async updateMedicationAlert(@Param('medication_alert_id') medicationAlertId: string, @Body() data: any) {
+    return this.medicationService.updateMedicationAlert(medicationAlertId, data);
   }
+
+  //  @HttpCode(HttpStatus.OK)
+  // @Post('/:medication_id')
+  // public async updateMedication(@Param('medication_id') medicationId: string, @Body() data: any) {
+  //   return this.medicationService.updateMedication(medicationId, data);
+  // }
 }

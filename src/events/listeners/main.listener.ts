@@ -80,11 +80,7 @@ export class EventListener {
       alert_time: Date;
     }[] = [];
 
-    for (
-      let day = new Date(startDate);
-      day <= endDate;
-      day.setUTCDate(day.getUTCDate() + 1)
-    ) {
+    for (let day = new Date(startDate); day <= endDate; day.setUTCDate(day.getUTCDate() + 1)) {
       for (const timeStr of times) {
         const [hour, minute] = timeStr.split(':').map(Number);
 
