@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { Role, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -115,4 +115,98 @@ export class UsersService {
         };
     }
 
+    async findAllUsers(role: string, search: string): Promise<Partial<User>[]> {
+        let result: Partial<User>[] = [];
+        let searchRoleCondition = {};
+
+        switch (role) {
+            case Role.DOCTOR:
+                // doctor can see admin and nurse
+                searchRoleCondition = {
+                    OR: [
+                        { role: Role.ADMIN },
+                        { role: Role.NURSE },
+                    ],
+                };
+
+                break;
+
+            case Role.PATIENT:
+                // patient can see only nurse
+                searchRoleCondition = {
+                    OR: [
+                        { role: Role.NURSE },
+                    ],
+                };
+
+                break;
+
+            case Role.NURSE:
+                // nurse can see admin, patient, and doctor
+                searchRoleCondition = {
+                    OR: [
+                        { role: Role.ADMIN },
+                        { role: Role.DOCTOR },
+                        { role: Role.PATIENT },
+                    ],
+                };
+
+                break;
+
+            case Role.ADMIN:
+                // admin can see all users except patient
+                searchRoleCondition = {
+                    NOT: {
+                        role: Role.PATIENT,
+                    },
+                };
+
+                break;
+
+            case Role.SUPERADMIN:
+                // superadmin can see all users except patient
+                searchRoleCondition = {
+                    NOT: {
+                        role: Role.PATIENT,
+                    },
+                };
+
+                break;
+
+            default:
+                throw new Error('Invalid role provided');
+        }
+
+        return await this.prisma.user.findMany({
+            where: {
+                AND: [
+                    searchRoleCondition,
+                    {
+                        OR: [
+                            { first_name: { contains: search, mode: 'insensitive' } },
+                            { last_name: { contains: search, mode: 'insensitive' } },
+                            { middle_name: { contains: search, mode: 'insensitive' } },
+                            { email: { contains: search, mode: 'insensitive' } },
+                            { username: { contains: search, mode: 'insensitive' } },
+                        ]
+                    }
+                ],
+            },
+            select: {
+                id: true,
+                email: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+                dob: true,
+                uri: true,
+                username: true,
+                role: true,
+                created_at: true,
+            },
+            orderBy: {
+                first_name: 'asc',
+            },
+        });
+    }
 }
