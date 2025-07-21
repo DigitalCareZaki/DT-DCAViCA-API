@@ -20,7 +20,10 @@ function getDate(value: string): Date {
   // console.log('Transform getDate ran');
 
   const date = new Date(value);
-  date.setHours(0, 0, 0, 0); // Reset time to midnight
+  // Subtract 5 hours from date
+  date.setHours(date.getHours() - 5, 0, 0, 0);
+
+  console.log('date >>>>>>>>>>', date);
 
   // console.log('date', date);
   // console.log('hours', date.getHours());
