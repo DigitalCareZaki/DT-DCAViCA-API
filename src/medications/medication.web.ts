@@ -57,8 +57,6 @@ export class MedicationWebController {
   public async createPatientMedication(
     @GetUser() user: UserRes,
     @Param('id') id: string,
-    @Query('page') page: number,
-    @Query('limit') limit: number,
     @Body() data: MedicationDTO,
   ): Promise<ModifiedMedication> {
     return this.medicationService.createPatientMedication(
