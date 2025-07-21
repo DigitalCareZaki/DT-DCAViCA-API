@@ -40,7 +40,7 @@ export class FirebaseService implements OnModuleInit {
     async sendMedicationReminders() {
         const now = new Date();
         const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-
+        console.log(fiveMinutesAgo, 'fiveMinutesAgo')
         const alerts = await this.prisma.patientMedicationAlerts.findMany({
             where: {
                 alert_time: {

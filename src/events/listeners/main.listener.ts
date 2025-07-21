@@ -79,27 +79,48 @@ export class EventListener {
       medication_id: string;
       alert_time: Date;
     }[] = [];
+    for (let d = new Date(startDate); d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
+      const currentDay = new Date(d); // copy the day
 
-    for (let day = new Date(startDate); day <= endDate; day.setUTCDate(day.getUTCDate() + 1)) {
       for (const timeStr of times) {
         const [hour, minute] = timeStr.split(':').map(Number);
 
-        const alertTime = new Date(Date.UTC(
-          day.getUTCFullYear(),
-          day.getUTCMonth(),
-          day.getUTCDate(),
-          hour,
-          minute,
-          0,
-          0
-        ));
+
+        const localDateStr = `${currentDay.getUTCFullYear()}-${(currentDay.getUTCMonth() + 1)
+          .toString().padStart(2, '0')}-${currentDay.getUTCDate()
+            .toString().padStart(2, '0')}T${timeStr}:00+05:00`;
+
+        const alertTime = new Date(localDateStr);
+
+        console.log('PKT:', localDateStr);
+        console.log('UTC to store:', alertTime.toISOString());
 
         alertsToCreate.push({
           medication_id: payload.medication.id,
-          alert_time: alertTime,
+          alert_time: alertTime, // this is UTC
         });
       }
     }
+    // for (let day = new Date(startDate); day <= endDate; day.setUTCDate(day.getUTCDate() + 1)) {
+    //   for (const timeStr of times) {
+    //     const [hour, minute] = timeStr.split(':').map(Number);
+    //     console.log('Processing time:', timeStr, 'for day:', day.toISOString());
+    //     const alertTime = new Date(Date.UTC(
+    //       day.getUTCFullYear(),
+    //       day.getUTCMonth(),
+    //       day.getUTCDate(),
+    //       hour,
+    //       minute,
+    //       0,
+    //       0
+    //     ));
+    //     console.log('alertTime time:', alertTime.toISOString);
+    //     alertsToCreate.push({
+    //       medication_id: payload.medication.id,
+    //       alert_time: alertTime,
+    //     });
+    //   }
+    // }
 
     console.log('alertsToCreate:', alertsToCreate);
 
