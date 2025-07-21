@@ -10,7 +10,6 @@ import { MultiValueMeasurementDTO, SingleValueMeasurementDTO } from 'src/measure
 import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 import { Role } from 'src/auth/enums/role.enum';
-import { Response } from 'express';
 
 @Controller('users')
 export class UsersController {
@@ -25,6 +24,12 @@ export class UsersController {
     if (!role) throw new AppError('role in query parameter is required', 400);
 
     return this.usersService.findAll(role, search);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('fetch')
+  findAllUsers(@Query('search') search = "", @GetUser() user: UserRes) {
+    return this.usersService.findAllUsers(user.role, search);
   }
 
   @Get('profile/:id')
