@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-
 import { PrismaService } from 'src/prisma/prisma.service';
-
 import type { MeasurementStatus } from 'prisma/prisma-client';
 import type { MeasurementCreatedEvent, MedicationCreatedEvent } from '../types';
 
@@ -69,29 +67,17 @@ export class EventListener {
 
   @OnEvent('medication.created')
   public async handleMedicationCreatedEvent({ medication, patientId }: MedicationCreatedEvent) {
-    const startDate = medication.start_date;
-    const endDate = medication.end_date;
-    const times = medication.time; // ['08:20', '14:00', '21:00']
+    const { start_date: startDate, end_date: endDate, time: times } = medication;
 
     const alertsToCreate: { medication_id: string; alert_time: Date; }[] = [];
 
     for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
-      console.log('d >>>>>>> ', d);
-      console.log('endDate >>>>>>> ', endDate);
-
       times.forEach(((time: string) => {
         const [hour, minute] = time.split(':').map(Number);
         const alertTime = new Date(d);
+        alertTime.setHours(hour, minute, 0, 0); // set hours, minutes, seconds, milliseconds
 
-        // Set the hours and minutes from the time string
-        alertTime.setHours(hour);
-        alertTime.setMinutes(minute);
-        alertTime.setSeconds(0);
-        alertTime.setMilliseconds(0);
-
-        console.log('alertTime >>>>>>> ', alertTime);
-
-        // Ensure the alert time is within the medication period
+        // push the alert time for the medication
         alertsToCreate.push({
           medication_id: medication.id,
           alert_time: alertTime,

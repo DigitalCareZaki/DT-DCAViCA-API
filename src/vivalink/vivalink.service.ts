@@ -1,10 +1,8 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-
 import { AppError } from 'src/errors';
 import { PrismaService } from 'src/prisma/prisma.service';
-
-import type { VLAllPatients, VLSinglePatientECGData } from './types';
+import type { VLAllPatients } from './types';
 
 @Injectable()
 export class VivalinkService {

@@ -5,7 +5,6 @@ import { Role } from 'src/auth/enums/role.enum';
 import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { GetUser } from 'src/auth/decorators';
 import { MedicationService } from './medication.service';
-import { AppError } from '../errors';
 import { Response } from 'express';
 
 @Controller('app/medications')
