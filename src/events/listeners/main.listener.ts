@@ -68,59 +68,36 @@ export class EventListener {
 
 
   @OnEvent('medication.created')
-  public async handleMedicationCreatedEvent(payload: MedicationCreatedEvent) {
-    console.log('Medication Created Event:======>>>', payload);
+  public async handleMedicationCreatedEvent({ medication, patientId }: MedicationCreatedEvent) {
+    const startDate = medication.start_date;
+    const endDate = medication.end_date;
+    const times = medication.time; // ['08:20', '14:00', '21:00']
 
-    const startDate = new Date(payload.medication.start_date);
-    const endDate = new Date(payload.medication.end_date);
-    const times = payload.medication.time; // ['08:20', '14:00', '21:00']
+    const alertsToCreate: { medication_id: string; alert_time: Date; }[] = [];
 
-    const alertsToCreate: {
-      medication_id: string;
-      alert_time: Date;
-    }[] = [];
-    for (let d = new Date(startDate); d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
-      const currentDay = new Date(d); // copy the day
+    for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
+      console.log('d >>>>>>> ', d);
+      console.log('endDate >>>>>>> ', endDate);
 
-      for (const timeStr of times) {
-        const [hour, minute] = timeStr.split(':').map(Number);
+      times.forEach(((time: string) => {
+        const [hour, minute] = time.split(':').map(Number);
+        const alertTime = new Date(d);
 
+        // Set the hours and minutes from the time string
+        alertTime.setHours(hour);
+        alertTime.setMinutes(minute);
+        alertTime.setSeconds(0);
+        alertTime.setMilliseconds(0);
 
-        const localDateStr = `${currentDay.getUTCFullYear()}-${(currentDay.getUTCMonth() + 1)
-          .toString().padStart(2, '0')}-${currentDay.getUTCDate()
-            .toString().padStart(2, '0')}T${timeStr}:00+05:00`;
+        console.log('alertTime >>>>>>> ', alertTime);
 
-        const alertTime = new Date(localDateStr);
-
-        console.log('PKT:', localDateStr);
-        console.log('UTC to store:', alertTime.toISOString());
-
+        // Ensure the alert time is within the medication period
         alertsToCreate.push({
-          medication_id: payload.medication.id,
-          alert_time: alertTime, // this is UTC
+          medication_id: medication.id,
+          alert_time: alertTime,
         });
-      }
-    }
-    // for (let day = new Date(startDate); day <= endDate; day.setUTCDate(day.getUTCDate() + 1)) {
-    //   for (const timeStr of times) {
-    //     const [hour, minute] = timeStr.split(':').map(Number);
-    //     console.log('Processing time:', timeStr, 'for day:', day.toISOString());
-    //     const alertTime = new Date(Date.UTC(
-    //       day.getUTCFullYear(),
-    //       day.getUTCMonth(),
-    //       day.getUTCDate(),
-    //       hour,
-    //       minute,
-    //       0,
-    //       0
-    //     ));
-    //     console.log('alertTime time:', alertTime.toISOString);
-    //     alertsToCreate.push({
-    //       medication_id: payload.medication.id,
-    //       alert_time: alertTime,
-    //     });
-    //   }
-    // }
+      }));
+    };
 
     console.log('alertsToCreate:', alertsToCreate);
 
@@ -130,57 +107,4 @@ export class EventListener {
       });
     }
   }
-  // public async handleMedicationCreatedEvent(payload: MedicationCreatedEvent) {
-  //   console.log('Medication Created Event:======>>>', payload);
-
-  //   const startDate = new Date(payload.medication.start_date);
-  //   const endDate = new Date(payload.medication.end_date);
-  //   const medicationTime = new Date(payload.medication.time);
-  //   const frequency = payload.medication.frequency;
-
-  //   const alertsToCreate: {
-  //     medication_id: string;
-  //     alert_time: Date;
-  //   }[] = [];
-
-  //   const timeDiff = endDate.getTime() - startDate.getTime();
-  //   const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-  //   console.log('Total Days: ', dayDiff);
-  //   console.log('Frequency per Day: ', frequency);
-
-  //   for (let i = 0; i <= dayDiff; i++) {
-  //     const currentDay = new Date(
-  //       startDate.getFullYear(),
-  //       startDate.getMonth(),
-  //       startDate.getDate() + i,
-  //       0, 0, 0, 0
-  //     );
-
-  //     for (let j = 0; j < frequency; j++) {
-  //       const alertDate = new Date(currentDay);
-
-  //       // Base time for first dose, then evenly spread next doses
-  //       alertDate.setUTCHours(medicationTime.getUTCHours(), medicationTime.getUTCMinutes(), 0, 0);
-
-  //       // Spread doses equally over 24 hours (example logic)
-  //       const intervalMinutes = (24 * 60) / frequency;
-  //       alertDate.setUTCMinutes(alertDate.getUTCMinutes() + (j * intervalMinutes));
-
-  //       alertsToCreate.push({
-  //         medication_id: payload.medication.id,
-  //         alert_time: alertDate,
-  //       });
-  //     }
-  //   }
-
-  //   console.log('alertsToCreate:======>>>', alertsToCreate);
-
-  //   if (alertsToCreate.length > 0) {
-  //     await this.prisma.patientMedicationAlerts.createMany({
-  //       data: alertsToCreate,
-  //     });
-  //   }
-  // }
-
 }

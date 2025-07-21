@@ -440,7 +440,9 @@ export class MedicationService {
       },
     });
 
-    const medication = await this.prisma.medication.findFirst({
+    console.log('patient.id >>> ', patient.id);
+
+    const medications = await this.prisma.medication.findMany({
       where: {
         start_date: {
           lte: new Date(),
@@ -454,8 +456,9 @@ export class MedicationService {
       },
     });
 
-    // console.log('medications >>> ', medication);
-    if (!medication) {
+    console.log('medication.length >>> ', medications.length && medications.map((med) => med.id));
+
+    if (!Array.isArray(medications) || medications.length === 0) {
       return res.status(HttpStatus.OK).json({
         statusCode: HttpStatus.OK,
         success: true,
@@ -467,17 +470,50 @@ export class MedicationService {
     const oneHourAgo = new Date(now.getTime() - 60 * 60_000);  // now − 1 h
     const fiveMinutesAgo = new Date(now.getTime() - 5 * 60_000);  // now − 5 min
 
+    console.log('now >>> ', now);
+    console.log('oneHourAgo >>> ', oneHourAgo);
+    console.log('fiveMinutesAgo >>> ', fiveMinutesAgo);
+
     const patientMedicationAlert = await this.prisma.patientMedicationAlerts.findFirst({
       where: {
-        medication_id: medication.id,
+        medication_id: {
+          in: medications.map((med) => med.id),
+        },
         taken: 'PENDING',
         alert_time: {
-          gte: oneHourAgo,     // alert_time is **not older than** 1 hour
-          lte: fiveMinutesAgo, // alert_time is **at least** 5 min old
+          gte: oneHourAgo,       // not older than 1 hour
+          lte: fiveMinutesAgo,   // at least 5 minutes old
         },
       },
-      orderBy: { alert_time: 'asc' },  // earliest that fits the window
+      // orderBy: { alert_time: 'asc' },
     });
+
+
+    // for (const alert of medications) {
+    //   const patientMedicationAlert = await this.prisma.patientMedicationAlerts.findFirst({
+    //     where: {
+    //       medication_id: alert.id,
+    //       taken: 'PENDING',
+    //       alert_time: {
+    //         gte: oneHourAgo,     // alert_time is **not older than** 1 hour
+    //         lte: fiveMinutesAgo, // alert_time is **at least** 5 min old
+    //       },
+    //     },
+    //     orderBy: { alert_time: 'asc' },  // earliest that fits the window
+    //   });
+    // }
+
+    // const patientMedicationAlert = await this.prisma.patientMedicationAlerts.findFirst({
+    //   where: {
+    //     medication_id: medications.id,
+    //     taken: 'PENDING',
+    //     alert_time: {
+    //       gte: oneHourAgo,     // alert_time is **not older than** 1 hour
+    //       lte: fiveMinutesAgo, // alert_time is **at least** 5 min old
+    //     },
+    //   },
+    //   orderBy: { alert_time: 'asc' },  // earliest that fits the window
+    // });
 
     console.log('patientMedicationAlert >>> ', patientMedicationAlert);
 
