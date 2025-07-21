@@ -71,12 +71,12 @@ export class EventListener {
 
     const alertsToCreate: { medication_id: string; alert_time: Date; }[] = [];
 
-    for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       times.forEach(((time: string) => {
         const [hour, minute] = time.split(':').map(Number);
         const alertTime = new Date(d);
-        // alertTime.setHours(hour, minute, 0, 0); // set hours, minutes, seconds, milliseconds
-        alertTime.setUTCHours(alertTime.getUTCHours() - 5, 0, 0, 0);
+        alertTime.setHours(hour - 5, minute, 0, 0); // set hours, minutes, seconds, milliseconds
+        // alertTime.setUTCHours(alertTime.getUTCHours() - 5, 0, 0, 0);
 
         // push the alert time for the medication
         alertsToCreate.push({
