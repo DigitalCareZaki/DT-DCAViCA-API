@@ -20,6 +20,7 @@ function getDate(value: string): Date {
   // console.log('Transform getDate ran');
 
   const date = new Date(value);
+  date.setHours(0, 0, 0, 0); // Reset time to midnight
 
   // console.log('date', date);
   // console.log('hours', date.getHours());
