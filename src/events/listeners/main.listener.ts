@@ -7,9 +7,7 @@ import type { MeasurementCreatedEvent, MedicationCreatedEvent } from '../types';
 @Injectable()
 export class EventListener {
   constructor(private prisma: PrismaService) { }
-
   @OnEvent('measurement.created')
-
   public async handleMeasurementCreatedEvent(payload: MeasurementCreatedEvent) {
     if (payload.measurement.type === 'ECG') {
       // ECG not supported yet
@@ -76,7 +74,6 @@ export class EventListener {
         const [hour, minute] = time.split(':').map(Number);
         const alertTime = new Date(d);
         alertTime.setHours(hour - 5, minute, 0, 0); // set hours, minutes, seconds, milliseconds
-        // alertTime.setUTCHours(alertTime.getUTCHours() - 5, 0, 0, 0);
 
         // push the alert time for the medication
         alertsToCreate.push({

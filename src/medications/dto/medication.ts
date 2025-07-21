@@ -24,10 +24,6 @@ function getDate(value: string): Date {
 
   console.log('date >>>>>>>>>>', date);
   return date;
-
-  // return new Date(
-  //   Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  // );
 }
 
 // @Transform runs before @Validate
