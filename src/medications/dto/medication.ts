@@ -17,37 +17,12 @@ import {
 } from 'src/validators';
 
 function getDate(value: string): Date {
-  // console.log('Transform getDate ran');
-
   const date = new Date(value);
+
   // Subtract 5 hours from date
-  date.setHours(date.getHours() - 5, 0, 0, 0);
+  date.setUTCHours(date.getUTCHours() - 5, 0, 0, 0); // Reset time to midnight in UTC
 
   console.log('date >>>>>>>>>>', date);
-
-  // console.log('date', date);
-  // console.log('hours', date.getHours());
-  // console.log('hours_utc', date.getUTCHours());
-
-  // console.log(
-  //   'test',
-  //   new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  // );
-
-  // console.log(
-  //   'Transformed date',
-  //   new Date(
-  //     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  //   ),
-  // );
-  // console.log(
-  //   'Transform getDate .toString',
-  //   new Date(
-  //     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  //   ).toString(),
-  // );
-
-  // console.log('date from Transform', date);
   return date;
 
   // return new Date(

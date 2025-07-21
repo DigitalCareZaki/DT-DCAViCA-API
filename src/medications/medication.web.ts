@@ -59,6 +59,9 @@ export class MedicationWebController {
     @Param('id') id: string,
     @Body() data: MedicationDTO,
   ): Promise<ModifiedMedication> {
+
+    console.log('createPatientMedication DTO >>>>>>>>>>', data);
+
     return this.medicationService.createPatientMedication(
       id,
       user.id,
