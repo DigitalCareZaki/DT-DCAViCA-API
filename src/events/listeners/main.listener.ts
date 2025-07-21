@@ -75,7 +75,8 @@ export class EventListener {
       times.forEach(((time: string) => {
         const [hour, minute] = time.split(':').map(Number);
         const alertTime = new Date(d);
-        alertTime.setHours(hour, minute, 0, 0); // set hours, minutes, seconds, milliseconds
+        // alertTime.setHours(hour, minute, 0, 0); // set hours, minutes, seconds, milliseconds
+        alertTime.setUTCHours(alertTime.getUTCHours() - 5, 0, 0, 0);
 
         // push the alert time for the medication
         alertsToCreate.push({
