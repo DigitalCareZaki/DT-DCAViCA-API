@@ -395,6 +395,12 @@ export class OrganizationService {
         associated_branches: {
           select: {
             name: true,
+            departments: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
           },
         },
         active: true,

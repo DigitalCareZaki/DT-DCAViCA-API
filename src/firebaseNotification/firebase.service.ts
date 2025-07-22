@@ -93,7 +93,7 @@ export class FirebaseService implements OnModuleInit {
                 alert.medication.doctor.user_id,
                 alert.medication.patient.user_id,
                 'Medication Reminder',
-                `Hello, ${name}, have you taken your medicine? (Medicine ID: ${alert.id})`,
+                `Hello, ${name}, have you taken your medicine? (Medicine ID: ${alert.medication.name})`,
             );
         }
 
@@ -141,6 +141,7 @@ export class FirebaseService implements OnModuleInit {
                 console.log('User not found or device token not found');
                 return;
             }
+            console.log(user, 'User found!');
             const token = user.device_token;
 
             const message = {

@@ -456,7 +456,7 @@ export class MedicationService {
       },
     });
 
-    console.log('medication.length >>> ', medications.length && medications.map((med) => med.id));
+    console.log('medication >>> ', medications);
 
     if (!Array.isArray(medications) || medications.length === 0) {
       return res.status(HttpStatus.OK).json({
