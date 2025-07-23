@@ -406,19 +406,31 @@ export class AdminService {
       },
     });
 
+    const departments = this.prisma.department.count({
+      where: {
+        branch: {
+          id: branchId,
+        },
+      },
+    });
+
     const [
       doctorsRes,
       patientsRes,
       nursesRes,
       appointmentsRes,
       medicationsRes,
+      departmentsRes,
     ] = await this.prisma.$transaction([
       doctors,
       patients,
       nurses,
       appointments,
       medications,
+      departments,
     ]);
+
+    console.log('departments:', departmentsRes);
 
     return {
       data: {
@@ -426,6 +438,7 @@ export class AdminService {
         patients: patientsRes ?? 0,
         nurses: nursesRes ?? 0,
         branches: 0,
+        departments: departmentsRes ?? 0,
         appointments: appointmentsRes ?? 0,
         medications: medicationsRes ?? 0,
       },
