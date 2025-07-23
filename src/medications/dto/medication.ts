@@ -38,14 +38,14 @@ export class MedicationDTO {
   @IsDate()
   @IsNotEmpty()
   @Type(() => Date)
-  @Validate(ValidateStartDateNotInPast)
+  // @Validate(ValidateStartDateNotInPast)
   @Transform(({ value }: { value: string }) => getDate(value))
   start_date: string;
 
   @IsDate()
   @IsNotEmpty()
   @Type(() => Date)
-  @Validate(ValidateEndDateGreaterThanStartDate)
+  // @Validate(ValidateEndDateGreaterThanStartDate)
   @Transform(({ value }: { value: string }) => getDate(value))
   end_date: string;
 
