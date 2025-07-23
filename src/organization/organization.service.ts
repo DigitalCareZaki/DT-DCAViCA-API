@@ -223,11 +223,7 @@ export class OrganizationService {
   //   }));
   // }
 
-  private async getBranchUsers(
-    user: UserRes,
-    search: string,
-    role: UserRole,
-  ): Promise<OrganizationUsers[]> {
+  private async getBranchUsers(user: UserRes, search: string, role: UserRole): Promise<OrganizationUsers[]> {
     const branch = await this.validateBranch(user.id);
 
     const filter: any = [
@@ -310,6 +306,43 @@ export class OrganizationService {
             name: true,
           },
         },
+        patient: {
+          select: {
+            doctors: {
+              select: {
+                departments: {
+                  select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        doctor: {
+          select: {
+            departments: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+              },
+            },
+          },
+        },
+        nurse: {
+          select: {
+            department: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+              },
+            },
+          },
+        },
         active: true,
       },
     });
@@ -323,7 +356,7 @@ export class OrganizationService {
   //     where: {
   //       id: user.id, // replace with actual user ID
   //     },
-  //     include: {
+  //     select: {
   //       associated_branches: {
   //         select: {
   //           departments: {
@@ -345,9 +378,9 @@ export class OrganizationService {
     user: UserRes,
     search: string,
     role: UserRole,
-  ): Promise<OrganizationUsers[]> {
+  ) {
     if (user.role === 'ADMIN') {
-      return this.getBranchUsers(user, search, role);
+      return await this.getBranchUsers(user, search, role);
     }
 
     const organization = await this.validateOrganization(user.id);
@@ -404,7 +437,7 @@ export class OrganizationService {
       });
     }
 
-    return this.prisma.user.findMany({
+    return await this.prisma.user.findMany({
       where: {
         AND: filter,
       },
@@ -425,6 +458,7 @@ export class OrganizationService {
               select: {
                 id: true,
                 title: true,
+                description: true,
               },
             },
           },

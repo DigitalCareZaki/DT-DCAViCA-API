@@ -97,11 +97,7 @@ export class OrganizationWebController extends OrganizationController {
   @Get('/users')
   @UseGuards(RolesGuard)
   @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER)
-  public async getOrganizationUsers(
-    @GetUser() user: UserRes,
-    @Query('search') search: string,
-    @Query('role') role: UserRole,
-  ): Promise<OrganizationUsers[]> {
+  public async getOrganizationUsers(@GetUser() user: UserRes, @Query('search') search: string, @Query('role') role: UserRole) {
     return this.getOrganizationService().getOrganizationUsers(
       user,
       search,
