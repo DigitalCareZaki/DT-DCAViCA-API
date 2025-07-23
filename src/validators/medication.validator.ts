@@ -15,9 +15,7 @@ const MedicationUnitArray = [
 const MedicationAlertTakenArray = ['TAKEN', 'NOT_TAKEN'];
 
 @ValidatorConstraint({ name: 'validateStartDateNotInPast' })
-export class ValidateStartDateNotInPast
-  implements ValidatorConstraintInterface
-{
+export class ValidateStartDateNotInPast implements ValidatorConstraintInterface {
   validate(
     value: string,
     args: ValidationArguments,
@@ -64,8 +62,7 @@ export class ValidateStartDateNotInPast
 
 @ValidatorConstraint({ name: 'validateEndDateGreaterThanStartDate' })
 export class ValidateEndDateGreaterThanStartDate
-  implements ValidatorConstraintInterface
-{
+  implements ValidatorConstraintInterface {
   validate(
     value: string,
     args: ValidationArguments,
@@ -108,8 +105,7 @@ export class ValidateMedicationUnit implements ValidatorConstraintInterface {
 
 @ValidatorConstraint({ name: 'validateMedicationAlertTaken' })
 export class ValidateMedicationAlertTaken
-  implements ValidatorConstraintInterface
-{
+  implements ValidatorConstraintInterface {
   validate(value: any): boolean | Promise<boolean> {
     return MedicationAlertTakenArray.some((val) => val === value);
   }
