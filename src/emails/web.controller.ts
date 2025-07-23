@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { EmailsService } from './emails.service';
 import { GetUser } from 'src/auth/decorators';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
@@ -18,8 +18,8 @@ export class EmailsWebController {
   @HttpCode(HttpStatus.OK)
   @Get('/email-history')
   @RequirePermission(Role.ADMIN, Role.SUPERADMIN, Role.MASTER)
-  public async getEmailHistory(@GetUser() user: UserRes) {
-    return this.emailService.getEmailHistory(user);
+  public async getEmailHistory(@Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes) {
+    return this.emailService.getEmailHistory(user, +page, +limit);
   }
 
   @HttpCode(HttpStatus.OK)

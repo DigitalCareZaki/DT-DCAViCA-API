@@ -617,27 +617,47 @@ export class OrganizationService {
 
   }
 
-  public async getOrganizationMedicines(organizationId: string) {
-    return await this.prisma.organizationMedication.findMany({
-      where: {
-        organization_id: organizationId,
-      },
-      select: {
-        id: true,
-        name: true,
-        organization: {
-          select: {
-            id: true,
-            name: true,
-          },
+  public async getOrganizationMedicines(organizationId: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const [medicines, totalItems] = await this.prisma.$transaction([
+      this.prisma.organizationMedication.findMany({
+        where: {
+          organization_id: organizationId,
         },
-        created_at: true,
+        select: {
+          id: true,
+          name: true,
+          organization: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          created_at: true,
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+
+      }),
+      this.prisma.organizationMedication.count({
+        where: {
+          organization_id: organizationId,
+        },
+      }),
+    ]);
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+    return {
+      data: medicines,
+      meta: {
+        totalItems,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
       },
-      orderBy: {
-        created_at: 'desc',
-      },
-      take: 10,
-    });
+    };
   }
 
   public async sendOnBoardEmail({

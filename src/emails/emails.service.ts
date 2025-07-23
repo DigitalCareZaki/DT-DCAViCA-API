@@ -15,13 +15,15 @@ export class EmailsService {
     return [user];
   }
 
-  public async getEmailHistory(user: UserRes) {
-    if (user.role === 'SUPERADMIN') return this.getSuperAdminEmailHistory(user);
-    if (user.role === 'ADMIN') return this.getAdminEmailHistory(user);
-    if (user.role === 'MASTER') return this.getMasterEmailHistory();
+  public async getEmailHistory(user: UserRes, page: number, limit: number) {
+    if (user.role === 'SUPERADMIN') return this.getSuperAdminEmailHistory(user, page, limit);
+    if (user.role === 'ADMIN') return this.getAdminEmailHistory(user, page, limit);
+    if (user.role === 'MASTER') return this.getMasterEmailHistory(page, limit);
   }
 
-  private async getAdminEmailHistory(user: UserRes) {
+  private async getAdminEmailHistory(user: UserRes, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
     const branch = await this.prisma.user.findUnique({
       where: {
         id: user.id,
@@ -30,96 +32,176 @@ export class EmailsService {
         associated_branches: true,
       },
     });
-
-    return this.prisma.emails.findMany({
-      where: {
-        user: {
-          associated_branches: {
-            some: {
-              id: branch.associated_branches[0]?.id,
+    const [emails, totalItems] = await this.prisma.$transaction([
+      this.prisma.emails.findMany({
+        where: {
+          user: {
+            associated_branches: {
+              some: {
+                id: branch.associated_branches[0]?.id,
+              },
             },
           },
         },
-      },
 
-      select: {
-        id: true,
-        error: true,
-        sended: true,
-        subject: true,
-        user: {
-          select: {
-            first_name: true,
-            last_name: true,
-            middle_name: true,
-            uri: true,
-            email: true,
+        select: {
+          id: true,
+          error: true,
+          sended: true,
+          subject: true,
+          user: {
+            select: {
+              first_name: true,
+              last_name: true,
+              middle_name: true,
+              uri: true,
+              email: true,
+            },
+          },
+          created_at: true,
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+      }),
+      this.prisma.emails.count({
+        where: {
+          user: {
+            associated_branches: {
+              some: {
+                id: branch.associated_branches[0]?.id,
+              },
+            },
           },
         },
-        created_at: true,
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return {
+      data: emails,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
       },
-      orderBy: {
-        created_at: 'desc',
-      },
-    });
+    };
   }
 
-  private async getMasterEmailHistory() {
-    return this.prisma.emails.findMany({
-      select: {
-        id: true,
-        error: true,
-        sended: true,
-        subject: true,
-        user: {
-          select: {
-            first_name: true,
-            last_name: true,
-            middle_name: true,
-            uri: true,
-            email: true,
+  private async getMasterEmailHistory(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const [emails, totalItems] = await this.prisma.$transaction([
+      this.prisma.emails.findMany({
+        select: {
+          id: true,
+          error: true,
+          sended: true,
+          subject: true,
+          user: {
+            select: {
+              first_name: true,
+              last_name: true,
+              middle_name: true,
+              uri: true,
+              email: true,
+            },
           },
+          created_at: true,
         },
-        created_at: true,
+        orderBy: {
+          created_at: 'desc',
+        },
+      }),
+      this.prisma.emails.count({}),
+    ]);
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+    return {
+      data: emails,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
       },
-      orderBy: {
-        created_at: 'desc',
-      },
-    });
+    };
   }
 
-  private async getSuperAdminEmailHistory(user: UserRes) {
-    return this.prisma.emails.findMany({
-      where: {
-        user: {
-          organization_id: user.organization_id,
-        },
-      },
-
-      select: {
-        id: true,
-        error: true,
-        sended: true,
-        subject: true,
-        user: {
-          select: {
-            first_name: true,
-            last_name: true,
-            middle_name: true,
-            uri: true,
-            email: true,
+  private async getSuperAdminEmailHistory(user: UserRes, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const [emails, totalItems] = await this.prisma.$transaction([
+      this.prisma.emails.findMany({
+        where: {
+          user: {
+            organization_id: user.organization_id,
           },
         },
-        created_at: true,
+
+        select: {
+          id: true,
+          error: true,
+          sended: true,
+          subject: true,
+          user: {
+            select: {
+              first_name: true,
+              last_name: true,
+              middle_name: true,
+              uri: true,
+              email: true,
+            },
+          },
+          created_at: true,
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.emails.count({
+        where: {
+          user: {
+            organization_id: user.organization_id,
+          },
+        },
+      }),
+
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+    return {
+      data: emails,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
       },
-      orderBy: {
-        created_at: 'desc',
-      },
-    });
+    };
   }
 
   public async getUserEmailHistory(userId: string) {
-    return this.prisma.emails.findMany({
+    return await this.prisma.emails.findMany({
       where: {
         user: {
           id: userId,
@@ -146,6 +228,7 @@ export class EmailsService {
       orderBy: {
         created_at: 'desc',
       },
-    });
+    })
+
   }
 }

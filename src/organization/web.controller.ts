@@ -355,12 +355,14 @@ export class OrganizationWebController extends OrganizationController {
   @Get('/medicines')
   @UseGuards(RolesGuard)
   @RequirePermission(Role.SUPERADMIN, Role.ADMIN)
-  public async getOrganizationMedicine(@GetUser() user: UserRes) {
+  public async getOrganizationMedicine(@Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes) {
     const organizationId =
       await this.getOrganizationService().getOrganizationId(user.id);
 
     return this.getOrganizationService().getOrganizationMedicines(
       organizationId,
+      page,
+      limit
     );
   }
 
