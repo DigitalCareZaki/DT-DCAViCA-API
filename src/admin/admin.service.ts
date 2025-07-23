@@ -104,6 +104,9 @@ export class AdminService {
                   user: {
                     select: { id: true, first_name: true, last_name: true },
                   },
+                  departments: {
+                    select: { title: true },
+                  },
                 },
                 orderBy: { created_at: 'asc' },
               },
