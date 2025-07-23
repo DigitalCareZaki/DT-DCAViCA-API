@@ -315,6 +315,32 @@ export class OrganizationService {
     });
   }
 
+  // public async getOrganizationUsers(user: UserRes,
+  //   search: string,
+  //   role: UserRole,
+  // ) {
+  //   return await this.prisma.user.findUnique({
+  //     where: {
+  //       id: user.id, // replace with actual user ID
+  //     },
+  //     include: {
+  //       associated_branches: {
+  //         select: {
+  //           departments: {
+  //             select: {
+  //               id: true,
+  //               title: true,
+  //               description: true,
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   });
+
+  // }
+
+
   public async getOrganizationUsers(
     user: UserRes,
     search: string,
@@ -407,7 +433,6 @@ export class OrganizationService {
       },
     });
   }
-
   public async getOrganizationBranches(
     user: UserRes,
   ): Promise<SelectOrganizationBranchesProps[]> {

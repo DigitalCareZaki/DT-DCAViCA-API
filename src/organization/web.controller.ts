@@ -92,6 +92,7 @@ export class OrganizationWebController extends OrganizationController {
     return this.getOrganizationService().getOrganizationDoctors(user.id);
   }
 
+
   @HttpCode(HttpStatus.OK)
   @Get('/users')
   @UseGuards(RolesGuard)
