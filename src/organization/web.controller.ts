@@ -325,8 +325,7 @@ export class OrganizationWebController extends OrganizationController {
     @Body() data: AddMedicinesDTO,
     @GetUser() user: UserRes,
   ) {
-    const organizationId =
-      await this.getOrganizationService().getOrganizationId(user.id);
+    const organizationId = await this.getOrganizationService().getOrganizationId(user.id);
 
     return this.getOrganizationService().addOrganizationMedicines(
       organizationId,
@@ -357,8 +356,8 @@ export class OrganizationWebController extends OrganizationController {
 
     return this.getOrganizationService().getOrganizationMedicines(
       organizationId,
-      page,
-      limit
+      +page,
+      +limit
     );
   }
 

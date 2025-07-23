@@ -653,6 +653,7 @@ export class OrganizationService {
 
   public async getOrganizationMedicines(organizationId: string, page: number, limit: number) {
     const skip = (page - 1) * limit;
+
     const [medicines, totalItems] = await this.prisma.$transaction([
       this.prisma.organizationMedication.findMany({
         skip,
@@ -682,16 +683,22 @@ export class OrganizationService {
         },
       }),
     ]);
+
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
+
     return {
       data: medicines,
-      meta: {
+      pagination: {
         totalItems,
+        perPage: limit,
+        currentPage: page,
         totalPages,
         hasNextPage,
         hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
       },
     };
   }
