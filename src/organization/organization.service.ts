@@ -621,6 +621,8 @@ export class OrganizationService {
     const skip = (page - 1) * limit;
     const [medicines, totalItems] = await this.prisma.$transaction([
       this.prisma.organizationMedication.findMany({
+        skip,
+        take: limit,
         where: {
           organization_id: organizationId,
         },

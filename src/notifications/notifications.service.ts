@@ -19,12 +19,12 @@ export class NotificationsService {
 
     const [notifications, totalItems] = await this.prisma.$transaction([
       this.prisma.notification.findMany({
+        skip,
+        take: limit,
         where: whereCondition,
         orderBy: {
           created_at: 'desc',
         },
-        skip,
-        take: limit,
         select: {
           id: true,
           sender: {

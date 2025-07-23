@@ -34,6 +34,8 @@ export class EmailsService {
     });
     const [emails, totalItems] = await this.prisma.$transaction([
       this.prisma.emails.findMany({
+        skip,
+        take: limit,
         where: {
           user: {
             associated_branches: {
@@ -100,6 +102,8 @@ export class EmailsService {
     const skip = (page - 1) * limit;
     const [emails, totalItems] = await this.prisma.$transaction([
       this.prisma.emails.findMany({
+        skip,
+        take: limit,
         select: {
           id: true,
           error: true,
@@ -144,6 +148,8 @@ export class EmailsService {
     const skip = (page - 1) * limit;
     const [emails, totalItems] = await this.prisma.$transaction([
       this.prisma.emails.findMany({
+        skip,
+        take: limit,
         where: {
           user: {
             organization_id: user.organization_id,
@@ -169,8 +175,7 @@ export class EmailsService {
         orderBy: {
           created_at: 'desc',
         },
-        skip,
-        take: limit,
+
       }),
       this.prisma.emails.count({
         where: {

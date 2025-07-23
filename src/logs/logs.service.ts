@@ -24,6 +24,8 @@ export class LogsService {
     const skip = (page - 1) * limit;
     const [logs, totalItems] = await this.prisma.$transaction([
       this.prisma.logs.findMany({
+        skip,
+        take: limit,
         orderBy: {
           created_at: 'desc',
         },
@@ -70,6 +72,8 @@ export class LogsService {
     const skip = (page - 1) * limit;
     const [logs, totalItems] = await this.prisma.$transaction([
       this.prisma.logs.findMany({
+        skip,
+        take: limit,
         where: {
           user: {
             AND: [
@@ -163,6 +167,8 @@ export class LogsService {
     });
     const [logs, totalItems] = await this.prisma.$transaction([
       this.prisma.logs.findMany({
+        skip,
+        take: limit,
         where: {
           user: {
             AND: [
