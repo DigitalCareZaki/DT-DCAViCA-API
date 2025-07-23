@@ -485,6 +485,18 @@ export class MedicationService {
           lte: fiveMinutesAgo,   // at least 5 minutes old
         },
       },
+      select: {
+        id: true,
+        medication: {
+          select: {
+            id: true,
+            name: true,
+            dosage: true,
+          },
+        },
+        alert_time: true,
+        taken: true,
+      },
       // orderBy: { alert_time: 'asc' },
     });
 
