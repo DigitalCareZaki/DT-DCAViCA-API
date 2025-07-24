@@ -16,69 +16,134 @@ export class DeviceService {
     userId: string,
     organizationId: string,
     role: UserRole,
-  ): Promise<Device[]> {
+    search: string,
+    page: number = 1,
+    limit: number = 10
+  ) {
+    console.log('Fetching all devices with search:', search);
     if (role === 'SUPERADMIN') {
-      return await this.prisma.device.findMany({
-        where: {
-          created_by: {
-            organization: {
-              id: organizationId,
+      const skip = (page - 1) * limit;
+      const [devices, totalItems] = await this.prisma.$transaction([
+        this.prisma.device.findMany({
+          skip,
+          take: limit,
+          where: {
+            created_by: {
+              organization: {
+                id: organizationId,
+              },
             },
+            OR: [
+              {
+                title: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                description: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            ],
           },
-        },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          serial_number: true,
-          uri: true,
-          category: true,
-          created_by: {
-            select: {
-              id: true,
-              first_name: true,
-              middle_name: true,
-              last_name: true,
-              email: true,
+
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            serial_number: true,
+            uri: true,
+            category: true,
+            created_by: {
+              select: {
+                id: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+                email: true,
+              },
             },
-          },
-          patient_devices: {
-            select: {
-              issued_to: {
-                select: {
-                  user: {
-                    select: {
-                      id: true,
-                      first_name: true,
-                      middle_name: true,
-                      last_name: true,
-                      email: true,
+            patient_devices: {
+              select: {
+                issued_to: {
+                  select: {
+                    user: {
+                      select: {
+                        id: true,
+                        first_name: true,
+                        middle_name: true,
+                        last_name: true,
+                        email: true,
+                      },
                     },
                   },
                 },
+                issued_by: {
+                  select: {
+                    id: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                    email: true,
+                  },
+                },
+                issued_at: true,
               },
-              issued_by: {
-                select: {
-                  id: true,
-                  first_name: true,
-                  middle_name: true,
-                  last_name: true,
-                  email: true,
+            },
+            created_at: true,
+            updated_at: true,
+          },
+          orderBy: {
+            created_at: 'desc',
+          },
+        }),
+        this.prisma.device.count({
+          where: {
+            created_by: {
+              organization: {
+                id: organizationId,
+              },
+            },
+            OR: [
+              {
+                title: {
+                  contains: search,
+                  mode: 'insensitive',
                 },
               },
-              issued_at: true,
-            },
+              {
+                description: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            ],
           },
-          created_at: true,
-          updated_at: true,
+        }),
+      ]);
+      const totalPages = Math.ceil(totalItems / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+      return {
+        data: devices,
+        pagination: {
+          totalItems,
+          perPage: limit,
+          currentPage: page,
+          totalPages,
+          hasNextPage,
+          hasPrevPage,
+          nextPage: hasNextPage ? page + 1 : null,
+          prevPage: hasPrevPage ? page - 1 : null,
         },
-        orderBy: {
-          created_at: 'desc',
-        },
-      });
+      };
+
     } else {
       // For ADMIN, DOCTOR and NURSE
       const res = await this.prisma.user.findUniqueOrThrow({
+
         where: { id: userId },
         select: {
           associated_branches: {
@@ -93,78 +158,144 @@ export class DeviceService {
           },
         },
       });
-
-      const devices = await this.prisma.device.findMany({
-        where: {
-          OR: [
-            {
-              created_by: {
-                associated_branches: {
-                  some: {
-                    id: res.associated_branches[0]?.id,
+      const skip = (page - 1) * limit;
+      const [devices, totalItems] = await this.prisma.$transaction([
+        this.prisma.device.findMany({
+          skip,
+          take: limit,
+          where: {
+            AND: [
+              {
+                OR: [
+                  {
+                    created_by: {
+                      associated_branches: {
+                        some: {
+                          id: res.associated_branches[0]?.id,
+                        },
+                      },
+                    },
                   },
-                },
+                  {
+                    created_by: {
+                      organization_id: res.organization.id,
+                    },
+                  },
+                ],
               },
-            },
-            {
-              created_by: {
-                organization_id: res.organization.id,
+              {
+                OR: [
+                  {
+                    title: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                  {
+                    description: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                ],
               },
-            },
-          ],
-        },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          serial_number: true,
-          uri: true,
-          category: true,
-          created_by: {
-            select: {
-              id: true,
-              first_name: true,
-              middle_name: true,
-              last_name: true,
-              email: true,
-            },
+            ],
           },
-          patient_devices: {
-            select: {
-              issued_to: {
-                select: {
-                  user: {
-                    select: {
-                      id: true,
-                      first_name: true,
-                      middle_name: true,
-                      last_name: true,
-                      email: true,
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            serial_number: true,
+            uri: true,
+            category: true,
+            created_by: {
+              select: {
+                id: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+                email: true,
+              },
+            },
+            patient_devices: {
+              select: {
+                issued_to: {
+                  select: {
+                    user: {
+                      select: {
+                        id: true,
+                        first_name: true,
+                        middle_name: true,
+                        last_name: true,
+                        email: true,
+                      },
                     },
                   },
                 },
-              },
-              issued_by: {
-                select: {
-                  id: true,
-                  first_name: true,
-                  middle_name: true,
-                  last_name: true,
-                  email: true,
+                issued_by: {
+                  select: {
+                    id: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                    email: true,
+                  },
                 },
+                issued_at: true,
               },
-              issued_at: true,
             },
+            created_at: true,
+            updated_at: true,
           },
-          created_at: true,
-          updated_at: true,
-        },
-        orderBy: {
-          created_at: 'desc',
-        },
-      });
+          orderBy: {
+            created_at: 'desc',
+          },
+        }),
+        this.prisma.device.count({
+          where: {
+            AND: [
+              {
+                OR: [
+                  {
+                    created_by: {
+                      associated_branches: {
+                        some: {
+                          id: res.associated_branches[0]?.id,
+                        },
+                      },
+                    },
+                  },
+                  {
+                    created_by: {
+                      organization_id: res.organization.id,
+                    },
+                  },
+                ],
+              },
+              {
+                OR: [
+                  {
+                    title: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                  {
+                    description: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+      ]);
 
-
+      const totalPages = Math.ceil(totalItems / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
       const enrichedDevices = devices.map((device) => {
         const isAssigned = device.patient_devices && device.patient_devices.length > 0;
         return {
@@ -173,7 +304,19 @@ export class DeviceService {
         };
       });
 
-      return enrichedDevices;
+      return {
+        data: enrichedDevices,
+        pagination: {
+          totalItems,
+          perPage: limit,
+          currentPage: page,
+          totalPages,
+          hasNextPage,
+          hasPrevPage,
+          nextPage: hasNextPage ? page + 1 : null,
+          prevPage: hasPrevPage ? page - 1 : null,
+        },
+      };
     }
 
 

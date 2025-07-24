@@ -16,65 +16,126 @@ export class TabletService {
     userId: string,
     organizationId: string,
     role: UserRole,
-  ): Promise<Tablet[]> {
+    search: string,
+    page: number = 1,
+    limit: number = 10
+  ) {
     if (role === 'SUPERADMIN') {
-      return await this.prisma.tablet.findMany({
-        where: {
-          created_by: {
-            organization: {
-              id: organizationId,
+      const skip = (page - 1) * limit;
+      const [tablets, totalItems] = await this.prisma.$transaction([
+        this.prisma.tablet.findMany({
+          skip,
+          take: limit,
+          where: {
+            created_by: {
+              organization: {
+                id: organizationId,
+              },
             },
+            OR: [
+              {
+                title: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                serial_number: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              }
+            ],
           },
-        },
-        select: {
-          id: true,
-          title: true,
-          serial_number: true,
-          uri: true,
-          category: true,
-          created_by: {
-            select: {
-              id: true,
-              first_name: true,
-              middle_name: true,
-              last_name: true,
-              email: true,
+          select: {
+            id: true,
+            title: true,
+            serial_number: true,
+            uri: true,
+            category: true,
+            created_by: {
+              select: {
+                id: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+                email: true,
+              },
             },
-          },
-          patient_tablets: {
-            select: {
-              issued_to: {
-                select: {
-                  user: {
-                    select: {
-                      id: true,
-                      first_name: true,
-                      middle_name: true,
-                      last_name: true,
-                      email: true,
+            patient_tablets: {
+              select: {
+                issued_to: {
+                  select: {
+                    user: {
+                      select: {
+                        id: true,
+                        first_name: true,
+                        middle_name: true,
+                        last_name: true,
+                        email: true,
+                      },
                     },
                   },
                 },
+                issued_by: {
+                  select: {
+                    id: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                    email: true,
+                  },
+                },
+                issued_at: true,
               },
-              issued_by: {
-                select: {
-                  id: true,
-                  first_name: true,
-                  middle_name: true,
-                  last_name: true,
-                  email: true,
+            },
+            created_at: true,
+            updated_at: true,
+          },
+          orderBy: {
+            created_at: 'desc',
+          },
+        }),
+        this.prisma.tablet.count({
+          where: {
+            created_by: {
+              organization: {
+                id: organizationId,
+              },
+            },
+            OR: [
+              {
+                title: {
+                  contains: search,
+                  mode: 'insensitive',
                 },
               },
-              issued_at: true,
-            },
+              {
+                serial_number: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              }
+            ],
           },
-          created_at: true,
-          updated_at: true,
+        }),
+      ]);
+      const totalPages = Math.ceil(totalItems / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+      return {
+        data: tablets,
+        pagination: {
+          totalItems,
+          perPage: limit,
+          currentPage: page,
+          totalPages,
+          hasNextPage,
+          hasPrevPage,
+          nextPage: hasNextPage ? page + 1 : null,
+          prevPage: hasPrevPage ? page - 1 : null,
         },
-        orderBy: {
-          created_at: 'desc',
-        },
-      });
+      };
     } else {
       // For ADMIN, DOCTOR and NURSE
       const res = await this.prisma.user.findUniqueOrThrow({
@@ -92,78 +153,145 @@ export class TabletService {
           },
         },
       });
-
-      const tablets = await this.prisma.tablet.findMany({
-        where: {
-          OR: [
-            {
-              created_by: {
-                associated_branches: {
-                  some: {
-                    id: res.associated_branches[0]?.id,
+      const skip = (page - 1) * limit;
+      const [tablets, totalItems] = await this.prisma.$transaction([
+        this.prisma.tablet.findMany({
+          skip,
+          take: limit,
+          where: {
+            AND: [
+              {
+                OR: [
+                  {
+                    created_by: {
+                      associated_branches: {
+                        some: {
+                          id: res.associated_branches[0]?.id,
+                        },
+                      },
+                    },
                   },
-                },
+                  {
+                    created_by: {
+                      organization_id: res.organization.id,
+                    },
+                  },
+                ],
               },
-            },
-            {
-              created_by: {
-                organization_id: res.organization.id,
+              {
+                OR: [
+                  {
+                    title: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                  {
+                    serial_number: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+
+                  }
+                ],
               },
-            },
-          ],
-        },
-        select: {
-          id: true,
-          title: true,
-          serial_number: true,
-          uri: true,
-          category: true,
-          created_by: {
-            select: {
-              id: true,
-              first_name: true,
-              middle_name: true,
-              last_name: true,
-              email: true,
-            },
+            ],
           },
-          patient_tablets: {
-            select: {
-              issued_to: {
-                select: {
-                  user: {
-                    select: {
-                      id: true,
-                      first_name: true,
-                      middle_name: true,
-                      last_name: true,
-                      email: true,
+          select: {
+            id: true,
+            title: true,
+            serial_number: true,
+            uri: true,
+            category: true,
+            created_by: {
+              select: {
+                id: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+                email: true,
+              },
+            },
+            patient_tablets: {
+              select: {
+                issued_to: {
+                  select: {
+                    user: {
+                      select: {
+                        id: true,
+                        first_name: true,
+                        middle_name: true,
+                        last_name: true,
+                        email: true,
+                      },
                     },
                   },
                 },
-              },
-              issued_by: {
-                select: {
-                  id: true,
-                  first_name: true,
-                  middle_name: true,
-                  last_name: true,
-                  email: true,
+                issued_by: {
+                  select: {
+                    id: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                    email: true,
+                  },
                 },
+                issued_at: true,
               },
-              issued_at: true,
             },
+            created_at: true,
+            updated_at: true,
           },
-          created_at: true,
-          updated_at: true,
-        },
-        orderBy: {
-          created_at: 'desc',
-        },
-      });
+          orderBy: {
+            created_at: 'desc',
+          },
+        }),
+        this.prisma.tablet.count({
+          where: {
+            AND: [
+              {
+                OR: [
+                  {
+                    created_by: {
+                      associated_branches: {
+                        some: {
+                          id: res.associated_branches[0]?.id,
+                        },
+                      },
+                    },
+                  },
+                  {
+                    created_by: {
+                      organization_id: res.organization.id,
+                    },
+                  },
+                ],
+              },
+              {
+                OR: [
+                  {
+                    title: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                  {
+                    serial_number: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  }
+                ],
+              },
+            ],
+          },
+        }),
+      ]);
 
 
-
+      const totalPages = Math.ceil(totalItems / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
       const enrichedtablet = tablets.map((tablet) => {
         const isAssigned = tablet.patient_tablets && tablet.patient_tablets.length > 0;
         return {
@@ -172,7 +300,19 @@ export class TabletService {
         };
       });
 
-      return enrichedtablet;
+      return {
+        data: enrichedtablet,
+        pagination: {
+          totalItems,
+          perPage: limit,
+          currentPage: page,
+          totalPages,
+          hasNextPage,
+          hasPrevPage,
+          nextPage: hasNextPage ? page + 1 : null,
+          prevPage: hasPrevPage ? page - 1 : null,
+        },
+      };
     }
   }
 

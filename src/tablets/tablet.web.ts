@@ -8,6 +8,8 @@ import {
   Param,
   Post,
   Patch,
+  Search,
+  Query,
 } from '@nestjs/common';
 
 import { TabletController } from './tablet.controller';
@@ -28,11 +30,14 @@ export class TabletWebController extends TabletController {
 
   @HttpCode(HttpStatus.OK)
   @Get()
-  public async getAllTablets(@GetUser() user: UserRes): Promise<Tablet[]> {
+  public async getAllTablets(@Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes, @Query('search') search: string) {
     return this.getTabletService().getAllTablets(
       user.id,
       user.organization_id,
       user.role,
+      search,
+      +page,
+      +limit
     );
   }
 

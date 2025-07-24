@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Patch,
+  Query,
 } from '@nestjs/common';
 
 import { DeviceController } from './device.controller';
@@ -38,11 +39,15 @@ export class DeviceWebController extends DeviceController {
 
   @HttpCode(HttpStatus.OK)
   @Get()
-  public async getAllDevices(@GetUser() user: UserRes): Promise<Device[]> {
+  public async getAllDevices(@Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes,
+    @Query('search') search: string = '',) {
     return this.getDeviceService().getAllDevices(
       user.id,
       user.organization_id,
       user.role,
+      search,
+      +page,
+      +limit
     );
   }
 
