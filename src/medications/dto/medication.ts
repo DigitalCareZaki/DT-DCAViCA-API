@@ -16,13 +16,24 @@ import {
   ValidateEndDateGreaterThanStartDate,
 } from 'src/validators';
 
-function getDate(value: string): Date {
+function startDateTransform(value: string): Date {
   const date = new Date(value);
 
-  // Subtract 5 hours from date
-  date.setUTCHours(date.getUTCHours() - 5, 0, 0, 0); // Reset time to midnight in UTC
+  // subtract 5 hours to adjust for timezone
+  date.setHours(date.getHours() - 5);
 
-  console.log('date >>>>>>>>>>', date);
+  return date;
+}
+
+function endDateTransform(value: string): Date {
+  const date = new Date(value);
+
+  // subtract 5 hours to adjust for timezone
+  date.setHours(date.getHours() - 5);
+
+  // add 23 hours, 59 minutes, and 59 seconds to set the time to the end of the day
+  date.setHours(date.getHours() + 23, date.getMinutes() + 59, date.getSeconds() + 59);
+
   return date;
 }
 
@@ -39,14 +50,14 @@ export class MedicationDTO {
   @IsNotEmpty()
   @Type(() => Date)
   // @Validate(ValidateStartDateNotInPast)
-  @Transform(({ value }: { value: string }) => getDate(value))
+  @Transform(({ value }: { value: string }) => startDateTransform(value))
   start_date: string;
 
   @IsDate()
   @IsNotEmpty()
   @Type(() => Date)
   // @Validate(ValidateEndDateGreaterThanStartDate)
-  @Transform(({ value }: { value: string }) => getDate(value))
+  @Transform(({ value }: { value: string }) => endDateTransform(value))
   end_date: string;
 
   // @IsISO8601()
