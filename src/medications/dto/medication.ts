@@ -20,7 +20,7 @@ function startDateTransform(value: string): Date {
   const date = new Date(value);
 
   // subtract 5 hours to adjust for timezone
-  date.setHours(date.getHours() - 5);
+  // date.setHours(date.getHours() - 5);
 
   return date;
 }

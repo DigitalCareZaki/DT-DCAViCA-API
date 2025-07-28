@@ -248,6 +248,7 @@ export class MedicationService {
         HttpStatus.FORBIDDEN,
       );
     }
+    console.log('Creating medication with data:', data);
 
     let medication: ModifiedMedication | undefined = undefined;
 
