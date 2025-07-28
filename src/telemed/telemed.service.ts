@@ -613,6 +613,7 @@ export class TelemedService {
       'Complete': '0',
       'Pending': '0',
       'Canceled': '0',
+      'Total': '0', // Added total field
     };
 
     const appointments = await this.prisma.appointmentParticipants.groupBy({
@@ -625,12 +626,18 @@ export class TelemedService {
       },
     });
 
+    let total = 0;
+
     appointments.forEach(item => {
       const label = statusLabels[item.status];
       if (label) {
-        result[label] = item._count.status.toString();
+        const count = item._count.status;
+        result[label] = count.toString();
+        total += count;
       }
     });
+
+    result['Total'] = total.toString();
 
     return result;
   }
