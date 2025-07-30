@@ -931,7 +931,7 @@ export class DoctorService {
   public async getDoctorsBySpeciality(specialityId: string) {
     const doctorList = await this.prisma.doctor.findMany({
       where: {
-        specialities: {
+        departments: {
           some: {
             id: specialityId, // assuming `id` is the field name in `Speciality` model
           },

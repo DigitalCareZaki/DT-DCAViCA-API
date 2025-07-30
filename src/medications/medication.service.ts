@@ -502,31 +502,6 @@ export class MedicationService {
     });
 
 
-    // for (const alert of medications) {
-    //   const patientMedicationAlert = await this.prisma.patientMedicationAlerts.findFirst({
-    //     where: {
-    //       medication_id: alert.id,
-    //       taken: 'PENDING',
-    //       alert_time: {
-    //         gte: oneHourAgo,     // alert_time is **not older than** 1 hour
-    //         lte: fiveMinutesAgo, // alert_time is **at least** 5 min old
-    //       },
-    //     },
-    //     orderBy: { alert_time: 'asc' },  // earliest that fits the window
-    //   });
-    // }
-
-    // const patientMedicationAlert = await this.prisma.patientMedicationAlerts.findFirst({
-    //   where: {
-    //     medication_id: medications.id,
-    //     taken: 'PENDING',
-    //     alert_time: {
-    //       gte: oneHourAgo,     // alert_time is **not older than** 1 hour
-    //       lte: fiveMinutesAgo, // alert_time is **at least** 5 min old
-    //     },
-    //   },
-    //   orderBy: { alert_time: 'asc' },  // earliest that fits the window
-    // });
 
     console.log('patientMedicationAlert >>> ', patientMedicationAlert);
 
@@ -545,56 +520,5 @@ export class MedicationService {
     });
   }
 
-  // public async updateMedication(medicationId: string, data: any) {
-  //   const medication = await this.prisma.medication.findFirst({
-  //     where: {
-  //       id: medicationId,
-  //       start_date: {
-  //         lte: new Date(),
-  //       },
-  //     },
-  //   });
 
-
-  //   // const medication = await this.prisma.medication.update({
-  //   //   where: {
-  //   //     id: medicationId,
-  //   //   },
-  //   //   data: {
-  //   //     name: data.name,
-  //   //     start_date: data.start_date,
-  //   //     end_date: data.end_date,
-  //   //     time: data.time,
-  //   //     dosage: data.dosage,
-  //   //     frequency: data.frequency,
-  //   //     unit: data.unit as MedicationUnit,
-  //   //   },
-  //   //   select: {
-  //   //     id: true,
-  //   //     name: true,
-  //   //     start_date: true,
-  //   //     end_date: true,
-  //   //     time: true,
-  //   //     dosage: true,
-  //   //     frequency: true,
-  //   //     unit: true,
-  //   //     doctor: {
-  //   //       select: {
-  //   //         user: {
-  //   //           select: {
-  //   //             id: true,
-  //   //             first_name: true,
-  //   //             middle_name: true,
-  //   //             last_name: true,
-  //   //             email: true,
-  //   //           },
-  //   //         },
-  //   //       },
-  //   //     },
-  //   //     created_at: true,
-  //   //   },
-  //   // });
-
-  //   return medication;
-  // }
 }
