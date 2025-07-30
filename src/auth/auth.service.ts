@@ -59,12 +59,12 @@ export class AuthService {
                 title: true,
               },
             },
-            // departments: {
-            //   select: {
-            //     id: true,
-            //     title: true,
-            //   },
-            // },
+            departments: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
             // npi_number: true,
             // pmdc_number: true,
             // employee_id: true,
@@ -72,10 +72,13 @@ export class AuthService {
         },
       }
     });
-
+    console.log(user, '============>>>user')
     // Add speciality key using specialities[0].title if it exists
     if (user.doctor && user.doctor.specialities && user.doctor.specialities.length > 0) {
       user.speciality = user.doctor.specialities[0].title;
+    }
+    if (user.doctor && user.doctor.departments && user.doctor.departments.length > 0) {
+      user.departments = user.doctor.departments[0].title;
     }
 
     if (!user.active) {

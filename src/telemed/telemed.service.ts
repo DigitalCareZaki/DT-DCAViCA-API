@@ -726,6 +726,7 @@ export class TelemedService {
   }
 
   public async calendar(userId: string): Promise<SlotParent> {
+    console.log(`Fetching calendar for user: ${userId}`);
     // console.log(`Fetching calendar for user: ${userId}`);
     const existingSlotParent = await this.prisma.slotParent.findUnique({
       where: { id: userId },
@@ -843,7 +844,7 @@ export class TelemedService {
     data: SlotParent,
   ): Promise<SlotParent> {
     // console.log(`Updating calendar 100% for user: ${user.id}`);
-
+    console.log(data, 'data:===========>>');
     // Fetch existing SlotParent with all nested relations
     const existingSlotParent = await this.prisma.slotParent.findUnique({
       where: { id: user.id },
