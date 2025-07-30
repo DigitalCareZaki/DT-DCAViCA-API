@@ -141,7 +141,7 @@ export class ComplianceService {
         },
       },
     });
-    console.log('patientMedications:========>>>>', JSON.stringify(patientMedications.medication[0].patient_medication_alerts))
+    console.log('patientMedications:========>>>>', JSON.stringify(patientMedications.medication))
 
     const formattedResults = patientMedications.medication.map((med) => {
       const complianceByDay: Record<string, {
@@ -182,29 +182,25 @@ export class ComplianceService {
             0
           ));
 
-          const matchingAlert = alerts.find(alert => {
-            const diff = Math.abs(new Date(alert.alert_time).getTime() - scheduledDose.getTime());
-            return diff <= 15 * 60 * 1000; // ±15 minutes
-          });
-
-
-          if (matchingAlert && matchingAlert.taken === 'TAKEN') {
-            complianceByDay[dayString].taken++;
-          } else {
-            complianceByDay[dayString].not_taken++;
-          }
-          // const matchingAlerts = alerts.filter(alert => {
+          // const matchingAlert = alerts.find(alert => {
+          //   console.log('alert:========>>>>', alert)
           //   const diff = Math.abs(new Date(alert.alert_time).getTime() - scheduledDose.getTime());
-          //   return diff <= 15 * 60 * 1000;
+          //   return diff <= 15 * 60 * 1000; // ±15 minutes
           // });
-
-          // const takenAlert = matchingAlerts.find(a => a.taken === 'TAKEN');
-
-          // if (takenAlert) {
+          // if (matchingAlert && matchingAlert.taken === 'TAKEN') {
           //   complianceByDay[dayString].taken++;
           // } else {
           //   complianceByDay[dayString].not_taken++;
           // }
+
+
+          const takenAlert = alerts.find(a => a.taken === 'TAKEN');
+
+          if (takenAlert) {
+            complianceByDay[dayString].taken++;
+          } else {
+            complianceByDay[dayString].not_taken++;
+          }
         }
       }
 
