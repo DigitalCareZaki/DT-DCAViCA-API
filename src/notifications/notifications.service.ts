@@ -78,44 +78,70 @@ export class NotificationsService {
     };
   }
 
-  public async getPatientNotifications(patientId: string) {
-    return this.prisma.notification.findMany({
-      where: {
-        reciever_id: patientId,
-      },
-      orderBy: {
-        created_at: 'desc',
-      },
-
-      select: {
-        id: true,
-        sender: {
-          select: {
-            first_name: true,
-            last_name: true,
-            middle_name: true,
-            uri: true,
-            email: true,
-            role: true,
-          },
+  public async getPatientNotifications(patientId: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const [notifications, totalItems] = await this.prisma.$transaction([
+      this.prisma.notification.findMany({
+        skip,
+        take: limit,
+        where: {
+          reciever_id: patientId,
         },
-        reciever: {
-          select: {
-            first_name: true,
-            last_name: true,
-            middle_name: true,
-            uri: true,
-            email: true,
-            role: true,
-          },
+        orderBy: {
+          created_at: 'desc',
         },
 
-        title: true,
-        description: true,
-        sender_id: true,
-        reciever_id: true,
-        created_at: true,
+        select: {
+          id: true,
+          sender: {
+            select: {
+              first_name: true,
+              last_name: true,
+              middle_name: true,
+              uri: true,
+              email: true,
+              role: true,
+            },
+          },
+          reciever: {
+            select: {
+              first_name: true,
+              last_name: true,
+              middle_name: true,
+              uri: true,
+              email: true,
+              role: true,
+            },
+          },
+
+          title: true,
+          description: true,
+          sender_id: true,
+          reciever_id: true,
+          created_at: true,
+        },
+      }),
+      this.prisma.notification.count({
+        where: {
+          reciever_id: patientId,
+        },
+      }),
+    ]);
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+    return {
+      data: notifications,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
       },
-    });
+    };
   }
 }

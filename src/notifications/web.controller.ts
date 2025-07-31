@@ -17,7 +17,7 @@ export class NotificationsWebController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/:patient_id')
-  public async fetchPatientNotifications(@Param('patient_id') patient_id: string) {
-    return this.notificationService.getPatientNotifications(patient_id);
+  public async fetchPatientNotifications(@Query('page') page = 1, @Query('limit') limit = 10, @Param('patient_id') patient_id: string) {
+    return this.notificationService.getPatientNotifications(patient_id, +page, +limit);
   }
 }
