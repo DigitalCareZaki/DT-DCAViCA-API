@@ -1292,11 +1292,25 @@ export class MeasurementService {
     };
   }
 
-  public async patientLastMeasurements(
-    id: string,
-    patientId: string,
-  ) {
-    console.log(id, patientId, '==========>  id patientId');
+  public async patientLastMeasurements(id: string, appointmentId: string) {
+
+    // get patientId from appointmentId using relation organizer_id and then get patientId from Patient table
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      select: { organizer_id: true }
+    });
+
+    console.log('object', appointment, '=========>appointment');
+
+    const patient = await this.prisma.patient.findFirst({
+      where: { user_id: appointment.organizer_id },
+      select: { id: true }
+    });
+
+    const patientId = patient.id;
+
+    console.log('patientId', patientId, '=========>patientId');
+
     const selectObject = {
       id: true,
       title: true,
@@ -1350,8 +1364,9 @@ export class MeasurementService {
         },
       },
     };
+
     const allMeasurements = await this.prisma.measurement.findMany({
-      where: { patient_id: patientId },
+      // where: { patient_id: patientId },
       orderBy: [
         { updated_at: 'desc' },
         { created_at: 'desc' },
