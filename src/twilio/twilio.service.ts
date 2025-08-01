@@ -33,18 +33,20 @@
 //     }
 //   }
 // }
-
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as Twilio from 'twilio';
+import { userSelectFields } from 'src/constant';
 
 @Injectable()
 export class TwilioService {
+
   private client: Twilio.Twilio;
   private from: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(private configService: ConfigService, private prisma: PrismaService) {
     const accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
     const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
     this.from = this.configService.get<string>('TWILIO_PHONE_NUMBER');
@@ -66,5 +68,44 @@ export class TwilioService {
       throw error;
     }
   }
+
+  public async getAllSms(page: number, limit: number): Promise<any> {
+    const skip = (page - 1) * limit;
+    const [messages, totalItems] = await this.prisma.$transaction([
+      this.prisma.sms.findMany({
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: 'desc',
+        },
+        select: {
+          id: true,
+          to: true,
+          body: true,
+          created_at: true,
+          sender: { select: userSelectFields },
+          receiver: { select: userSelectFields },
+        },
+      }),
+      this.prisma.sms.count(),
+    ]);
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+    return {
+      data: messages,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+      },
+    };
+  }
+
 }
 
