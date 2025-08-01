@@ -1292,7 +1292,85 @@ export class MeasurementService {
     };
   }
 
+  public async patientLastMeasurements(
+    id: string,
+    patientId: string,
+  ) {
+    console.log(id, patientId, '==========>  id patientId');
+    const selectObject = {
+      id: true,
+      title: true,
+      status: true,
+      updated_status: true,
+      mode: true,
+      updated_status_at: true,
+      updated_status_by: true,
+      type: true,
+      values: true,
+      unit: true,
+      reading_source: true,
+      created_at: true,
+      patient: {
+        select: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              first_name: true,
+              middle_name: true,
+              last_name: true,
+            },
+          },
+        },
+      },
+      doctor: {
+        select: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              first_name: true,
+              middle_name: true,
+              last_name: true,
+            },
+          },
+        },
+      },
+      nurse: {
+        select: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              first_name: true,
+              middle_name: true,
+              last_name: true,
+            },
+          },
+        },
+      },
+    };
+    const allMeasurements = await this.prisma.measurement.findMany({
+      where: { patient_id: patientId },
+      orderBy: [
+        { updated_at: 'desc' },
+        { created_at: 'desc' },
+      ],
+      select: selectObject,
+    });
 
+    // Step 2: Extract the latest per type manually
+    const latestByTypeMap = new Map();
+
+    for (const measurement of allMeasurements) {
+      if (!latestByTypeMap.has(measurement.type)) {
+        latestByTypeMap.set(measurement.type, measurement);
+      }
+    }
+
+    const latestMeasurements = Array.from(latestByTypeMap.values());
+    return latestMeasurements;
+  }
 
   public async patientMeasurements(
     patientId: string,

@@ -83,6 +83,20 @@ export class MeasurementWebController {
       limit || 10,
     );
   }
+  @HttpCode(HttpStatus.OK)
+  @Get('/last/') // :id -> patient -> user_id
+  public async patientLastMeasurements(
+    @GetUser() user: UserRes,
+    @Query('patientId') patientId: string,
+    // @Query('page') page?: number,
+    // @Query('limit') limit?: number,
+    // @Query('type') type?: string,
+  ) {
+    return this.measurementService.patientLastMeasurements(
+      user.id,
+      patientId
+    );
+  }
 
   @HttpCode(HttpStatus.CREATED)
   @Post('/patients/:id') // :id -> patient -> user_id
