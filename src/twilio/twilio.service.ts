@@ -70,6 +70,7 @@ export class TwilioService {
   }
 
   public async getAllSms(page: number, limit: number): Promise<any> {
+    // for admin only
     const skip = (page - 1) * limit;
     const [messages, totalItems] = await this.prisma.$transaction([
       this.prisma.sms.findMany({
