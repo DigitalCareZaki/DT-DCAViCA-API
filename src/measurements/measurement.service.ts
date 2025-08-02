@@ -1366,7 +1366,7 @@ export class MeasurementService {
     };
 
     const allMeasurements = await this.prisma.measurement.findMany({
-      // where: { patient_id: patientId },
+      where: { patient_id: patientId },
       orderBy: [
         { updated_at: 'desc' },
         { created_at: 'desc' },
