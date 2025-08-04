@@ -30,67 +30,67 @@ export class MedicationService {
   ): Promise<ModifiedMedication[]> {
     if (role === 'DOCTOR' || role === 'NURSE') {
 
-      const [medications, total] = await this.prisma.$transaction([
-        this.prisma.medication.findMany({
-          where: {
-            AND: [
-              {
-                patient: {
-                  [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
-                    some: {
-                      user_id: userId,
-                    },
-                  },
-                },
-              },
-              {
-                patient: {
-                  user_id: patientId,
-                },
-              },
-              {
-                name: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
-            ],
-          },
-          skip: (page - 1) * limit,
-          take: limit,
-          select: {
-            id: true,
-            name: true,
-            start_date: true,
-            end_date: true,
-            time: true,
-            dosage: true,
-            frequency: true,
-            unit: true,
-            doctor: {
-              select: {
-                user: {
-                  select: {
-                    id: true,
-                    first_name: true,
-                    middle_name: true,
-                    last_name: true,
-                    email: true,
+
+      this.prisma.medication.findMany({
+        where: {
+          AND: [
+            {
+              patient: {
+                [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
+                  some: {
+                    user_id: userId,
                   },
                 },
               },
             },
-            appointment: {
-              select: {
-                id: true,
-                title: true,
-                start_date: true,
-                end_date: true,
+            {
+              patient: {
+                user_id: patientId,
               },
             },
-            created_at: true,
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          name: true,
+          start_date: true,
+          end_date: true,
+          time: true,
+          dosage: true,
+          frequency: true,
+          unit: true,
+          doctor: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                  email: true,
+                },
+              },
+            },
           },
-        });
+          appointment: {
+            select: {
+              id: true,
+              title: true,
+              start_date: true,
+              end_date: true,
+            },
+          },
+          created_at: true,
+        },
+      });
     } else {
       // Patient
       if (patientId !== userId) {
