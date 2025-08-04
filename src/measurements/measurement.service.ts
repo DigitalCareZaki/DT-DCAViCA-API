@@ -697,6 +697,7 @@ export class MeasurementService {
                   first_name: true,
                   middle_name: true,
                   last_name: true,
+                  phone_number: true,
                 },
               },
             },
@@ -710,6 +711,7 @@ export class MeasurementService {
                   first_name: true,
                   middle_name: true,
                   last_name: true,
+                  phone_number: true
                 },
               },
             },
@@ -776,14 +778,14 @@ export class MeasurementService {
             message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
 
           }
-          console.log(contact.number, 'contact.number  ======>>>>>');
-          await this.sms.sendSMS(contact.number, message);
 
+          await this.sms.sendSMS(contact.number, message);
+          console.log(contact, '=========>contact after sms');
           // Save the SMS log to the database
           await this.prisma.sms.create({
             data: {
-              receiver_id: user.id,
-              sender_id: measurement.patient.user.id,
+              receiver_id: contact.id,
+              sender_id: user.id,
               to: contact.number,
               body: message,
             },
@@ -828,6 +830,8 @@ export class MeasurementService {
                   first_name: true,
                   middle_name: true,
                   last_name: true,
+                  phone_number: true
+
                 },
               },
             },
@@ -841,6 +845,7 @@ export class MeasurementService {
                   first_name: true,
                   middle_name: true,
                   last_name: true,
+                  phone_number: true
                 },
               },
             },
@@ -870,14 +875,14 @@ export class MeasurementService {
         message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
 
       }
-      await this.sms.sendSMS(user.phone_number, message);
+      await this.sms.sendSMS(measurement.doctor.phone_number, message);
 
       // Save the SMS log to the database
       await this.prisma.sms.create({
         data: {
-          receiver_id: user.id,
-          sender_id: measurement.patient.user.id,
-          to: user.phone_number,
+          receiver_id: measurement.doctor.user.id,
+          sender_id: user.id,
+          to: measurement.doctor.user.phone_number,
           body: message,
         },
       });
@@ -905,10 +910,11 @@ export class MeasurementService {
 
           await this.sms.sendSMS(contact.number, message);
           // Save the SMS log to the database
+          console.log(contact, '=========>contact after sms');
           await this.prisma.sms.create({
             data: {
-              receiver_id: user.id,
-              sender_id: measurement.patient.user.id,
+              receiver_id: contact.id,
+              sender_id: user.id,
               to: contact.number,
               body: message,
             },
