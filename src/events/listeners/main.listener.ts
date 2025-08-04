@@ -32,7 +32,7 @@ export class EventListener {
     });
 
     let category: MeasurementStatus = 'ALERT_NOT_SET';
-
+    console.log('patientReadingRange:======>>>', patientReadingRange);
     if (patientReadingRange && patientReadingRange.range.length > 0) {
       if (payload.measurement.type === 'BLOODPRESSURE') {
         const [systolic, diastolic] = payload.measurement.values;
@@ -47,8 +47,9 @@ export class EventListener {
       } else {
         const value = payload.measurement.values[0];
         const [low, high] = patientReadingRange.range;
-
+        console.log('value, low, high =====>>', value, low, high);
         category = value <= low ? 'LOW' : value >= high ? 'HIGH' : 'NORMAL';
+        console.log('category =====>>', category);
       }
     }
 

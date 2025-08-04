@@ -655,6 +655,7 @@ export class MeasurementService {
   // }
 
   public async createPatientMeasurement(patientId: string, user: UserRes, role: UserRole, data: MeasurementDTO) {
+    console.log('patientId', patientId, '=========>patientId');
     let measurement = null;
 
     // Doctor and Nurse
