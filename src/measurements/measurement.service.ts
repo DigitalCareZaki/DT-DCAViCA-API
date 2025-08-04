@@ -730,10 +730,17 @@ export class MeasurementService {
         },
       });
 
-      console.log('measurement', measurement, '=========>measurement');
 
-      console.log('user', user, '=========>user');
-      const message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.range[0]}/${measurement.range[1]}`;
+      let message = '';
+
+      if (measurement.values.length > 1) {
+        message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
+
+      } else {
+        message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
+
+      }
+      console.log(user.phone_number, 'userphone_number  ======>>>>>');
       await this.sms.sendSMS(user.phone_number, message);
 
       // Save the SMS log to the database
@@ -745,6 +752,8 @@ export class MeasurementService {
           body: message,
         },
       });
+
+
 
       const contacts = await this.prisma.contacts.findMany({
         where: {
@@ -760,7 +769,14 @@ export class MeasurementService {
 
       if (contacts.length > 0) {
         contacts.forEach(async (contact) => {
-          const message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.range[0]}/${measurement.range[1]}`;
+          if (measurement.values.length > 1) {
+            message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
+
+          } else {
+            message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
+
+          }
+          console.log(contact.number, 'contact.number  ======>>>>>');
           await this.sms.sendSMS(contact.number, message);
 
           // Save the SMS log to the database
@@ -846,7 +862,14 @@ export class MeasurementService {
       });
 
       console.log('measurement', measurement, '=========>measurement');
-      const message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.range[0]}/${measurement.range[1]}`;
+      let message = '';
+      if (measurement.values.length > 1) {
+        message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
+
+      } else {
+        message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
+
+      }
       await this.sms.sendSMS(user.phone_number, message);
 
       // Save the SMS log to the database
@@ -872,9 +895,15 @@ export class MeasurementService {
       });
       if (contacts.length > 0) {
         contacts.forEach(async (contact) => {
-          const message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.range[0]}/${measurement.range[1]}`;
-          await this.sms.sendSMS(contact.number, message);
 
+          if (measurement.values.length > 1) {
+            message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
+
+          } else {
+            message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
+          }
+
+          await this.sms.sendSMS(contact.number, message);
           // Save the SMS log to the database
           await this.prisma.sms.create({
             data: {
