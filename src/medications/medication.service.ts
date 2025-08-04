@@ -154,8 +154,7 @@ export class MedicationService {
     userId: string,
     role: UserRole,
     search: string,
-    page: number = 1,
-    limit: number = 10
+
   ) {
     if (role === 'DOCTOR' || role === 'NURSE') {
       return await this.prisma.medication.findMany({
@@ -183,8 +182,7 @@ export class MedicationService {
             },
           ],
         },
-        skip: (page - 1) * limit,
-        take: limit,
+
         select: {
           id: true,
           name: true,
@@ -219,8 +217,6 @@ export class MedicationService {
             },
           ],
         },
-        skip: (page - 1) * limit,
-        take: limit,
         select: {
           id: true,
           name: true,

@@ -27,16 +27,14 @@ export class MedicationAppController {
     @GetUser() user: UserRes,
     @Param('id') id: string,
     @Query('search') search: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+
   ) {
     return this.medicationService.getPatientMedicationForApp(
       id,
       user.id,
       user.role,
-      search || '',
-      page ? +page : 1,
-      limit ? +limit : 10,
+      search || ''
+
     );
   }
 
