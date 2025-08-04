@@ -867,62 +867,62 @@ export class MeasurementService {
         },
       });
 
-      console.log('measurement', measurement, '=========>measurement');
-      let message = '';
-      if (measurement.values.length > 1) {
-        message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
+      // console.log('measurement', measurement, '=========>measurement');
+      // let message = '';
+      // if (measurement.values.length > 1) {
+      //   message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
 
-      } else {
-        message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
+      // } else {
+      //   message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
 
-      }
-      await this.sms.sendSMS(measurement.doctor.phone_number, message);
+      // }
+      // await this.sms.sendSMS(measurement.doctor.phone_number, message);
 
-      // Save the SMS log to the database
-      await this.prisma.sms.create({
-        data: {
-          receiver_id: measurement.doctor.user.id,
-          sender_id: user.id,
-          to: measurement.doctor.user.phone_number,
-          body: message,
-        },
-      });
+      // // Save the SMS log to the database
+      // await this.prisma.sms.create({
+      //   data: {
+      //     receiver_id: measurement.doctor.user.id,
+      //     sender_id: user.id,
+      //     to: measurement.doctor.user.phone_number,
+      //     body: message,
+      //   },
+      // });
 
-      const contacts = await this.prisma.contacts.findMany({
-        where: {
-          user: {
-            id: measurement.patient.user.id,
-          }
-        },
-        select: {
-          id: true,
-          number: true
-        },
-      });
-      if (contacts.length > 0) {
-        contacts.forEach(async (contact) => {
+      // const contacts = await this.prisma.contacts.findMany({
+      //   where: {
+      //     user: {
+      //       id: measurement.patient.user.id,
+      //     }
+      //   },
+      //   select: {
+      //     id: true,
+      //     number: true
+      //   },
+      // });
+      // if (contacts.length > 0) {
+      //   contacts.forEach(async (contact) => {
 
-          if (measurement.values.length > 1) {
-            message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
+      //     if (measurement.values.length > 1) {
+      //       message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
 
-          } else {
-            message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
-          }
+      //     } else {
+      //       message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
+      //     }
 
-          await this.sms.sendSMS(contact.number, message);
-          // Save the SMS log to the database
-          console.log(contact, '=========>contact after sms');
-          await this.prisma.sms.create({
-            data: {
-              receiver_id: contact.id,
-              sender_id: user.id,
-              to: contact.number,
-              body: message,
-            },
-          });
+      //     await this.sms.sendSMS(contact.number, message);
+      //     // Save the SMS log to the database
+      //     console.log(contact, '=========>contact after sms');
+      //     await this.prisma.sms.create({
+      //       data: {
+      //         receiver_id: contact.id,
+      //         sender_id: user.id,
+      //         to: contact.number,
+      //         body: message,
+      //       },
+      //     });
 
-        });
-      }
+      //   });
+      // }
 
 
     }
