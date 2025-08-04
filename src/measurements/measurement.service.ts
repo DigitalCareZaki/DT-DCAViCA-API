@@ -1525,7 +1525,7 @@ export class MeasurementService {
     type: string,
     page: number,
     limit: number,
-  ): Promise<PaginatedResult<ModifiedMeasurement>> {
+  ) {
     // Calculate pagination parameters
     console.log(page, limit, '==========>  page');
     const skip = (page - 1) * limit;

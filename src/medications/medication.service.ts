@@ -27,127 +27,205 @@ export class MedicationService {
     search: string,
     page: number = 1,
     limit: number = 10
-  ): Promise<ModifiedMedication[]> {
+  ) {
     if (role === 'DOCTOR' || role === 'NURSE') {
 
-
-      this.prisma.medication.findMany({
-        where: {
-          AND: [
-            {
-              patient: {
-                [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
-                  some: {
-                    user_id: userId,
+      const [medications, totalItems] = await this.prisma.$transaction([
+        this.prisma.medication.findMany({
+          where: {
+            AND: [
+              {
+                patient: {
+                  [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
+                    some: {
+                      user_id: userId,
+                    },
+                  },
+                },
+              },
+              {
+                patient: {
+                  user_id: patientId,
+                },
+              },
+              {
+                name: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          },
+          skip: (page - 1) * limit,
+          take: limit,
+          select: {
+            id: true,
+            name: true,
+            start_date: true,
+            end_date: true,
+            time: true,
+            dosage: true,
+            frequency: true,
+            unit: true,
+            doctor: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                    email: true,
                   },
                 },
               },
             },
-            {
-              patient: {
-                user_id: patientId,
+            appointment: {
+              select: {
+                id: true,
+                title: true,
+                start_date: true,
+                end_date: true,
               },
             },
-            {
-              name: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            },
-          ],
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        select: {
-          id: true,
-          name: true,
-          start_date: true,
-          end_date: true,
-          time: true,
-          dosage: true,
-          frequency: true,
-          unit: true,
-          doctor: {
-            select: {
-              user: {
-                select: {
-                  id: true,
-                  first_name: true,
-                  middle_name: true,
-                  last_name: true,
-                  email: true,
+            created_at: true,
+          },
+        }),
+        this.prisma.medication.count({
+          where: {
+            AND: [
+              {
+                patient: {
+                  [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
+                    some: {
+                      user_id: userId,
+                    },
+                  },
                 },
               },
-            },
+              {
+                patient: {
+                  user_id: patientId,
+                },
+              },
+              {
+                name: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            ],
           },
-          appointment: {
-            select: {
-              id: true,
-              title: true,
-              start_date: true,
-              end_date: true,
-            },
-          },
-          created_at: true,
+        }),
+
+      ]);
+      const totalPages = Math.ceil(totalItems / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+      return {
+        data: medications,
+        pagination: {
+          totalItems,
+          perPage: limit,
+          currentPage: page,
+          totalPages,
+          hasNextPage,
+          hasPrevPage,
+          nextPage: hasNextPage ? page + 1 : null,
+          prevPage: hasPrevPage ? page - 1 : null,
         },
-      });
+      };
     } else {
       // Patient
       if (patientId !== userId) {
         throw new AppError('Can not fetch information for this patient', HttpStatus.FORBIDDEN);
       }
-
-      return await this.prisma.medication.findMany({
-        where: {
-          AND: [
-            {
-              patient: {
-                user_id: patientId,
+      const [medications, totalItems] = await this.prisma.$transaction([
+        this.prisma.medication.findMany({
+          where: {
+            AND: [
+              {
+                patient: {
+                  user_id: patientId,
+                },
               },
-            },
-            {
-              name: {
-                contains: search,
-                mode: 'insensitive',
+              {
+                name: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
               },
-            },
-          ],
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        select: {
-          id: true,
-          name: true,
-          start_date: true,
-          end_date: true,
-          time: true,
-          dosage: true,
-          frequency: true,
-          unit: true,
-          doctor: {
-            select: {
-              user: {
-                select: {
-                  id: true,
-                  first_name: true,
-                  middle_name: true,
-                  last_name: true,
-                  email: true,
+            ],
+          },
+          skip: (page - 1) * limit,
+          take: limit,
+          select: {
+            id: true,
+            name: true,
+            start_date: true,
+            end_date: true,
+            time: true,
+            dosage: true,
+            frequency: true,
+            unit: true,
+            doctor: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                    email: true,
+                  },
                 },
               },
             },
-          },
-          appointment: {
-            select: {
-              id: true,
-              title: true,
-              start_date: true,
-              end_date: true,
+            appointment: {
+              select: {
+                id: true,
+                title: true,
+                start_date: true,
+                end_date: true,
+              },
             },
+            created_at: true,
           },
-          created_at: true,
+        }),
+        this.prisma.medication.count({
+          where: {
+            AND: [
+              {
+                patient: {
+                  user_id: patientId,
+                },
+              },
+              {
+                name: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          },
+        }),
+      ]);
+      const totalPages = Math.ceil(totalItems / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+      return {
+        data: medications,
+        pagination: {
+          totalItems,
+          perPage: limit,
+          currentPage: page,
+          totalPages,
+          hasNextPage,
+          hasPrevPage,
+          nextPage: hasNextPage ? page + 1 : null,
+          prevPage: hasPrevPage ? page - 1 : null,
         },
-      });
+      };
     }
   }
 

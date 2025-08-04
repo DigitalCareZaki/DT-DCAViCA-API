@@ -41,7 +41,7 @@ export class MedicationWebController {
     @Query('search') search: string,
     @Query('page') page: number,
     @Query('limit') limit: number,
-  ): Promise<ModifiedMedication[]> {
+  ) {
     return this.medicationService.getPatientMedication(
       id,
       user.id,
