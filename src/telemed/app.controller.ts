@@ -29,6 +29,18 @@ export class TelemedAppController {
       Appointmentlist: appointments.Appointmentlist,
     };
   }
+  @Get('/patient-appointments')
+  public async getPatientAppointments(@GetUser() user: UserRes, @Query('patientId') patientId: string) {
+
+    const appointments = await this.telemedService.patientAppointmentAnalytics(user, patientId,);
+    console.log('appointments:===========>>', appointments);
+    const analytics = await this.telemedService.PatientAppointmentAnalyticsGroup(user, patientId);
+
+    return {
+      analytics,
+      Appointmentlist: appointments,
+    };
+  }
 
   @Get('/report/:appointmentId')
   public async getAppointmentReport(@Param('appointmentId') appointmentId: string) {

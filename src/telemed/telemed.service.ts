@@ -519,6 +519,147 @@ export class TelemedService {
       },
     };
   }
+  public async patientAppointmentAnalytics(user: UserRes, patientId: string) {
+
+    let data: any[] = [];
+
+
+    if (user.role === 'DOCTOR') {
+
+      const dt = await this.prisma.appointmentParticipants.findMany({
+        where: { user_id: patientId },
+
+        select: {
+          id: true,
+          status: true,
+          appointment: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              about: true,
+              type: true,
+              status: true,
+              start_date: true,
+              organizer: {
+                select: {
+                  id: true,
+                  first_name: true,
+                  last_name: true,
+                  middle_name: true,
+                  role: true,
+                },
+              },
+              participants: {
+                select: {
+                  id: true,
+                  user: {
+                    select: {
+                      id: true,
+                      first_name: true,
+                      last_name: true,
+                      middle_name: true,
+                      role: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+        // this.prisma.appointmentParticipants.count({ where: { user_id: user.id } }),
+
+
+        // Normalize for doctor
+        data = dt.map(item => {
+          const doctor = item.appointment.participants.find(p => p.user.role === 'DOCTOR')?.user;
+          return {
+            id: item.appointment.id,
+            status: item.status,
+            title: item.appointment.title,
+            description: item.appointment.description,
+            about: item.appointment.about,
+            type: item.appointment.type,
+            patientId: item.appointment.organizer.id,
+            patient_name: `${item.appointment.organizer.first_name} ${item.appointment.organizer.last_name}`,
+            doctorid: doctor?.id || null,
+            doctor_name: doctor ? `${doctor.first_name} ${doctor.last_name}` : null,
+            AppointmetDate: item.appointment.start_date,
+          };
+        });
+
+      return data;
+    }
+
+    if (user.role === 'PATIENT') {
+
+
+      const dt = await this.prisma.appointmentParticipants.findMany({
+        where: { user_id: patientId },
+        select: {
+          id: true,
+          status: true,
+          appointment: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              about: true,
+              type: true,
+              status: true,
+              start_date: true,
+              organizer: {
+                select: {
+                  id: true,
+                  first_name: true,
+                  last_name: true,
+                  middle_name: true,
+                  role: true,
+                },
+              },
+              participants: {
+                select: {
+                  id: true,
+                  user: {
+                    select: {
+                      id: true,
+                      first_name: true,
+                      last_name: true,
+                      middle_name: true,
+                      role: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+
+        //console.log('data:===========>>', JSON.stringify(data, null, 2));
+        // Normalize for patient
+        data = dt.map(item => {
+          const doctor = item.appointment.participants.find(p => p.user.role === 'DOCTOR')?.user;
+
+          return {
+            id: item.appointment.id,
+            status: item.status,
+            title: item.appointment.title,
+            description: item.appointment.description,
+            about: item.appointment.about,
+            type: item.appointment.type,
+            patientId: item.appointment.organizer.id,
+            patient_name: `${item.appointment.organizer.first_name} ${item.appointment.organizer.last_name}`,
+            doctorid: doctor?.id || null,
+            doctor_name: doctor ? `${doctor.first_name} ${doctor.last_name}` : null,
+            AppointmetDate: item.appointment.start_date,
+          };
+        });
+      return data;
+    }
+
+  }
 
   public async appointmentList(user: UserRes, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
@@ -620,6 +761,48 @@ export class TelemedService {
       by: ['status'],
       where: {
         user_id: user.id,
+      },
+      _count: {
+        status: true,
+      },
+    });
+
+    let total = 0;
+
+    appointments.forEach(item => {
+      const label = statusLabels[item.status];
+      if (label) {
+        const count = item._count.status;
+        result[label] = count.toString();
+        total += count;
+      }
+    });
+
+    result['Total'] = total.toString();
+
+    return result;
+  }
+  public async PatientAppointmentAnalyticsGroup(user: UserRes, patientId: string) {
+    const statusLabels: Record<string, string> = {
+      'ACTIVE': 'Active',
+      'COMPLETED': 'Complete',
+      'PENDING': 'Pending',
+      'CANCELLED': 'Canceled',
+      // Add other statuses if needed
+    };
+
+    const result: Record<string, string> = {
+      'Active': '0',
+      'Complete': '0',
+      'Pending': '0',
+      'Canceled': '0',
+      'Total': '0', // Added total field
+    };
+
+    const appointments = await this.prisma.appointmentParticipants.groupBy({
+      by: ['status'],
+      where: {
+        user_id: patientId,
       },
       _count: {
         status: true,
