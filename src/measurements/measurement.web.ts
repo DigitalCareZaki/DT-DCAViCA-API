@@ -97,7 +97,7 @@ export class MeasurementWebController {
   public async createMeasurements(@GetUser() user: UserRes, @Param('id') id: string, @Body() data: MeasurementDTO) {
     return this.measurementService.createPatientMeasurement(
       id,
-      user.id,
+      user,
       user.role,
       data,
     );
