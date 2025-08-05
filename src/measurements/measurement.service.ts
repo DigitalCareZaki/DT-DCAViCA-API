@@ -766,7 +766,12 @@ export class MeasurementService {
         },
         select: {
           id: true,
-          number: true
+          number: true,
+          user: {
+            select: {
+              id: true,
+            },
+          },
         },
       });
 
@@ -785,7 +790,7 @@ export class MeasurementService {
           // Save the SMS log to the database
           await this.prisma.sms.create({
             data: {
-              receiver_id: contact.id,
+              receiver_id: contact.user.id,
               sender_id: user.id,
               to: contact.number,
               body: message,
