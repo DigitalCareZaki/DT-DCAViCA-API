@@ -71,6 +71,15 @@ export class EventListener {
         },
       });
     } else {
+
+      const doctor = await this.prisma.doctor.findFirst({
+        where: {
+          user: {
+            id: patientReadingRange.user.id,
+          },
+        },
+      });
+      console.log('doctor:======>>>', doctor);
       console.log('doctorId in Patient:======>>>', payload.doctorId);
       const measurement = await this.prisma.measurement.update({
         where: {
@@ -78,7 +87,7 @@ export class EventListener {
         },
         data: {
           status: category,
-          doctor_id: patientReadingRange.user.id, // assign the doctor id from the patient reading range
+          doctor_id: doctor.id, // assign the doctor id from the patient reading range
         },
         include: {
           patient: {
