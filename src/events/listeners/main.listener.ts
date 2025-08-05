@@ -135,7 +135,12 @@ export class EventListener {
           },
           select: {
             id: true,
-            number: true
+            number: true,
+            user: {
+              select: {
+                id: true,
+              },
+            },
           },
         });
         if (contacts.length > 0) {
@@ -153,7 +158,7 @@ export class EventListener {
             console.log(contact, '=========>contact after sms');
             await this.prisma.sms.create({
               data: {
-                receiver_id: contact.id,
+                receiver_id: contact.user.id,
                 sender_id: measurement.patient.user.id,
                 to: contact.number,
                 body: message,
