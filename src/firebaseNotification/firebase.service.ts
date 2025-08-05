@@ -55,6 +55,7 @@ export class FirebaseService implements OnModuleInit {
                         name: true,
                         id: true,
                         doctor_id: true,
+                        dosage: true,
                         patient: {
                             select: {
                                 user_id: true,
@@ -93,7 +94,7 @@ export class FirebaseService implements OnModuleInit {
                 alert.medication.doctor.user_id,
                 alert.medication.patient.user_id,
                 'Medication Reminder',
-                `Hello, ${name}, have you taken your medicine? (Medicine Name: ${alert.medication.name})`,
+                `Hello, ${name}, have you taken your medicine? (Medicine Name: ${alert.medication.name}), Medicine Dosage: ${alert.medication.dosage}`,
             );
         }
 

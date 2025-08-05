@@ -4,6 +4,7 @@ import type { ModifiedMedicationWithDoctor } from './types';
 
 export type MeasurementCreatedEvent = {
   patientId: string;
+  doctorId: string;
   measurement: ModifiedMeasurement;
 };
 
