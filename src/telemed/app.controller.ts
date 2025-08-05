@@ -20,13 +20,13 @@ export class TelemedAppController {
   @Get('/appointments')
   public async getAppointments(@GetUser() user: UserRes, @Query('page') page?: number, @Query('limit') limit?: number) {
 
-    const appointments = await this.telemedService.appointmentAnalytics(user, page ? +page : 1, limit ? +limit : 10);
+    const appointments = await this.telemedService.patientAppointmentList(user);
     console.log('appointments:===========>>', appointments);
     const analytics = await this.telemedService.appointmentAnalyticsGroup(user);
 
     return {
       analytics,
-      Appointmentlist: appointments.Appointmentlist,
+      Appointmentlist: appointments,
     };
   }
   @Get('/patient-appointments')

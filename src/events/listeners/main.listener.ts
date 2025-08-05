@@ -25,6 +25,12 @@ export class EventListener {
       },
       select: {
         range: true,
+        user: {
+          select: {
+            id: true,
+
+          }
+        },
       },
       orderBy: {
         created_at: 'desc',

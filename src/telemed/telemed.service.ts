@@ -519,6 +519,171 @@ export class TelemedService {
       },
     };
   }
+
+  public async patientAppointmentList(user: UserRes) {
+    const dt = await this.prisma.appointmentParticipants.findMany({
+      where: { user_id: user.id },
+      select: {
+        id: true,
+        status: true,
+        created_at: true,
+        appointment: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            about: true,
+            type: true,
+            status: true,
+            start_date: true,
+            organizer: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                middle_name: true,
+                role: true,
+              },
+            },
+            participants: {
+              select: {
+                id: true,
+                user: {
+                  select: {
+                    id: true,
+                    first_name: true,
+                    last_name: true,
+                    middle_name: true,
+                    role: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc', // optional now, frontend will sort
+      },
+    });
+
+    let appointmentList = dt.map(item => {
+      const doctor = item.appointment.participants.find(p => p.user.role === 'DOCTOR')?.user;
+
+      return {
+        id: item.appointment.id,
+        status: item.status,
+        title: item.appointment.title,
+        description: item.appointment.description,
+        about: item.appointment.about,
+        type: item.appointment.type,
+        patientId: item.appointment.organizer.id,
+        patient_name: `${item.appointment.organizer.first_name} ${item.appointment.organizer.last_name}`,
+        doctorid: doctor?.id || null,
+        doctor_name: doctor ? `${doctor.first_name} ${doctor.last_name}` : null,
+        AppointmetDate: item.appointment.start_date,
+      };
+    });
+
+    // 👇 Sort ACTIVE first, then by most recent
+    // appointmentList.sort((a, b) => {
+    //   const statusPriority = {
+    //     ACTIVE: 1,
+    //     PENDING: 2,
+    //     COMPLETED: 3,
+    //     CANCELED: 4,
+    //   };
+
+    //   const aPriority = statusPriority[a.status] || 99;
+    //   const bPriority = statusPriority[b.status] || 99;
+
+    //   if (aPriority !== bPriority) {
+    //     return aPriority - bPriority;
+    //   }
+
+    //   return new Date(b.AppointmetDate).getTime() - new Date(a.AppointmetDate).getTime();
+    // });
+
+    return appointmentList;
+  }
+
+  // public async patientAppointmentList(user: UserRes) {
+  //   const dt = await this.prisma.appointmentParticipants.findMany({
+  //     where: { user_id: user.id },
+  //     select: {
+  //       id: true,
+  //       status: true,
+  //       created_at: true,
+  //       appointment: {
+  //         select: {
+  //           id: true,
+  //           title: true,
+  //           description: true,
+  //           about: true,
+  //           type: true,
+  //           status: true,
+  //           start_date: true,
+  //           organizer: {
+  //             select: {
+  //               id: true,
+  //               first_name: true,
+  //               last_name: true,
+  //               middle_name: true,
+  //               role: true,
+  //             },
+  //           },
+  //           participants: {
+  //             select: {
+  //               id: true,
+  //               user: {
+  //                 select: {
+  //                   id: true,
+  //                   first_name: true,
+  //                   last_name: true,
+  //                   middle_name: true,
+  //                   role: true,
+  //                 },
+  //               },
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //     orderBy: {
+
+  //       created_at: 'desc',
+
+  //     },
+  //   });
+
+  //   //console.log('data:===========>>', JSON.stringify(data, null, 2));
+  //   // Normalize for patient
+
+  //   console.log('dt:===========>>', dt);
+  //   let appointmentList: any[] = [];
+  //   appointmentList = dt.map(item => {
+  //     const doctor = item.appointment.participants.find(p => p.user.role === 'DOCTOR')?.user;
+
+  //     return {
+  //       id: item.appointment.id,
+  //       status: item.status,
+  //       title: item.appointment.title,
+  //       description: item.appointment.description,
+  //       about: item.appointment.about,
+  //       type: item.appointment.type,
+  //       patientId: item.appointment.organizer.id,
+  //       patient_name: `${item.appointment.organizer.first_name} ${item.appointment.organizer.last_name}`,
+  //       doctorid: doctor?.id || null,
+  //       doctor_name: doctor ? `${doctor.first_name} ${doctor.last_name}` : null,
+  //       AppointmetDate: item.appointment.start_date,
+  //     };
+  //   });
+  //   return appointmentList;
+  // }
+
+
+
+
   public async patientAppointmentAnalytics(user: UserRes, patientId: string) {
 
     let data: any[] = [];
