@@ -882,6 +882,7 @@ export class MeasurementService {
         this.eventEmitter.emitAsync('measurement.created', payload);
       });
     } else {
+      console.log('patientId in else:doctorId null======>>>', patientId);
       process.nextTick(() => {
         const payload: MeasurementCreatedEvent = {
           patientId,
