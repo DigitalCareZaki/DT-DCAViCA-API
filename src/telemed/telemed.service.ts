@@ -732,6 +732,9 @@ export class TelemedService {
             },
           },
         },
+        orderBy: {
+          created_at: 'desc', // optional now, frontend will sort
+        },
       }),
         // this.prisma.appointmentParticipants.count({ where: { user_id: user.id } }),
 
@@ -799,6 +802,9 @@ export class TelemedService {
               },
             },
           },
+        },
+        orderBy: {
+          created_at: 'desc', // optional now, frontend will sort
         },
       }),
 
