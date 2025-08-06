@@ -58,119 +58,120 @@ export class EventListener {
         category = value <= low ? 'LOW' : value >= high ? 'HIGH' : 'NORMAL';
         console.log('category =====>>', category);
       }
-    }
-
-    if (payload.doctorId) {
-      console.log('doctorId in Doctor:======>>>', payload.doctorId);
-      await this.prisma.measurement.update({
-        where: {
-          id: payload.measurement.id,
-        },
-        data: {
-          status: category,
-        },
-      });
-    } else {
-
-      const doctor = await this.prisma.doctor.findFirst({
-        where: {
-          user: {
-            id: patientReadingRange.user.id,
+      if (payload.doctorId) {
+        console.log('doctorId in Doctor:======>>>', payload.doctorId);
+        await this.prisma.measurement.update({
+          where: {
+            id: payload.measurement.id,
           },
-        },
-      });
-      console.log('doctor:======>>>', doctor);
-      console.log('doctorId in Patient:======>>>', payload.doctorId);
-      const measurement = await this.prisma.measurement.update({
-        where: {
-          id: payload.measurement.id,
-        },
-        data: {
-          status: category,
-          doctor_id: doctor.id, // assign the doctor id from the patient reading range
-        },
-        include: {
-          patient: {
-            include: {
-              user: true,
-            },
-          },
-          doctor: {
-            include: {
-              user: true,
-            },
-          },
-
-        },
-
-      });
-
-      console.log('measurement after update:======>>>', measurement);
-      if (measurement) {
-        let message = '';
-        if (measurement.values.length > 1) {
-          message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
-
-        } else {
-          message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
-
-        }
-        await this.sms.sendSMS(measurement.doctor.user.phone_number, message);
-
-        // Save the SMS log to the database
-        await this.prisma.sms.create({
           data: {
-            receiver_id: measurement.doctor.user.id,
-            sender_id: measurement.patient.user.id,
-            to: measurement.doctor.user.phone_number,
-            body: message,
+            status: category,
           },
         });
+      } else {
 
-        const contacts = await this.prisma.contacts.findMany({
+        const doctor = await this.prisma.doctor.findFirst({
           where: {
             user: {
-              id: measurement.patient.user.id,
-            }
-          },
-          select: {
-            id: true,
-            number: true,
-            user: {
-              select: {
-                id: true,
-              },
+              id: patientReadingRange.user.id,
             },
           },
         });
-        if (contacts.length > 0) {
-          contacts.forEach(async (contact) => {
-
-            if (measurement.values.length > 1) {
-              message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
-
-            } else {
-              message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
-            }
-
-            await this.sms.sendSMS(contact.number, message);
-            // Save the SMS log to the database
-            console.log(contact, '=========>contact after sms');
-            await this.prisma.sms.create({
-              data: {
-                receiver_id: contact.user.id,
-                sender_id: measurement.patient.user.id,
-                to: contact.number,
-                body: message,
+        console.log('doctor:======>>>', doctor);
+        console.log('doctorId in Patient:======>>>', payload.doctorId);
+        const measurement = await this.prisma.measurement.update({
+          where: {
+            id: payload.measurement.id,
+          },
+          data: {
+            status: category,
+            doctor_id: doctor.id, // assign the doctor id from the patient reading range
+          },
+          include: {
+            patient: {
+              include: {
+                user: true,
               },
-            });
+            },
+            doctor: {
+              include: {
+                user: true,
+              },
+            },
 
+          },
+
+        });
+
+        console.log('measurement after update:======>>>', measurement);
+        if (measurement) {
+          let message = '';
+          if (measurement.values.length > 1) {
+            message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
+
+          } else {
+            message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
+
+          }
+          await this.sms.sendSMS(measurement.doctor.user.phone_number, message);
+
+          // Save the SMS log to the database
+          await this.prisma.sms.create({
+            data: {
+              receiver_id: measurement.doctor.user.id,
+              sender_id: measurement.patient.user.id,
+              to: measurement.doctor.user.phone_number,
+              body: message,
+            },
           });
+
+          const contacts = await this.prisma.contacts.findMany({
+            where: {
+              user: {
+                id: measurement.patient.user.id,
+              }
+            },
+            select: {
+              id: true,
+              number: true,
+              user: {
+                select: {
+                  id: true,
+                },
+              },
+            },
+          });
+          if (contacts.length > 0) {
+            contacts.forEach(async (contact) => {
+
+              if (measurement.values.length > 1) {
+                message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
+
+              } else {
+                message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
+              }
+
+              await this.sms.sendSMS(contact.number, message);
+              // Save the SMS log to the database
+              console.log(contact, '=========>contact after sms');
+              await this.prisma.sms.create({
+                data: {
+                  receiver_id: contact.user.id,
+                  sender_id: measurement.patient.user.id,
+                  to: contact.number,
+                  body: message,
+                },
+              });
+
+            });
+          }
         }
+
+
       }
-
-
     }
+
+
 
 
   }
