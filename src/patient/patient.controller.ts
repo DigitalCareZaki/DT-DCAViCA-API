@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Patch,
   UseGuards,
 } from '@nestjs/common';
@@ -40,4 +41,5 @@ export class PatientController {
   public getPatientService(): PatientService {
     return this.patientService;
   }
+
 }

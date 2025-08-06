@@ -14,9 +14,10 @@ import { PatientService } from './patient.service';
 import { GetUser } from 'src/auth/decorators';
 
 import { PatientMedicationAlertDTO } from './dto';
-
+import { Role } from 'src/auth/enums/role.enum';
 import type { UserRes } from '@types';
 import type { PatientMedicationAlert } from './types';
+import { RequirePermission } from 'src/auth/decorators/role.decorator';
 
 @Controller('web/patient')
 export class PatientWebController extends PatientController {
@@ -52,4 +53,10 @@ export class PatientWebController extends PatientController {
   public async fetchContacts(@GetUser() user: any) {
     return this.getPatientService().fetchContacts(user.id);
   }
+  @HttpCode(HttpStatus.OK)
+  @Get('/assign-doctors/:id') // Patient ID > user.id
+  public async fetchAssignedDoctors(@GetUser() user: any, @Param('id') id: string) {
+    return this.getPatientService().fetchAssignedDoctors(user.id, id);
+  }
+
 }

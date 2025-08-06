@@ -322,4 +322,43 @@ export class PatientService {
       },
     });
   }
+  public async fetchAssignedDoctors(userId: string, id: string) {
+    const pt = await this.prisma.patient.findUniqueOrThrow({
+      where: {
+        user_id: id,
+      },
+    });
+    if (!pt) {
+      throw new Error('Patient not found');
+    }
+    const patient: any = await this.prisma.patient.findMany({
+      where: {
+        id: pt.id,
+      },
+      select: {
+        doctors: {
+          select: {
+            id: true,
+
+
+          }
+        }
+      }
+    })
+    if (!patient || patient.length === 0 || !patient[0].doctors || patient[0].doctors.length === 0) {
+      throw new Error('No assigned doctors found for this patient');
+    }
+    const doctor_id = patient[0].doctors[0].id;
+    return await this.prisma.doctor.findUniqueOrThrow({
+      where: {
+        id: doctor_id,
+
+      },
+      select: {
+        user_id: true,
+
+      },
+    });
+
+  }
 }
