@@ -146,7 +146,7 @@ export class PatientService {
       weight: pt.weight,
       firstName: pt.user.first_name,
       lastName: pt.user.last_name,
-      subjectId: pt.user.email,
+      subjectId: pt.user.first_name,
       birthDate: pt.user.dob ? pt.user.dob.toISOString().split('T')[0] : null,
       gender: pt.user.gender,
       site: 'Pakistan',
