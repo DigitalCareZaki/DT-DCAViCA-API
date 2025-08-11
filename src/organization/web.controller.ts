@@ -18,6 +18,7 @@ import { RolesGuard } from 'src/auth/guards';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 import { Role } from 'src/auth/enums/role.enum';
 
+
 import type {
   OrganizationUsers,
   SelectOrganizationBranchesProps,
@@ -130,6 +131,9 @@ export class OrganizationWebController extends OrganizationController {
   public async getCities(): Promise<CitiesProps[]> {
     return this.getLocationService().getCities();
   }
+
+
+
 
   @HttpCode(HttpStatus.CREATED)
   @Post('/patient')
@@ -371,5 +375,7 @@ export class OrganizationWebController extends OrganizationController {
       name,
     );
   }
+
+
 
 }

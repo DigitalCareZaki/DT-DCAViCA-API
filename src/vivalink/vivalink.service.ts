@@ -3,6 +3,9 @@ import { Cron } from '@nestjs/schedule';
 import { AppError } from 'src/errors';
 import { PrismaService } from 'src/prisma/prisma.service';
 import type { VLAllPatients } from './types';
+import { Role } from 'src/auth/enums/role.enum';
+import { UserRes } from '@types';
+import { console } from 'inspector';
 
 @Injectable()
 export class VivalinkService {
@@ -69,7 +72,7 @@ export class VivalinkService {
     }
   }
 
-  public async getPatients(): Promise<VLAllPatients> {
+  public async getPatients(user: UserRes): Promise<VLAllPatients> {
     const request = new Request(
       this.vlCredentails.baseUrl + `/tenants/${this.vlCredentails.tenantId}`,
       {
@@ -96,8 +99,64 @@ export class VivalinkService {
     if (result?.code !== 200) {
       throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
     }
+    // 1. Extract emails from result keys
 
-    return result?.data?.mappings ?? {};
+    const doctor = await this.prisma.doctor.findUnique({
+      where: {
+        user_id: user.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    console.log('user >>>>>>>> ', user);
+    const emailList = Object.keys(result?.data?.mappings ?? {});
+    const patients = await this.prisma.user.findMany({
+      where: {
+        role: Role.PATIENT,
+        first_name: {
+          in: emailList,
+        },
+        patient: {
+          doctors: {
+            some: {
+              id: doctor.id, // Make sure to pass loggedInDoctorId as a parameter to getPatients()
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        first_name: true,
+        patient: {
+          select: {
+            id: true,
+            user_id: true,
+            doctors: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    console.log('patients >>>>>>>> ', patients);
+
+    // 3. Attach matching result data to each patient
+    const patientsWithData = patients.map(patient => ({
+      ...patient,
+      mappings: result.data.mappings[patient.first_name] ?? [], // gets the array from result
+    }));
+
+    const formatted = patientsWithData.reduce((acc, patient) => {
+      acc[patient.first_name] = patient.mappings;
+      return acc;
+    }, {});
+    console.log(formatted, '=====>>patientsWithData');
+
+    return formatted ?? {};
   }
   public async getAppPatients(): Promise<VLAllPatients> {
     const request = new Request(

@@ -34,7 +34,7 @@ export class SendgridService {
 
     try {
       const res = await sgMail.send(msg);
-      console.log('sgMail.send res ======>>>>', JSON.stringify(res, null, 2));
+      console.log('sgMail.send res ======>>>>');
 
       await this.prisma.emails.create({
         data: {

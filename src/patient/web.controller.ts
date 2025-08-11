@@ -6,6 +6,7 @@ import {
   Param,
   Body,
   Query,
+  Post,
 } from '@nestjs/common';
 
 import { PatientController } from './patient.controller';
@@ -58,5 +59,12 @@ export class PatientWebController extends PatientController {
   public async fetchAssignedDoctors(@GetUser() user: any, @Param('id') id: string) {
     return this.getPatientService().fetchAssignedDoctors(user.id, id);
   }
+
+  // @HttpCode(HttpStatus.OK)
+  // @Post('vlLogin')
+  // public async vlLogin(@GetUser() user: any) {
+  //   return this.getPatientService().vlLogin(user.id);
+  // }
+
 
 }

@@ -13,17 +13,21 @@ import { VivalinkService } from './vivalink.service';
 import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { Role } from 'src/auth/enums/role.enum';
 import type { VLAllPatients, VLSinglePatientECGData } from './types';
+import { GetUser } from 'src/auth/decorators';
+import { UserRes } from '@types';
 
 @Controller('vl')
 @UseGuards(JwtGuard, RolesGuard)
 @RequirePermission(Role.DOCTOR)
 export class VivalinkController {
-  constructor(private vivalinkService: VivalinkService) {}
+  constructor(private vivalinkService: VivalinkService) { }
 
   @HttpCode(HttpStatus.OK)
   @Get('patients')
-  public async getPatients(): Promise<VLAllPatients> {
-    return this.vivalinkService.getPatients();
+  public async getPatients(
+    @GetUser() user: UserRes,
+  ): Promise<VLAllPatients> {
+    return this.vivalinkService.getPatients(user);
   }
   @HttpCode(HttpStatus.OK)
   @Get('appPatients')
