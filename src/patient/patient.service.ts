@@ -173,6 +173,7 @@ export class PatientService {
     try {
       const browser = await puppeteer.launch({
         headless: true, // Run in headless mode
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
         defaultViewport: null, // Use default viewport size
       });
 
