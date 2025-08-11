@@ -202,7 +202,11 @@ export class PatientService {
 
     try {
       // Navigate to patient add page
-      await page.goto("https://webportal.vivalink.com/patient-management/add");
+      // await page.goto("https://webportal.vivalink.com/patient-management/add");
+      await page.goto("https://webportal.vivalink.com/patient-management/add", {
+        waitUntil: "networkidle2",
+        timeout: 60000
+      });
       await page.waitForSelector('#patient-form');
       console.log("Navigated to patient add page====>>>");
       // Fill in patient information
