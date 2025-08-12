@@ -207,7 +207,20 @@ export class PatientService {
         waitUntil: "domcontentloaded", // instead of networkidle
         timeout: 120000
       });
-      await page.waitForSelector('#patient-form', { hidden: true, timeout: 30000 });
+      for (let i = 0; i < 6; i++) { // retry for ~30s
+        const exists = await page.$('#patient-form');
+        if (exists) {
+          console.log("Form found!");
+          break;
+        }
+        console.log(`Form not found, retrying... ${i + 1}`);
+        await page.waitForTimeout(5000);
+      }
+
+      if (!(await page.$('#patient-form'))) {
+        throw new Error("Patient form not found after waiting 30s");
+      }
+      // await page.waitForSelector('#patient-form', { hidden: true, timeout: 30000 });
       console.log("Navigated to patient add page====>>>");
       // Fill in patient information
       // Required fields
