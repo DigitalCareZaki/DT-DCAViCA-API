@@ -466,6 +466,12 @@ export class AdminService {
         email: true,
         phone_number: true,
         username: true,
+        associated_branches: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         location: {
           include: {
             city: {
