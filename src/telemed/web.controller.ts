@@ -50,9 +50,10 @@ export class TelemedWebController {
 
 
   @Get('/organization-appointments')
-  public async getAppointments(@GetUser() user: UserRes, @Query('page') page = 1,
-    @Query('limit') limit = 10) {
-    return await this.telemedService.organizationAppointmentList(user, page, limit);
+  public async getAppointments(@GetUser() user: UserRes, @Query('page') page: number,
+    @Query('limit') limit: number) {
+    return await this.telemedService.organizationAppointmentList(user, page ? +page : 1,
+      limit ? +limit : 10,);
   }
 
   @HttpCode(HttpStatus.OK)
