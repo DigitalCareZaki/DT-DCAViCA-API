@@ -48,6 +48,13 @@ export class TelemedWebController {
     return this.telemedService.getAppointments(user.id);
   }
 
+
+  @Get('/organization-appointments')
+  public async getAppointments(@GetUser() user: UserRes, @Query('page') page = 1,
+    @Query('limit') limit = 10) {
+    return await this.telemedService.organizationAppointmentList(user, page, limit);
+  }
+
   @HttpCode(HttpStatus.OK)
   @Patch()
   @UseGuards(RolesGuard)

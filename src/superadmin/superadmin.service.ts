@@ -7,7 +7,7 @@ import { DoctorProfileUpdateDto } from 'src/doctor/dto';
 
 @Injectable()
 export class SuperadminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   public async getStats(organizationId: string): Promise<StatsProps> {
     const doctors = this.prisma.user.count({
@@ -53,8 +53,8 @@ export class SuperadminService {
       where: { organization_id: organizationId },
     });
 
-    const appointments = this.prisma.appointment.count({
-      where: { organizer_id: organizationId },
+    const appointments = this.prisma.appointmentParticipants.count({
+      // where: { organizer_id: organizationId },
     });
 
     const medications = this.prisma.medication.count({
