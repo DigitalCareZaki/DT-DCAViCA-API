@@ -96,7 +96,7 @@ export class DeviceWebController extends DeviceController {
   public async createDevice(
     @GetUser() user: UserRes,
     @Body() data: DeviceDTO,
-  ): Promise<Device> {
+  ) {
     return this.getDeviceService().createDevice(
       user.id,
       user.organization_id,
@@ -109,7 +109,7 @@ export class DeviceWebController extends DeviceController {
   public async createPatientDevice(
     @GetUser() user: UserRes,
     @Body() data: DeviceDTO,
-  ): Promise<Device> {
+  ) {
     return this.getDeviceService().createDevice(
       user.id,
       user.organization_id,

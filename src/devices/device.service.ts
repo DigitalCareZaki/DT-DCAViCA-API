@@ -708,103 +708,107 @@ export class DeviceService {
     const dc = {
       id: data.serial_number,
       serial_number: data.serial_number,
-
       category: data.category as MeasurementType,
 
     };
 
-    // await this.vlDevice(dc);
-    // return;
-    // check if device does not already exist in organization
-    console.log(data, 'device data ===========>>>');
-    const deviceAlreadyExists = await this.prisma.device.findFirst({
-      where: {
-        AND: [
-          {
-            serial_number: data.serial_number,
-          },
-          {
-            created_by: {
-              organization: {
-                id: organizationId,
-              },
+    const result = await this.vlDevice(dc); // will return true or false
+    console.log('device add on VivaLink ===========>>>', result);
+    if (result) {
+
+      const deviceAlreadyExists = await this.prisma.device.findFirst({
+        where: {
+          AND: [
+            {
+              serial_number: data.serial_number,
             },
-          },
-        ],
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (deviceAlreadyExists) {
-
-      throw new BadRequestException('Device already exists in your organization.');
-
-    }
-
-    const device = await this.prisma.device.create({
-      data: {
-        title: data.title,
-        description: data.description,
-        serial_number: data.serial_number,
-        uri: data.uri,
-        category: data.category as MeasurementType,
-        created_by: {
-          connect: {
-            id: userId,
-          },
-        },
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        serial_number: true,
-        uri: true,
-        category: true,
-        created_by: {
-          select: {
-            id: true,
-            first_name: true,
-            middle_name: true,
-            last_name: true,
-            email: true,
-          },
-        },
-        patient_devices: {
-          select: {
-            issued_to: {
-              select: {
-                user: {
-                  select: {
-                    id: true,
-                    first_name: true,
-                    middle_name: true,
-                    last_name: true,
-                    email: true,
-                  },
+            {
+              created_by: {
+                organization: {
+                  id: organizationId,
                 },
               },
             },
-            issued_by: {
-              select: {
-                id: true,
-                first_name: true,
-                middle_name: true,
-                last_name: true,
-                email: true,
-              },
+          ],
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (deviceAlreadyExists) {
+
+        throw new BadRequestException('Device already exists in your organization.');
+
+      }
+
+      const device = await this.prisma.device.create({
+        data: {
+          title: data.title,
+          description: data.description,
+          serial_number: data.serial_number,
+          uri: data.uri,
+          category: data.category as MeasurementType,
+          created_by: {
+            connect: {
+              id: userId,
             },
-            issued_at: true,
           },
         },
-        created_at: true,
-        updated_at: true,
-      },
-    });
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          serial_number: true,
+          uri: true,
+          category: true,
+          created_by: {
+            select: {
+              id: true,
+              first_name: true,
+              middle_name: true,
+              last_name: true,
+              email: true,
+            },
+          },
+          patient_devices: {
+            select: {
+              issued_to: {
+                select: {
+                  user: {
+                    select: {
+                      id: true,
+                      first_name: true,
+                      middle_name: true,
+                      last_name: true,
+                      email: true,
+                    },
+                  },
+                },
+              },
+              issued_by: {
+                select: {
+                  id: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                  email: true,
+                },
+              },
+              issued_at: true,
+            },
+          },
+          created_at: true,
+          updated_at: true,
+        },
+      });
 
-    return device;
+      return device;
+    } else {
+
+      return false;
+    }
+
   }
 
 
@@ -1222,18 +1226,17 @@ export class DeviceService {
       device_type: 'BP',
       site: 'Pakistan',
 
-
     }
     // VVE-14 VVE-14
     const page = await this.vlLogin();
 
-    const result = await this.vlAddDevice(page, dv);
-    console.log('result========================>>>Final', result);
-    if (result) {
-      return 'Device added successfully';
-    } else {
-      return 'Failed to add device';
-    }
+    return await this.vlAddDevice(page, dv);
+    //console.log('result========================>>>Final', result);
+    // if (result) {
+    //   return 'Device added successfully';
+    // } else {
+    //   return 'Failed to add device';
+    // }
   }
 
   async vlLogin() {
@@ -1343,22 +1346,22 @@ export class DeviceService {
 
       // Fill in device information
       // Required fields
-      if (device.device_type) {
-        await page.click('#type');
-        await page.waitForSelector('.ant-select-dropdown');
-        await page.click('#type');
-        // Get site dropdown options
-        const siteOptions = await page.$$('.ant-select-item-option');
+      // if (device.device_type) {
+      //   await page.click('#type');
+      //   await page.waitForSelector('.ant-select-dropdown');
+      //   await page.click('#type');
+      //   // Get site dropdown options
+      //   const siteOptions = await page.$$('.ant-select-item-option');
 
-        // Find and click the correct site option
-        for (const option of siteOptions) {
-          const optionText = await page.evaluate(el => el.textContent.trim(), option);
-          if (optionText.toLowerCase() === device.device_type.toLowerCase()) {
-            await option.click();
-            break;
-          }
-        }
-      }
+      //   // Find and click the correct site option
+      //   for (const option of siteOptions) {
+      //     const optionText = await page.evaluate(el => el.textContent.trim(), option);
+      //     if (optionText.toLowerCase() === device.device_type.toLowerCase()) {
+      //       await option.click();
+      //       break;
+      //     }
+      //   }
+      // }
       await page.type('#identifier', device.id);
       if (device.site) {
         await page.click('#site');
@@ -1380,13 +1383,13 @@ export class DeviceService {
 
 
 
-      // await page.evaluate(() => {
-      //   console.log('Trying to submit the form in 1st attempt');
-      //   const submitButton = Array.from(document.querySelectorAll('button')).find(
-      //     button => button.textContent && button.textContent.includes('Save')
-      //   );
-      //   if (submitButton) (submitButton as HTMLButtonElement).click();
-      // });
+      await page.evaluate(() => {
+        console.log('Trying to submit the form in 1st attempt');
+        const submitButton = Array.from(document.querySelectorAll('button')).find(
+          button => button.textContent && button.textContent.includes('Save')
+        );
+        if (submitButton) (submitButton as HTMLButtonElement).click();
+      });
       console.log('Trying to submit the form in 2nd attempt');
       // Second attempt - click by more specific selector
       // await page.evaluate(() => {
@@ -1403,6 +1406,7 @@ export class DeviceService {
         page.waitForSelector('.success-message', { timeout: 30000 }).then(() => 'success'),
         new Promise(resolve => setTimeout(() => resolve('timeout'), 30000))
       ]);
+
 
       if (!result || result === 'timeout' || (result !== 'success' && result !== 'navigation')) {
         console.log('Timeout or unexpected result:', result);
