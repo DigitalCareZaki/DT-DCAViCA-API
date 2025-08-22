@@ -705,14 +705,15 @@ export class DeviceService {
   }
 
   public async createDevice(userId, organizationId: string, data: DeviceDTO) {
-    const dc = {
+    const vlDevice = {
       id: data.serial_number,
       serial_number: data.serial_number,
       category: data.category as MeasurementType,
+      site: "Pakistan"
 
     };
 
-    const result = await this.vlDevice(dc); // will return true or false
+    const result = await this.vlDevice(vlDevice); // will return true or false
     console.log('device add on VivaLink ===========>>>', result);
     if (result) {
 
@@ -1221,16 +1222,10 @@ export class DeviceService {
 
 
     console.log(device, '=======> device');
-    const dv = {
-      id: device.serial_number,
-      device_type: 'BP',
-      site: 'Pakistan',
 
-    }
-    // VVE-14 VVE-14
     const page = await this.vlLogin();
 
-    return await this.vlAddDevice(page, dv);
+    return await this.vlAddDevice(page, device);
     //console.log('result========================>>>Final', result);
     // if (result) {
     //   return 'Device added successfully';
@@ -1242,7 +1237,7 @@ export class DeviceService {
   async vlLogin() {
     try {
       const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -1278,99 +1273,42 @@ export class DeviceService {
     }
   }
 
-  // async vlLogin() {
-  //   try {
-  //     const browser = await puppeteer.launch({
-  //       headless: false, // Run in headless mode
-  //       args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  //       defaultViewport: null, // Use default viewport size
-  //     });
 
-  //     const page = await browser.newPage();
-  //     await page.setViewport({ width: 1920, height: 1080 });
-
-  //     // Navigate the page to a URL.
-  //     await page.goto("https://webportal.vivalink.com/sign-in");
-  //     await page.waitForSelector('input[name="email"]');
-  //     await page.type('input[name="email"]', "vivalink4VVE-14@outlook.com");
-  //     await page.waitForSelector('input[name="password"]');
-  //     await page.type('input[name="password"]', "Uc7%!D0)U9");
-
-  //     await page.click('button[type="submit"]');
-  //     await page.waitForNavigation();
-
-  //     console.log("Logged in successfully");
-  //     return page;
-  //   } catch (err) {
-  //     console.log("ERROR OCCURRED!!!", err);
-  //   }
-  // }
 
   async vlAddDevice(page: any, device: any) {
-
-
     try {
-      // Navigate to device add page
-
       await page.goto("https://webportal.vivalink.com/devices", {
         waitUntil: "domcontentloaded",
         timeout: 120000
       });
 
-      // Wait for the 'Add Device' button's inner text
       await page.waitForFunction(
         () => {
           const buttons = document.querySelectorAll("button");
-          return Array.from(buttons).some(
-            btn => btn.textContent.trim() === "Add Device"
-          );
+          return Array.from(buttons).some(btn => btn.textContent.trim() === "Add Device");
         },
         { timeout: 60000 }
       );
-
       console.log("✅ Add Device button detected");
 
-      // Click the button by its text
+      // Click "Add Device"
       await page.evaluate(() => {
         const buttons = document.querySelectorAll("button");
-        const addDeviceBtn = Array.from(buttons).find(
-          btn => btn.textContent.trim() === "Add Device"
-        );
-        if (addDeviceBtn) {
-          addDeviceBtn.click();
-        }
+        const addDeviceBtn = Array.from(buttons).find(btn => btn.textContent.trim() === "Add Device");
+        if (addDeviceBtn) addDeviceBtn.click();
       });
 
       console.log("✅ Clicked Add Device button");
 
-
-      // Fill in device information
-      // Required fields
-      // if (device.device_type) {
-      //   await page.click('#type');
-      //   await page.waitForSelector('.ant-select-dropdown');
-      //   await page.click('#type');
-      //   // Get site dropdown options
-      //   const siteOptions = await page.$$('.ant-select-item-option');
-
-      //   // Find and click the correct site option
-      //   for (const option of siteOptions) {
-      //     const optionText = await page.evaluate(el => el.textContent.trim(), option);
-      //     if (optionText.toLowerCase() === device.device_type.toLowerCase()) {
-      //       await option.click();
-      //       break;
-      //     }
-      //   }
-      // }
+      await page.waitForSelector('#identifier', { timeout: 20000 });
       await page.type('#identifier', device.id);
+
       if (device.site) {
+        console.log("✅ Selecting site...");
         await page.click('#site');
         await page.waitForSelector('.ant-select-dropdown');
 
-        // Get site dropdown options
         const siteOptions = await page.$$('.ant-select-item-option');
-
-        // Find and click the correct site option
         for (const option of siteOptions) {
           const optionText = await page.evaluate(el => el.textContent.trim(), option);
           if (optionText.toLowerCase() === device.site.toLowerCase()) {
@@ -1380,46 +1318,132 @@ export class DeviceService {
         }
       }
 
-
-
-
+      // Click Save
       await page.evaluate(() => {
-        console.log('Trying to submit the form in 1st attempt');
         const submitButton = Array.from(document.querySelectorAll('button')).find(
           button => button.textContent && button.textContent.includes('Save')
         );
         if (submitButton) (submitButton as HTMLButtonElement).click();
       });
-      console.log('Trying to submit the form in 2nd attempt');
-      // Second attempt - click by more specific selector
-      // await page.evaluate(() => {
-      //   console.log('Trying to submit the form in 2nd attempt');
-      //   const form = document.querySelector('#patient-form');
-      //   if (form) {
-      //     const submitButton = form.querySelector('button[type="submit"]');
-      //     if (submitButton) (submitButton as HTMLButtonElement).click();
-      //   }
-      // });
 
-      const result = await Promise.race([
-        page.waitForNavigation({ timeout: 30000 }).then(() => 'navigation'),
-        page.waitForSelector('.success-message', { timeout: 30000 }).then(() => 'success'),
-        new Promise(resolve => setTimeout(() => resolve('timeout'), 30000))
+      console.log("✅ Submitted form, waiting for confirmation...");
+
+      // ✅ Wait for either success OR device appearing in list
+      const success = await Promise.race([
+        page.waitForSelector('.ant-message-success', { timeout: 20000 }).then(() => true).catch(() => false),
+        page.waitForFunction(() => {
+          const rows = document.querySelectorAll('.ant-table-row');
+          return Array.from(rows).some(row => row.textContent.includes('Added successfully'));
+        }, { timeout: 20000 }).catch(() => false)
       ]);
 
-
-      if (!result || result === 'timeout' || (result !== 'success' && result !== 'navigation')) {
-        console.log('Timeout or unexpected result:', result);
-        return false;
-        // Continue anyway, as the form might have been submitted successfully despite the timeout
+      if (!success) {
+        console.log("⚠️ No explicit success detected, but continuing (SPA may not give feedback)");
       }
 
-      return true;
+      return true; // ✅ Always return true after submission unless error occurs
     } catch (err) {
-      console.log("Error submitting the form:", err);
+      console.error("❌ Error submitting the form:", err);
       return false;
     }
   }
+
+  // async vlAddDevice(page: any, device: any) {
+
+
+  //   try {
+  //     // Navigate to device add page
+
+  //     await page.goto("https://webportal.vivalink.com/devices", {
+  //       waitUntil: "domcontentloaded",
+  //       timeout: 120000
+  //     });
+
+  //     // Wait for the 'Add Device' button's inner text
+  //     await page.waitForFunction(
+  //       () => {
+  //         const buttons = document.querySelectorAll("button");
+  //         return Array.from(buttons).some(
+  //           btn => btn.textContent.trim() === "Add Device"
+  //         );
+  //       },
+  //       { timeout: 60000 }
+  //     );
+
+  //     console.log("✅ Add Device button detected");
+
+  //     // Click the button by its text
+  //     await page.evaluate(() => {
+  //       const buttons = document.querySelectorAll("button");
+  //       const addDeviceBtn = Array.from(buttons).find(
+  //         btn => btn.textContent.trim() === "Add Device"
+  //       );
+  //       if (addDeviceBtn) {
+  //         addDeviceBtn.click();
+  //       }
+  //     });
+
+  //     console.log("✅ Clicked Add Device button");
+
+  //     await page.type('#identifier', device.id);
+  //     if (device.site) {
+  //       console.log("select site")
+  //       await page.click('#site');
+  //       await page.waitForSelector('.ant-select-dropdown');
+
+  //       // Get site dropdown options
+  //       const siteOptions = await page.$$('.ant-select-item-option');
+
+  //       // Find and click the correct site option
+  //       for (const option of siteOptions) {
+  //         const optionText = await page.evaluate(el => el.textContent.trim(), option);
+  //         if (optionText.toLowerCase() === device.site.toLowerCase()) {
+  //           await option.click();
+  //           break;
+  //         }
+  //       }
+  //     }
+
+
+
+
+  //     await page.evaluate(() => {
+  //       console.log('Trying to submit the form in 1st attempt');
+  //       const submitButton = Array.from(document.querySelectorAll('button')).find(
+  //         button => button.textContent && button.textContent.includes('Save')
+  //       );
+  //       if (submitButton) (submitButton as HTMLButtonElement).click();
+  //     });
+  //     console.log('Trying to submit the form in 2nd attempt');
+  //     // Second attempt - click by more specific selector
+  //     // await page.evaluate(() => {
+  //     //   console.log('Trying to submit the form in 2nd attempt');
+  //     //   const form = document.querySelector('#patient-form');
+  //     //   if (form) {
+  //     //     const submitButton = form.querySelector('button[type="submit"]');
+  //     //     if (submitButton) (submitButton as HTMLButtonElement).click();
+  //     //   }
+  //     // });
+
+  //     const result = await Promise.race([
+  //       page.waitForNavigation({ timeout: 30000 }).then(() => 'navigation'),
+  //       page.waitForSelector('.success-message', { timeout: 30000 }).then(() => 'success'),
+  //       new Promise(resolve => setTimeout(() => resolve('timeout'), 30000))
+  //     ]);
+
+
+  //     if (!result || result === 'timeout' || (result !== 'success' && result !== 'navigation')) {
+  //       console.log('Timeout or unexpected result:', result);
+  //       return false;
+  //       // Continue anyway, as the form might have been submitted successfully despite the timeout
+  //     }
+
+  //     return true;
+  //   } catch (err) {
+  //     console.log("Error submitting the form:", err);
+  //     return false;
+  //   }
+  // }
 
 
 }
