@@ -111,7 +111,7 @@ export class TelemedService {
             patientEmail: user.email,
             patientPhone: user.phone_number,
             patientComment: dto.description,
-            link: `https:avica.health/doctor/telemed`
+            link: `https://avica.health/doctor/telemed`
             // link: `https://avica-frontend.vercel.app/patient/telemed/meetings/view/${appointment.id}`
           },
           templateId: SENDGRID_TEMPLATES.APPOINTMENT_INVITATION,
