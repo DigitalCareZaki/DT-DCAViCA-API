@@ -52,6 +52,12 @@ export class NurseService {
         phone_number: true,
         pincode: true,
         username: true,
+        associated_branches: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         location: {
           include: {
             city: {
