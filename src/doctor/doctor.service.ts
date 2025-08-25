@@ -55,6 +55,12 @@ export class DoctorService {
         phone_number: true,
         username: true,
         pincode: true,
+        associated_branches: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         location: {
           include: {
             city: {
