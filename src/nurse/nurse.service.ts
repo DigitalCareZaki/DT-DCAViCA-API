@@ -69,7 +69,7 @@ export class NurseService {
         },
         nurse: {
           include: {
-            department: true,
+            departments: true,
           },
         },
         created_at: true,
@@ -402,7 +402,7 @@ export class NurseService {
               phone_number: true,
             },
           },
-          department: {
+          departments: {
             select: {
               title: true,
             },
@@ -487,7 +487,7 @@ export class NurseService {
           create: {
             npi_number: data.npi_number,
             employee_id: data.employee_id,
-            department: {
+            departments: {
               connect: {
                 id: data.department_id,
               },
@@ -673,7 +673,7 @@ export class NurseService {
             phone_number: true,
           },
         },
-        department: {
+        departments: {
           select: {
             title: true,
           },

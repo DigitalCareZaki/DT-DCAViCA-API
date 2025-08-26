@@ -334,7 +334,7 @@ export class OrganizationService {
         },
         nurse: {
           select: {
-            department: {
+            departments: {
               select: {
                 id: true,
                 title: true,

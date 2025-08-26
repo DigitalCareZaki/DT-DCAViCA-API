@@ -228,8 +228,8 @@ model Nurse {
   npi_number  String @unique
   employee_id String
   specialities Specialization[] @relation(name: "nurseSpecilization")
-  department    Department @relation(name: "nurseDepartment", fields: [department_id], references: [id])
-  department_id String
+  departments  Department[]     @relation(name: "nurseDepartment")
+  
 
   patients     Patient[]     @relation("patientNurses")
   measurements Measurement[] @relation("nurseMeasurements")

@@ -552,7 +552,7 @@ export class DoctorService {
               phone_number: true,
             },
           },
-          department: {
+          departments: {
             select: {
               title: true,
             },
@@ -660,7 +660,7 @@ export class DoctorService {
             phone_number: true,
           },
         },
-        department: {
+        departments: {
           select: {
             title: true,
           },
@@ -978,7 +978,7 @@ export class DoctorService {
   public async getNursesBySpeciality(specialityId: string) {
     const nurseList = await this.prisma.nurse.findMany({
       where: {
-        specialities: {
+        departments: {
           some: {
             id: specialityId, // assuming `id` is the field name in `Speciality` model
           },
