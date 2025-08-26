@@ -631,6 +631,12 @@ export class OrganizationService {
     organizationId: string,
     names: string[],
   ) {
+
+    const medicine = await this.prisma.organizationMedication.findFirst({
+      where: { name: { in: names } },
+    });
+
+    if (medicine) throw new AppError('Medicine already existing', HttpStatus.BAD_REQUEST);
     await this.prisma.organizationMedication.createMany({
       data: names.map((name) => ({
         name,
@@ -642,6 +648,11 @@ export class OrganizationService {
   }
 
   public async addOrganizationMedicine(organizationId: string, name: string) {
+    const medicine = await this.prisma.organizationMedication.findFirst({
+      where: { name: name },
+    });
+
+    if (medicine) throw new AppError('Medicine already existing', HttpStatus.BAD_REQUEST);
     return await this.prisma.organizationMedication.create({
       data: {
         name,
@@ -757,6 +768,11 @@ export class OrganizationService {
     });
 
     if (!medicine) throw new AppError('Medicine not found', HttpStatus.NOT_FOUND);
+    const med = await this.prisma.organizationMedication.findFirst({
+      where: { name: name },
+    });
+
+    if (med) throw new AppError('Medicine already existing', HttpStatus.BAD_REQUEST);
 
     return await this.prisma.organizationMedication.update({
       where: { id: medicineId },

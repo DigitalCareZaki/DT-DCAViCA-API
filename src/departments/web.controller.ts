@@ -4,6 +4,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -32,6 +34,19 @@ export class WebDepartController extends DepartmentsController {
   @HttpCode(HttpStatus.OK)
   public async createDepartment(@Body() data: DepartmentDTO) {
     return await this.getDepartmentService().createDepartment(data);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Patch('/:departmentId') // :departmentId -> department -> id
+  public async updateDepartment(
+    @GetUser() user: UserRes,
+    @Param('departmentId') departmentId: string,
+    @Body() data: any,
+  ) {
+    return this.getDepartmentService().updateDepartment(
+      departmentId,
+      data,
+    );
   }
 
   @Get('/branches')
