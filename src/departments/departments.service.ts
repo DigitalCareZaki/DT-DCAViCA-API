@@ -174,6 +174,46 @@ export class DepartmentsService {
     });
   }
 
+  public async getSingleDepartment(
+    departmentId: string,
+  ) {
+    console.log(departmentId, 'departmentId ===========>>>');
+    return await this.prisma.department.findUniqueOrThrow({
+      where: {
+        id: departmentId,
+
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        location: {
+          select: {
+            zipcode: true,
+            address: true,
+            city: {
+              select: {
+                name: true,
+                id: true,
+              },
+            },
+          },
+        },
+        branch: {
+          select: {
+            name: true,
+            id: true,
+          },
+        },
+
+
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+  }
+
   private async getSuperAdminDepartments(
     userId: string,
     search: string,

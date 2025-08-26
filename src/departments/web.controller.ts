@@ -30,6 +30,19 @@ export class WebDepartController extends DepartmentsController {
     return await this.getDepartmentService().getDepartments(user, search);
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Get('/department/:departmentId')
+  public async getSingleDepartment(
+    @GetUser() user: UserRes,
+    @Param('departmentId') departmentId: string,
+  ) {
+    return this.getDepartmentService().getSingleDepartment(
+      departmentId,
+
+
+    );
+  }
+
   @Post('/')
   @HttpCode(HttpStatus.OK)
   public async createDepartment(@Body() data: DepartmentDTO) {
