@@ -506,6 +506,15 @@ export class MessageService {
             email: true,
           },
         },
+        reciever: {
+          select: {
+            first_name: true,
+            last_name: true,
+            middle_name: true,
+            uri: true,
+            email: true,
+          },
+        },
       },
       orderBy: { created_at: 'desc' },
     });
