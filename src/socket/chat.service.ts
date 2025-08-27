@@ -22,6 +22,7 @@ export class ChatService {
         room_id: payload.room_id,
         user_id: payload.author_id,
         message: payload.message,
+        media: payload.media ?? null,
         created_at: new Date(),
       },
     });

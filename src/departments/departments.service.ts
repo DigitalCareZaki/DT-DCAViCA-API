@@ -40,81 +40,89 @@ export class DepartmentsService {
     data: DepartmentDTO,
   ) {
     // check if user can edit the department
+    console.log(data, 'departmentId ===========>>>');
 
-    const canEditDepartment = await this.prisma.department.findFirst({
-      where: {
-        id: departmentId,
-      },
-      select: {
-        id: true,
-      },
-    });
+    try {
+      const canEditDepartment = await this.prisma.department.findFirst({
+        where: {
+          id: departmentId,
+        },
+        select: {
+          id: true,
+        },
+      });
 
-    if (!canEditDepartment) {
-      throw new Error('Can not edit department');
-    }
+      if (!canEditDepartment) {
+        throw new Error('Can not edit department');
+      }
 
-    // check if department does not already exists
-    const departmentAlreadyExists = await this.prisma.department.findFirst({
-      where: {
-        title: data.title,
-      },
-      select: {
-        id: true,
-      },
-    });
+      // check if department does not already exists
+      const departmentAlreadyExists = await this.prisma.department.findFirst({
+        where: {
+          title: data.title,
+        },
+        select: {
+          id: true,
+        },
+      });
 
-    if (departmentAlreadyExists && departmentAlreadyExists.id !== departmentId) {
-      throw new Error('Department already exists');
-    }
+      if (departmentAlreadyExists && departmentAlreadyExists.id !== departmentId) {
+        throw new Error('Department already exists');
+      }
 
-    const location = await this.prisma.location.create({
-      data: {
-        city_id: data.city_id,
-        address: data.address,
-        zipcode: data.zipcode,
-      },
-    });
+      const location = await this.prisma.location.create({
+        data: {
+          city_id: data.city_id,
+          address: data.address,
+          zipcode: data.zipcode,
+        },
+      });
 
-    const department = await this.prisma.department.update({
-      where: {
-        id: departmentId,
-      },
-      data: {
-        title: data.title,
-        description: data.description,
-        location_id: location.id,
-        barnch_id: data.branch_id,
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        location: {
-          select: {
-            address: true,
-            city: {
-              select: {
-                name: true,
-                id: true,
+      const department = await this.prisma.department.update({
+        where: {
+          id: departmentId,
+        },
+        data: {
+          title: data.title,
+          description: data.description,
+          location_id: location.id,
+          barnch_id: data.branch_id,
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          location: {
+            select: {
+              address: true,
+              zipcode: true,
+              city: {
+                select: {
+                  name: true,
+                  id: true,
+                },
               },
             },
           },
-        },
-        branch: {
-          select: {
-            name: true,
-            id: true,
+          branch: {
+            select: {
+              name: true,
+              id: true,
+            },
           },
+
+
+          created_at: true,
+          updated_at: true,
         },
+      });
 
-
-        created_at: true,
-        updated_at: true,
-      },
-    });
-
-    return department;
+      return department;
+    }
+    catch (error) {
+      console.error(error);
+      throw new Error('Failed to update department');
+    }
   }
 
   public async getBranches(user: UserRes) {
