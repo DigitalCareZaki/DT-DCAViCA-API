@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -682,7 +682,7 @@ export class TabletService {
     });
 
     if (tabletAlreadyExists) {
-      throw new Error('Tablet already exists in your organization');
+      throw new BadRequestException('tablet already exists in your organization.');
     }
 
     const tablet = await this.prisma.tablet.create({

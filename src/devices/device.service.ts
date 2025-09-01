@@ -713,35 +713,34 @@ export class DeviceService {
 
     };
 
+    const deviceAlreadyExists = await this.prisma.device.findFirst({
+      where: {
+        AND: [
+          {
+            serial_number: data.serial_number,
+          },
+          {
+            created_by: {
+              organization: {
+                id: organizationId,
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (deviceAlreadyExists) {
+
+      throw new BadRequestException('Device already exists in your organization.');
+
+    }
     const result = await this.vlDevice(vlDevice); // will return true or false
     console.log('device add on VivaLink ===========>>>', result);
     if (result) {
-
-      const deviceAlreadyExists = await this.prisma.device.findFirst({
-        where: {
-          AND: [
-            {
-              serial_number: data.serial_number,
-            },
-            {
-              created_by: {
-                organization: {
-                  id: organizationId,
-                },
-              },
-            },
-          ],
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (deviceAlreadyExists) {
-
-        throw new BadRequestException('Device already exists in your organization.');
-
-      }
 
       const device = await this.prisma.device.create({
         data: {
