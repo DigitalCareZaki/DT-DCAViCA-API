@@ -682,7 +682,7 @@ export class TabletService {
     });
 
     if (tabletAlreadyExists) {
-      throw new BadRequestException('tablet already exists in your organization.');
+      throw new BadRequestException('Accessory already exists in your organization.');
     }
 
     const tablet = await this.prisma.tablet.create({
