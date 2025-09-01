@@ -299,6 +299,7 @@ export class OrganizationService {
         email: true,
         phone_number: true,
         username: true,
+        uri: true,
         role: true,
         gender: true,
         associated_branches: {
@@ -449,6 +450,7 @@ export class OrganizationService {
         email: true,
         phone_number: true,
         username: true,
+        uri: true,
         role: true,
         gender: true,
         associated_branches: {
