@@ -66,6 +66,7 @@ export class MessageWebController extends MessageController {
     @Query('type') type: string,
     @Param('id') id: string,
   ): Promise<boolean> {
+    console.log('Starring message userId: ', user.id);
     if (type === 'starred') {
       return await this.getMessageService().starredMessage(user.id, id);
     }

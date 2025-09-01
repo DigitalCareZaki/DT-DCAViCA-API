@@ -210,36 +210,40 @@ export class MessageService {
     userId: string,
     messageId: string,
   ): Promise<boolean> {
-    await this.prisma.message.findFirstOrThrow({
-      where: {
-        AND: [
-          {
-            id: messageId,
-          },
-          {
-            reciever_id: userId,
-          },
-          {
-            starred: false,
-          },
-        ],
-      },
-      select: {
-        id: true,
-      },
-    });
+    console.log('Starring message userId: ', userId);
+    try {
+      const msg = await this.prisma.message.findFirstOrThrow({
+        where: {
+          AND: [
+            {
+              id: messageId,
+            },
+            {
+              starred: false,
+            },
+          ],
+        },
+        select: {
+          id: true,
+        },
+      });
 
-    await this.prisma.message.update({
-      where: {
-        id: messageId,
-      },
+      await this.prisma.message.update({
+        where: {
+          id: messageId,
+        },
 
-      data: {
-        starred: true,
-      },
-    });
+        data: {
+          starred: true,
+        },
+      });
 
-    return true;
+      return true;
+    }
+    catch (error) {
+      console.error('Error starring message: ', error);
+
+    }
   }
 
   public async getSentMessages(
