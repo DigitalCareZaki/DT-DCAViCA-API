@@ -180,9 +180,9 @@ export class MessageService {
           {
             id: messageId,
           },
-          {
-            reciever_id: userId,
-          },
+          // {
+          //   reciever_id: userId,
+          // },
           {
             starred: true,
           },
