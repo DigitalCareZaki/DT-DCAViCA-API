@@ -90,22 +90,22 @@ export class UploaderService {
 
   async uploadToS3(file: Express.Multer.File) {
 
+
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
+
+    const fileName = this.generateFileName(file.originalname);
+    console.log('Generated file name====>>>', fileName);
+    const uploadParams = {
+      Bucket: this.bucketName,
+      Key: fileName,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    };
     try {
-      if (!file) {
-        throw new Error('No file uploaded');
-      }
-
-      const fileName = this.generateFileName(file.originalname);
-      console.log('Generated file name====>>>', fileName);
-      const uploadParams = {
-        Bucket: this.bucketName,
-        Key: fileName,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      };
-
-      await this.s3.send(new PutObjectCommand(uploadParams));
-
+      const result = await this.s3.send(new PutObjectCommand(uploadParams));
+      console.log(result, '========result');
       return {
         message: 'File uploaded successfully',
         url: `https://${this.bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`,
