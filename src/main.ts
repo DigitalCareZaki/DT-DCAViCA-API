@@ -1,3 +1,5 @@
+import * as dotenv from 'dotenv';
+dotenv.config(); // Load .env file
 import { writeFileSync } from 'fs';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
