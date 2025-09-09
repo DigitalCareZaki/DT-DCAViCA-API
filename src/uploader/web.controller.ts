@@ -33,13 +33,14 @@ export class UploaderWebController extends UploaderController {
   @Post('/')
   @UseInterceptors(FileInterceptor('file'))
   async upload(@UploadedFile() file: Express.Multer.File) {
-    return this.getUploaderService().handleFile(file);
+    return this.getUploaderService().uploadToS3(file);
   }
-  @HttpCode(HttpStatus.OK)
-  @Post('/uploads3')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadS3(@UploadedFile() file: Express.Multer.File) {
-    return await this.getUploaderService().uploadToS3(file);
-  }
+
+  // @HttpCode(HttpStatus.OK)
+  // @Post('/uploads3')
+  // @UseInterceptors(FileInterceptor('file'))
+  // async uploadS3(@UploadedFile() file: Express.Multer.File) {
+  //   return await this.getUploaderService().uploadToS3(file);
+  // }
 }
 

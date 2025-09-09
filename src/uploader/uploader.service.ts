@@ -9,37 +9,7 @@ import * as path from 'path';
 export class UploaderService {
   constructor(@Inject('CLOUDINARY') private cloudinary: typeof Cloudinary) { }
 
-  public async handleFile(file: Express.Multer.File) {
-    const isPDF =
-      file.mimetype === 'application/pdf' ||
-      file.mimetype === 'application/octet-stream';
 
-    const originalName = file.originalname.replace(/\.[^/.]+$/, ''); // Remove extension
-    const extension = file.originalname.split('.').pop(); // Get extension (e.g., pdf)
-
-    return new Promise((resolve, reject) => {
-      const upload = this.cloudinary.uploader.upload_stream(
-        {
-          folder: 'avica',
-          resource_type: 'raw',
-          type: 'upload', // ✅ public access for raw files
-          public_id: `${originalName}.${extension}`,
-          overwrite: true,
-        },
-        (error, result) => {
-          if (error) return reject(error);
-          resolve({
-            url: result.secure_url, // ✅ will now be accessible
-            originalname: file.originalname,
-            mimetype: file.mimetype,
-            size: file.size,
-          });
-        },
-      );
-
-      Readable.from(file.buffer).pipe(upload);
-    });
-  }
 
   // public async handleFile(file: Express.Multer.File) {
   //   const isPDF = file.mimetype === 'application/pdf' || file.mimetype === 'application/octet-stream';
