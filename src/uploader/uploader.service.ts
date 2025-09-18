@@ -136,7 +136,7 @@ export class UploaderService {
       // writeStream.on("finish", () => {
       //   console.log(`✅ File downloaded to ${outputPath}`);
       // });
-
+      console.log("File downloaded to ");
       return { pdfUrl: `https://vve-14-vitals-archive.s3.us-west-1.amazonaws.com/${date}/${deviceId}_${date}_ECG_denoised_ANALYSIS.pdf` };
 
     } catch (error) {
