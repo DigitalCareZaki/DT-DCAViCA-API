@@ -4,6 +4,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -28,6 +29,15 @@ export class UploaderWebController extends UploaderController {
       availableRoutes: [],
     };
   }
+  @HttpCode(HttpStatus.OK)
+  @Get('/ecg')
+  async getEcgFromS3(
+    @Query('date') date?: string,
+    @Query('deviceId') deviceId?: string,
+  ) {
+    return this.getUploaderService().getEcgFromS3(date, deviceId);
+  }
+
 
   @HttpCode(HttpStatus.OK)
   @Post('/')

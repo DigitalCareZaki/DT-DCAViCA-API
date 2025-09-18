@@ -1,9 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { v2 as Cloudinary } from 'cloudinary';
-import { Readable } from 'stream';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { pipeline, Readable } from 'stream';
+import { S3Client, PutObjectCommand, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
 import * as crypto from 'crypto';
 import * as path from 'path';
+import fs, { createWriteStream } from "fs";
+import { promisify } from 'util';
+
+
+const pipe = promisify(pipeline);
 
 @Injectable()
 export class UploaderService {
@@ -56,6 +61,16 @@ export class UploaderService {
     },
   });
 
+
+  private s1 = new S3Client({
+    region: process.env.AWS_ECG_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ECG_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_ECG_SECRET_ACCESS_KEY,
+    },
+  });
+  private ecgBucket = process.env.AWS_ECG_BUCKET_NAME;
+
   private bucketName = process.env.AWS_BUCKET_NAME;
 
   async uploadToS3(file: Express.Multer.File) {
@@ -86,6 +101,50 @@ export class UploaderService {
       throw new Error('Error uploading file to S3');
     }
 
+  }
+
+  public async getEcgFromS3(
+    date: string,
+    deviceId: string,
+  ) {
+
+    console.log('date in service ======>>>', date, deviceId)
+    const params = {
+      Bucket: this.ecgBucket,
+      Prefix: date,
+    };
+    const bucketName = "vve-14-vitals-archive";
+    const key = `${date}/${deviceId}_${date}_ECG_denoised_ANALYSIS.pdf`;
+
+    try {
+      const command = new GetObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+      });
+
+      const response = await this.s1.send(command);
+
+      if (!response.Body) {
+        return 'no file is available'; // no file body returned
+      }
+      const bodyStream = response.Body as Readable;
+      // const outputPath = "./downloaded.pdf";
+      // // Pipe to local file
+      // const writeStream = createWriteStream(outputPath);
+      // bodyStream.pipe(writeStream);
+
+      // writeStream.on("finish", () => {
+      //   console.log(`✅ File downloaded to ${outputPath}`);
+      // });
+      // console.log('S3 ListObjectsV2 response:', response);
+      return { pdfUrl: `https://vve-14-vitals-archive.s3.us-west-1.amazonaws.com/${date}/${deviceId}_${date}_ECG_denoised_ANALYSIS.pdf` };
+
+    } catch (error) {
+      if (error.name === "NoSuchKey") {
+        console.log("File not found:", key);
+        return { error: "File not found" };
+      }
+    }
   }
 
   private generateFileName(originalName: string): string {
