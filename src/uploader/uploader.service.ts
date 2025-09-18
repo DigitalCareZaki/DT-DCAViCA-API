@@ -123,10 +123,10 @@ export class UploaderService {
       });
       console.log('command ======>>>', command)
       const response = await this.s1.send(command);
-
-      if (!response.Body) {
-        return 'no file is available'; // no file body returned
-      }
+      console.log("File downloaded to ", response);
+      // if (!response.Body) {
+      //   return 'no file is available'; // no file body returned
+      // }
       const bodyStream = response.Body as Readable;
       // const outputPath = "./downloaded.pdf";
       // // Pipe to local file
