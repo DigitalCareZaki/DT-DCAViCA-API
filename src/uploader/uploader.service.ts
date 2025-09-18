@@ -121,7 +121,7 @@ export class UploaderService {
         Bucket: bucketName,
         Key: key,
       });
-
+      console.log('command ======>>>', command)
       const response = await this.s1.send(command);
 
       if (!response.Body) {
@@ -136,7 +136,7 @@ export class UploaderService {
       // writeStream.on("finish", () => {
       //   console.log(`✅ File downloaded to ${outputPath}`);
       // });
-      // console.log('S3 ListObjectsV2 response:', response);
+
       return { pdfUrl: `https://vve-14-vitals-archive.s3.us-west-1.amazonaws.com/${date}/${deviceId}_${date}_ECG_denoised_ANALYSIS.pdf` };
 
     } catch (error) {
