@@ -121,12 +121,12 @@ export class UploaderService {
         Bucket: bucketName,
         Key: key,
       });
-      console.log('command ======>>>', command)
+
       const response = await this.s1.send(command);
-      console.log("File downloaded to ", response);
-      // if (!response.Body) {
-      //   return 'no file is available'; // no file body returned
-      // }
+
+      if (!response.Body) {
+        return 'no file is available'; // no file body returned
+      }
       const bodyStream = response.Body as Readable;
       // const outputPath = "./downloaded.pdf";
       // // Pipe to local file
@@ -136,7 +136,7 @@ export class UploaderService {
       // writeStream.on("finish", () => {
       //   console.log(`✅ File downloaded to ${outputPath}`);
       // });
-      console.log("File downloaded to ");
+
       return { pdfUrl: `https://vve-14-vitals-archive.s3.us-west-1.amazonaws.com/${date}/${deviceId}_${date}_ECG_denoised_ANALYSIS.pdf` };
 
     } catch (error) {
