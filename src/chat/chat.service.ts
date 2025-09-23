@@ -17,7 +17,8 @@ export class ChatService {
   constructor(private prisma: PrismaService) { }
 
   public async getChatRooms(user: UserRes): Promise<GetRoomsProps[]> {
-    return await this.prisma.room.findMany({
+    // 1) Fetch all rooms for the user (excluding appointment rooms)
+    const rooms = await this.prisma.room.findMany({
       where: {
         AND: [
           {
@@ -40,7 +41,6 @@ export class ChatService {
               not: user.id,
             },
           },
-
           select: {
             first_name: true,
             last_name: true,
@@ -53,6 +53,71 @@ export class ChatService {
         },
       },
     });
+
+    if (rooms.length === 0) {
+      return rooms as unknown as GetRoomsProps[];
+    }
+
+    const roomIds = rooms.map(r => r.id);
+
+    // 2) Compute unread counts per room for this user
+    const unreadCounts = await this.prisma.chat.groupBy({
+      by: ['room_id'],
+      where: {
+        room_id: { in: roomIds },
+        read: false,
+        // Unread means messages authored by other users
+        user_id: { not: user.id },
+      },
+      _count: { _all: true },
+    });
+    const unreadCountMap = new Map<string, number>(
+      unreadCounts.map(u => [u.room_id as unknown as string, u._count._all])
+    );
+
+    // 3) Get latest message timestamp per room to use as tiebreaker sort
+    const latestPerRoom = await this.prisma.chat.groupBy({
+      by: ['room_id'],
+      where: { room_id: { in: roomIds } },
+      _max: { created_at: true },
+    });
+    const lastMessageAtMap = new Map<string, Date | null>(
+      latestPerRoom.map(x => [x.room_id as unknown as string, x._max.created_at ?? null])
+    );
+
+    // 4) Merge metadata and sort: unread first, then newest activity
+    const enriched = rooms
+      .map(r => ({
+        ...r,
+        unread_count: unreadCountMap.get(r.id) ?? 0,
+        last_message_at: lastMessageAtMap.get(r.id) ?? null,
+      }))
+      .sort((a, b) => {
+        const unreadDelta = (b.unread_count ?? 0) - (a.unread_count ?? 0);
+        if (unreadDelta !== 0) return unreadDelta;
+        const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+        const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+        return bTime - aTime;
+      });
+
+    console.log('enriched latest on top>>>>>>>>> ', enriched);
+
+    return enriched as unknown as GetRoomsProps[];
+  }
+
+  public async markRoomRead(user: UserRes, roomId: string): Promise<{ updated: number; }> {
+    const result = await this.prisma.chat.updateMany({
+      where: {
+        room_id: roomId,
+        read: false,
+        user_id: { not: user.id },
+      },
+      data: {
+        read: true,
+      },
+    });
+
+    return { updated: result.count };
   }
 
   public async ceateRoom(

@@ -126,6 +126,18 @@ export class SocketGateway
       };
 
       this.emitRoomChats(data, payload.room_id);
+
+      // emit lightweight room update for receiver to reorder list (unread + latest)
+      // sender should not get unread increment
+      const now = Date.now();
+      const receiverId = payload.receiver_id || payload?.reciever_id || null;
+      if (receiverId) {
+        this.server.emit(`${receiverId}:room_update`, {
+          room_id: payload.room_id,
+          last_message_at: now,
+          unread_increment: 1,
+        });
+      }
     } catch (error) {
       console.error('Error handling chat message: ', error);
     }

@@ -37,6 +37,15 @@ export class ChatWebController extends ChatController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @Post('/room/:id/read')
+  public markRoomRead(
+    @GetUser() user: UserRes,
+    @Param('id') id: string,
+  ): Promise<{ updated: number }> {
+    return this.getChatService().markRoomRead(user, id);
+  }
+
+  @HttpCode(HttpStatus.OK)
   @Get('/search/users')
   public searchRooms(
     @Query('search') search: string,

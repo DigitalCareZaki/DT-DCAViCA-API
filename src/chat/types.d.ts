@@ -31,4 +31,6 @@ export interface SearchUsersProps {
 export interface GetRoomsProps {
   id: string;
   users: User[];
+  unread_count?: number;
+  last_message_at?: Date | null;
 }
