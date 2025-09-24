@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { SocketGateway } from 'src/socket/socket.gateway';
 
 import type { InboxRes, Message, SearchUserRes } from './types';
 import { ComposeDTO } from './dto/compose.dto';
 
 @Injectable()
 export class MessageService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService, private socketGateway: SocketGateway) { }
 
   public async inbox(userId: string, search: string): Promise<InboxRes[]> {
     return this.prisma.message.findMany({
@@ -93,19 +94,38 @@ export class MessageService {
         parent_id: true
       },
 
-      orderBy: {
-        created_at: 'desc',
-      },
+      // Unread first, then by most recent activity
+      orderBy: [
+        { is_read: 'asc' },
+        { updated_at: 'desc' },
+        { created_at: 'desc' },
+      ],
     });
   }
 
   public async compose(userId: string, data: ComposeDTO): Promise<Message> {
-    const reciever = await this.prisma.user.findUniqueOrThrow({
+    // Resolve receiver by email or by user id
+    let recieverId: string | null = null;
+    // try email first
+    const byEmail = await this.prisma.user.findUnique({
       where: { email: data.send_to },
       select: { id: true },
     });
+    if (byEmail?.id) {
+      recieverId = byEmail.id;
+    } else {
+      // fallback: treat send_to as user id
+      const byId = await this.prisma.user.findUnique({
+        where: { id: data.send_to },
+        select: { id: true },
+      });
+      if (!byId?.id) throw new Error('Receiver not found');
+      recieverId = byId.id;
+    }
 
     let root_id: string | null = null;
+
+    console.log('byEmail >>>', byEmail);
 
     if (data.parent_id) {
       const parent = await this.prisma.message.findUnique({
@@ -123,22 +143,34 @@ export class MessageService {
       attachments: data.attachments ?? [],
       subject: data.subject,
       content: data.content,
-      reciever_id: reciever.id,
+      reciever_id: recieverId,
       parent_id: data.parent_id ?? null,
       root_id: root_id ?? null,
     });
 
-    return this.prisma.message.create({
+    const created = await this.prisma.message.create({
       data: {
         sender_id: userId,
         attachments: data.attachments ?? [],
         subject: data.subject,
         content: data.content,
-        reciever_id: reciever.id,
+        reciever_id: recieverId,
         parent_id: data.parent_id ?? null,
         root_id: root_id ?? null,
       },
     });
+
+    // Realtime: notify receiver to refresh inbox and show unread indicator
+    try {
+      this.socketGateway.server.emit(`${recieverId}:inbox_update`, {
+        type: 'new_message',
+        message_id: created.id,
+        root_id: created.root_id ?? created.id,
+        updated_at: created.updated_at,
+      });
+    } catch { }
+
+    return created;
   }
 
   public async deleteMessage(
@@ -161,7 +193,7 @@ export class MessageService {
       },
     });
 
-    await this.prisma.message.update({
+    const updated = await this.prisma.message.update({
       where: {
         id: messageId,
       },
@@ -169,6 +201,13 @@ export class MessageService {
         deleted: true,
       },
     });
+
+    try {
+      this.socketGateway.server.emit(`${userId}:inbox_update`, {
+        type: 'delete',
+        message_id: updated.id,
+      });
+    } catch { }
 
     return true;
   }
@@ -194,7 +233,7 @@ export class MessageService {
       },
     });
 
-    await this.prisma.message.update({
+    const updated = await this.prisma.message.update({
       where: {
         id: messageId,
       },
@@ -202,6 +241,13 @@ export class MessageService {
         starred: false,
       },
     });
+
+    try {
+      this.socketGateway.server.emit(`${userId}:inbox_update`, {
+        type: 'unstar',
+        message_id: updated.id,
+      });
+    } catch { }
 
     return true;
   }
@@ -228,7 +274,7 @@ export class MessageService {
         },
       });
 
-      await this.prisma.message.update({
+      const updated = await this.prisma.message.update({
         where: {
           id: messageId,
         },
@@ -237,6 +283,13 @@ export class MessageService {
           starred: true,
         },
       });
+
+      try {
+        this.socketGateway.server.emit(`${userId}:inbox_update`, {
+          type: 'star',
+          message_id: updated.id,
+        });
+      } catch { }
 
       return true;
     }
@@ -595,7 +648,7 @@ export class MessageService {
 
   public async markThreadAsRead(userId: string, rootId: string) {
     console.log('Marking thread as read for user:', userId, 'rootId:', rootId);
-    return await this.prisma.message.updateMany({
+    const res = await this.prisma.message.updateMany({
       where: {
         reciever_id: userId,
         is_read: false,
@@ -608,13 +661,19 @@ export class MessageService {
         is_read: true,
       },
     });
+    try {
+      this.socketGateway.server.emit(`${userId}:inbox_update`, {
+        type: 'read_thread',
+        root_id: rootId,
+      });
+    } catch { }
 
-
+    return res;
   }
   public async markMessageAsRead(userId: string, id: string) {
     console.log('Marking thread as read for user:', userId, 'Id:', id);
 
-    return await this.prisma.message.updateMany({
+    const res = await this.prisma.message.updateMany({
       where: {
         id: id,
         is_read: false,
@@ -624,6 +683,13 @@ export class MessageService {
         is_read: true,
       },
     });
+    try {
+      this.socketGateway.server.emit(`${userId}:inbox_update`, {
+        type: 'read_message',
+        message_id: id,
+      });
+    } catch { }
+    return res;
   }
 
 

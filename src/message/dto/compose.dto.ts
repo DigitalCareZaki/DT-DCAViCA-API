@@ -1,8 +1,9 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, Validate } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, Validate } from 'class-validator';
 import { ValidateAdditionalUri } from 'src/validators';
 
 export class ComposeDTO {
-  @IsEmail()
+  // Accept either an email or a user id (uuid/cuid)
+  @IsString()
   @IsNotEmpty()
   send_to: string;
 

@@ -164,6 +164,12 @@ export class SocketGateway
     try {
       const notification = await this.notificationService.createNotification(payload);
       this.server.emit(`${notification.reciever_id}:recieve_notification`, notification);
+
+      // Also nudge inbox to refresh for realtime email/messages
+      this.server.emit(`${notification.reciever_id}:inbox_update`, {
+        type: 'new_message_soft',
+        at: Date.now(),
+      });
     } catch (error) {
       console.error('Error sending notification: ', error);
     }
