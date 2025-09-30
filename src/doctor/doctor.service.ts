@@ -980,7 +980,7 @@ export class DoctorService {
       where: {
         departments: {
           some: {
-            id: specialityId, // assuming `id` is the field name in `Speciality` model
+            id: specialityId, /// assuming `id` is the field name in `Speciality` model
           },
         },
       },

@@ -41,6 +41,18 @@ export class FirebaseService implements OnModuleInit {
         const now = new Date();
         const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
         console.log(fiveMinutesAgo, 'fiveMinutesAgo')
+        await this.prisma.patientMedicationAlerts.updateMany({
+            where: {
+                alert_time: {
+                    lte: now,
+                },
+                taken: 'PENDING',
+                notification_sent: true,
+            },
+            data: {
+                taken: 'MISSED',
+            },
+        });
         const alerts = await this.prisma.patientMedicationAlerts.findMany({
             where: {
                 alert_time: {
@@ -99,22 +111,6 @@ export class FirebaseService implements OnModuleInit {
         }
 
 
-        // update taken field to "NOT_TAKEN" which are older than 1 hour
-        // const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-        // const updateMedicationAlerts = await this.prisma.patientMedicationAlerts.updateMany({
-        //     where: {
-        //         alert_time: {
-        //             lte: oneHourAgo,
-        //         },
-        //         taken: 'PENDING',
-        //     },
-        //     data: {
-        //         taken: 'NOT_TAKEN',
-        //         notification_sent: true,
-        //     },
-        // });
-
-        // console.log('Updated medication alerts:', updateMedicationAlerts.count);
     }
 
     public async sendNotification(sender: string, receiver: string, title: string, body: string) {

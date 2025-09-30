@@ -132,197 +132,240 @@ export class ComplianceService {
     role: UserRole,
   ): Promise<PatientCompliancePerPill> {
 
-
-    console.log('patientId:========>>>>', patientId)
-    const patientMedications = await this.prisma.patient.findFirst({
-      where: {
-        AND: [
-          {
-            [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
-              some: {
-                user_id: userId,
+    try {
+      console.log('patientId:========>>>>', patientId)
+      const patientMedications = await this.prisma.patient.findFirst({
+        where: {
+          AND: [
+            {
+              [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
+                some: {
+                  user_id: userId,
+                },
+              },
+            },
+            {
+              user_id: patientId,
+            },
+          ],
+        },
+        select: {
+          user: {
+            select: { id: true },
+          },
+          medication: {
+            select: {
+              id: true,
+              name: true,
+              start_date: true,
+              end_date: true,
+              frequency: true, // doses per day
+              time: true,      // base time for the first dose
+              created_at: true,
+              patient_medication_alerts: {
+                select: {
+                  taken: true,
+                  alert_time: true,
+                },
               },
             },
           },
-          {
-            user_id: patientId,
-          },
-        ],
-      },
-      select: {
-        user: {
-          select: { id: true },
         },
-        medication: {
-          select: {
-            id: true,
-            name: true,
-            start_date: true,
-            end_date: true,
-            frequency: true, // doses per day
-            time: true,      // base time for the first dose
-            created_at: true,
-            patient_medication_alerts: {
-              select: {
-                taken: true,
-                alert_time: true,
-              },
-            },
-          },
-        },
-      },
-    });
-    console.log('patientMedications:========>>>>', JSON.stringify(patientMedications.medication))
+      });
+      console.log('patientMedications:========>>>>', JSON.stringify(patientMedications.medication))
 
-    const formattedResults = patientMedications.medication.map((med) => {
-      const complianceByDay: Record<string, {
-        total: number;
-        taken: number;
-        not_taken: number;
-      }> = {};
+      const formattedResults = patientMedications.medication.map((med) => {
+        const complianceByDay: Record<string, {
+          total: number;
+          taken: number;
+          not_taken: number;
+          not_action_taken: number;
+          pending: number;
+        }> = {};
 
-      const startDate = new Date(med.start_date);
-      const endDate = new Date(med.end_date);
-      const scheduledTimes: string[] = med.time || []; // <-- updated
+        const startDate = new Date(med.start_date);
+        const endDate = new Date(med.end_date);
+        const scheduledTimes: string[] = med.time || [];
 
-      const alerts = med.patient_medication_alerts;
+        const alerts = med.patient_medication_alerts;
 
-      // Iterate each day in the medication period
-      for (
-        let date = new Date(startDate);
-        date <= endDate;
-        date.setUTCDate(date.getUTCDate() + 1)
-      ) {
-        const dayString = date.toISOString().slice(0, 10); // YYYY-MM-DD
-        complianceByDay[dayString] = {
-          total: scheduledTimes.length,
-          taken: 0,
-          not_taken: 0,
-        };
+        // 1. Pre-group alerts by day (YYYY-MM-DD)
+        const alertsByDay: Record<string, typeof alerts> = {};
+        for (const alert of alerts) {
+          const dayString = alert.alert_time.toISOString().slice(0, 10);
+          if (!alertsByDay[dayString]) alertsByDay[dayString] = [];
+          alertsByDay[dayString].push(alert);
+        }
 
-        // For each scheduled time
-        for (const timeStr of scheduledTimes) {
-          const [hour, minute] = timeStr.split(':').map(Number);
-          const scheduledDose = new Date(Date.UTC(
-            date.getUTCFullYear(),
-            date.getUTCMonth(),
-            date.getUTCDate(),
-            hour,
-            minute,
-            0,
-            0
-          ));
+        // 2. Iterate over days
+        for (
+          let date = new Date(startDate);
+          date <= endDate;
+          date.setUTCDate(date.getUTCDate() + 1)
+        ) {
+          const dayString = date.toISOString().slice(0, 10);
 
-          // const matchingAlert = alerts.find(alert => {
-          //   console.log('alert:========>>>>', alert)
-          //   const diff = Math.abs(new Date(alert.alert_time).getTime() - scheduledDose.getTime());
-          //   return diff <= 15 * 60 * 1000; // ±15 minutes
-          // });
-          // if (matchingAlert && matchingAlert.taken === 'TAKEN') {
-          //   complianceByDay[dayString].taken++;
-          // } else {
-          //   complianceByDay[dayString].not_taken++;
-          // }
+          complianceByDay[dayString] = {
+            total: scheduledTimes.length,
+            taken: 0,
+            not_taken: 0,
+            not_action_taken: 0,
+            pending: 0,
+          };
 
-
-          const takenAlert = alerts.find(a => a.taken === 'TAKEN');
-
-          if (takenAlert) {
-            complianceByDay[dayString].taken++;
-          } else {
-            complianceByDay[dayString].not_taken++;
+          const dayAlerts = alertsByDay[dayString] || [];
+          for (const alert of dayAlerts) {
+            switch (alert.taken) {
+              case 'TAKEN':
+                complianceByDay[dayString].taken++;
+                break;
+              case 'NOT_TAKEN':
+                complianceByDay[dayString].not_taken++;
+                break;
+              case 'MISSED':
+                complianceByDay[dayString].not_action_taken++;
+                break;
+              case 'PENDING':
+                complianceByDay[dayString].pending++;
+                break;
+            }
           }
         }
-      }
+
+        return {
+          id: med.id,
+          name: med.name,
+          created_at: med.created_at,
+          compliance: complianceByDay,
+        };
+      });
 
       return {
-        id: med.id,
-        name: med.name,
-        created_at: med.created_at,
-        compliance: complianceByDay,
+        user: {
+          id: patientId,
+        },
+        medications: formattedResults,
       };
-    });
+    } catch (error) {
+      console.error('Error fetching patient compliance:', error);
+      throw error;
+    }
+    // public async getPatientCompliancePerPill(
+    //   patientId: string,
+    //   userId: string,
+    //   role: UserRole,
+    // ): Promise<PatientCompliancePerPill> {
 
-    return {
-      user: {
-        id: patientId,
-      },
-      medications: formattedResults,
-    };
+
+    //   console.log('patientId:========>>>>', patientId)
+    //   const patientMedications = await this.prisma.patient.findFirst({
+    //     where: {
+    //       AND: [
+    //         {
+    //           [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
+    //             some: {
+    //               user_id: userId,
+    //             },
+    //           },
+    //         },
+    //         {
+    //           user_id: patientId,
+    //         },
+    //       ],
+    //     },
+    //     select: {
+    //       user: {
+    //         select: { id: true },
+    //       },
+    //       medication: {
+    //         select: {
+    //           id: true,
+    //           name: true,
+    //           start_date: true,
+    //           end_date: true,
+    //           frequency: true, // doses per day
+    //           time: true,      // base time for the first dose
+    //           created_at: true,
+    //           patient_medication_alerts: {
+    //             select: {
+    //               taken: true,
+    //               alert_time: true,
+    //             },
+    //           },
+    //         },
+    //       },
+    //     },
+    //   });
+    //   console.log('patientMedications:========>>>>', JSON.stringify(patientMedications.medication))
+
+    //   const formattedResults = patientMedications.medication.map((med) => {
+    //     const complianceByDay: Record<string, {
+    //       total: number;
+    //       taken: number;
+    //       not_taken: number;
+    //       no_action_taken?: number;
+    //       pending?: number;
+    //     }> = {};
+
+    //     const startDate = new Date(med.start_date);
+    //     const endDate = new Date(med.end_date);
+    //     const scheduledTimes: string[] = med.time || []; // <-- updated
+
+    //     const alerts = med.patient_medication_alerts;
+
+    //     // Iterate each day in the medication period
+    //     for (
+    //       let date = new Date(startDate);
+    //       date <= endDate;
+    //       date.setUTCDate(date.getUTCDate() + 1)
+    //     ) {
+    //       const dayString = date.toISOString().slice(0, 10); // YYYY-MM-DD
+    //       complianceByDay[dayString] = {
+    //         total: scheduledTimes.length,
+    //         taken: 0,
+    //         not_taken: 0,
+    //       };
+
+    //       // For each scheduled time
+    //       for (const timeStr of scheduledTimes) {
+    //         const [hour, minute] = timeStr.split(':').map(Number);
+    //         const scheduledDose = new Date(Date.UTC(
+    //           date.getUTCFullYear(),
+    //           date.getUTCMonth(),
+    //           date.getUTCDate(),
+    //           hour,
+    //           minute,
+    //           0,
+    //           0
+    //         ));
+
+
+
+
+    //         const takenAlert = alerts.find(a => a.taken === 'TAKEN');
+
+    //         if (takenAlert) {
+    //           complianceByDay[dayString].taken++;
+    //         } else {
+    //           complianceByDay[dayString].not_taken++;
+    //         }
+    //       }
+    //     }
+
+    //     return {
+    //       id: med.id,
+    //       name: med.name,
+    //       created_at: med.created_at,
+    //       compliance: complianceByDay,
+    //     };
+    //   });
+
+    //   return {
+    //     user: {
+    //       id: patientId,
+    //     },
+    //     medications: formattedResults,
+    //   };
+    // }
   }
-
-  // public async getPatientCompliancePerPill(
-  //   patientId: string,
-  //   userId: string,
-  //   role: UserRole,
-  // ): Promise<PatientCompliancePerPill> {
-  //   const patientMedications = await this.prisma.patient.findFirst({
-  //     where: {
-  //       AND: [
-  //         {
-  //           [role === 'DOCTOR' ? 'doctors' : 'nurses']: {
-  //             some: {
-  //               user_id: userId,
-  //             },
-  //           },
-  //         },
-  //         {
-  //           user_id: patientId,
-  //         },
-  //       ],
-  //     },
-  //     select: {
-  //       user: {
-  //         select: {
-  //           id: true,
-  //         },
-  //       },
-  //       medication: {
-  //         select: {
-  //           id: true,
-  //           name: true,
-  //           patient_medication_alerts: {
-  //             select: {
-  //               taken: true,
-  //               alert_time: true,
-  //             },
-  //           },
-  //         },
-  //       },
-  //     },
-  //   });
-
-  //   const formattedResults = patientMedications.medication.map((med) => ({
-  //     id: med.id,
-  //     name: med.name,
-  //     compliance: med.patient_medication_alerts.reduce((acc, item) => {
-  //       const date = new Date(item.alert_time).toISOString();
-
-  //       if (!acc[date]) {
-  //         acc[date] = {
-  //           total: 0,
-  //           taken: 0,
-  //           not_taken: 0,
-  //         };
-  //       }
-
-  //       acc[date].total++;
-
-  //       if (item.taken === 'TAKEN') {
-  //         acc[date].taken++;
-  //       } else {
-  //         acc[date].not_taken++;
-  //       }
-
-  //       return acc;
-  //     }, {}),
-  //   }));
-
-  //   return {
-  //     user: {
-  //       id: patientId,
-  //     },
-  //     medications: formattedResults,
-  //   };
-  // }
 }
