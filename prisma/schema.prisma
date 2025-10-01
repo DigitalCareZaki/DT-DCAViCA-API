@@ -530,6 +530,7 @@ model Branch {
 
   users User[] @relation("BranchToUser")
   departments Department[] @relation("branchDepartments")
+  videos Videos[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -825,6 +826,8 @@ model Videos {
 
   author_id String
   author    User   @relation(name: "userVideos", fields: [author_id], references: [id])
+   branchId  String? 
+  branch    Branch?   @relation(fields: [branchId], references: [id])
 
   created_at DateTime @default(now())
 }

@@ -64,30 +64,6 @@ export class ComplianceService {
             },
           },
         });
-      // .patients({
-      //   select: {
-      //     medication: {
-      //       where: {
-      //         created_at: {
-      //           gte: new Date(
-      //             new Date().getTime() - days * 24 * 60 * 60 * 1000,
-      //           ),
-      //          },
-      //        },
-      //       select: {
-      //         id: true,
-      //         name: true,
-      //         patient_medication_alerts: {
-      //           select: {
-      //             taken: true,
-      //             alert_time: true,
-      //           },
-      //         },
-      //       },
-      //     },
-      //   },
-      // });
-
       const Results = patientMedications.reduce((acc, patient) => {
         patient.medication.forEach((med) => {
           med.patient_medication_alerts.forEach((alert) => {
@@ -99,17 +75,40 @@ export class ComplianceService {
                 total: 0,
                 taken: 0,
                 not_taken: 0,
+                pending: 0,
+                not_action_taken: 0,
               };
             }
 
             // adding total
             acc[date].total++;
+            switch (alert.taken) {
+              case 'TAKEN':
+                acc[date].taken++;
+                break;
 
-            if (alert.taken === 'TAKEN') {
-              acc[date].taken++;
-            } else {
-              acc[date].not_taken++;
+              case 'NOT_TAKEN':
+                acc[date].not_taken++;
+                break;
+
+              case 'PENDING':
+                acc[date].pending++;
+                break;
+
+              case 'MISSED':
+                acc[date].not_action_taken++;
+                break;
+
+              default:
+                // optional: handle unexpected values
+                acc[date].not_action_taken++;
+                break;
             }
+            // if (alert.taken === 'TAKEN') {
+            //   acc[date].taken++;
+            // } else {
+            //   acc[date].not_taken++;
+            // }
           });
         });
 
