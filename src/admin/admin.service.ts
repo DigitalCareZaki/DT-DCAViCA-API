@@ -312,19 +312,25 @@ export class AdminService {
   }
 
   public async getBranchId(id: string) {
-    return await this.prisma.branch.findFirstOrThrow({
-      where: {
-        users: {
-          some: {
-            id,
+    try {
+      return await this.prisma.branch.findFirstOrThrow({
+        where: {
+          users: {
+            some: {
+              id,
+            },
           },
         },
-      },
 
-      select: {
-        id: true,
-      },
-    });
+        select: {
+          id: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching branch ID:', error);
+      throw new Error('Could not fetch branch ID');
+    }
+
   }
 
   public async getStats(branchId: string) {

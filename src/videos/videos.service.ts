@@ -5,39 +5,56 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { AddVideosDTO } from './dto/add.dto';
 
 import type { VideoPriority, VideoCategory, MeasurementType } from '@prisma/client';
+import { Role } from 'src/auth/enums/role.enum';
 
 @Injectable()
 export class VideosService {
   constructor(private prisma: PrismaService) { }
 
-  public async getAllVideos(organizationId: string, category?: string) {
-    return await this.prisma.videos.findMany({
-      where: {
-        author: {
-          organization_id: organizationId,
-        },
-        ...(category ? { category: category as MeasurementType } : {}),
-      },
-      select: {
-        title: true,
-        description: true,
-        uri: true,
-        category: true,
-        priority: true,
-        author: {
-          select: {
-            first_name: true,
-            middle_name: true,
-            last_name: true,
-            email: true,
+  public async getAllVideos(id: string, role: string, category?: string) {
+    try {
+      const isSuperAdmin = role === Role.SUPERADMIN;
+      const whereCondition: any = isSuperAdmin
+        ? { author: { organization_id: id } }
+        : { branchId: id };
+      if (category) {
+        whereCondition.category = category as MeasurementType;
+      }
+      return await this.prisma.videos.findMany({
+        where: whereCondition,
+        select: {
+          title: true,
+          description: true,
+          uri: true,
+          category: true,
+          priority: true,
+          author: {
+            select: {
+              first_name: true,
+              middle_name: true,
+              last_name: true,
+              email: true,
+            },
           },
+          branch: {
+            select: {
+              name: true,
+              location: true,
+            },
+          },
+          created_at: true,
         },
-        created_at: true,
-      },
-      orderBy: {
-        created_at: 'desc', // Most recent video first
-      },
-    });
+        orderBy: {
+          created_at: 'desc', // Most recent video first
+        },
+      });
+
+    } catch (error) {
+      console.log('Error fetching all videos:', error);
+      throw new Error('Could not fetch videos');
+    }
+
+
   }
   public async getLatestVideo(organizationId: string, category?: string) {
     return await this.prisma.videos.findFirst({
@@ -68,7 +85,7 @@ export class VideosService {
       },
     });
   }
-  public async addVideo(data: AddVideosDTO, userId: string) {
+  public async addVideo(data: AddVideosDTO, userId: string, branchId: string) {
 
     try {
       const video = await this.prisma.videos.create({
@@ -81,6 +98,11 @@ export class VideosService {
           author: {
             connect: {
               id: userId,
+            },
+          },
+          branch: {
+            connect: {
+              id: branchId,
             },
           },
         },

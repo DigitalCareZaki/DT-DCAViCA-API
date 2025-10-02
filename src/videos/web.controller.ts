@@ -15,11 +15,14 @@ import { UserRes } from '@types';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { Role } from 'src/auth/enums/role.enum';
+import { AdminService } from 'src/admin/admin.service';
 
 @UseGuards(JwtGuard)
 @Controller('web/videos')
 export class WebVideosController {
-  constructor(private readonly videosService: VideosService) { }
+  constructor(private readonly videosService: VideosService,
+    private readonly adminService: AdminService
+  ) { }
 
   @Get('/')
   @HttpCode(HttpStatus.OK)
@@ -29,7 +32,14 @@ export class WebVideosController {
   @Get('/all-videos')
   @HttpCode(HttpStatus.OK)
   public async getAllVideos(@GetUser() user: UserRes, @Query('category') category?: string) {
-    return this.videosService.getAllVideos(user.organization_id, category);
+    let branchId: any;
+    if (user.role === Role.ADMIN) {
+      branchId = await this.adminService.getBranchId(user.id);
+    }
+    const targetId =
+      user.role === Role.SUPERADMIN ? user.organization_id : branchId.id;
+    console.log('targetId', targetId);
+    return this.videosService.getAllVideos(targetId, user.role, category);
   }
 
   @Post('/')
@@ -37,6 +47,8 @@ export class WebVideosController {
   @UseGuards(RolesGuard)
   @RequirePermission(Role.ADMIN, Role.SUPERADMIN)
   public async addVideos(@Body() body: AddVideosDTO, @GetUser() user: UserRes) {
-    return this.videosService.addVideo(body, user.id);
+    const branchId = await this.adminService.getBranchId(user.id);
+    console.log(branchId.id);
+    return this.videosService.addVideo(body, user.id, branchId.id);
   }
 }
