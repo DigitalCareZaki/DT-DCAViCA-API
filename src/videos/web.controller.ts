@@ -16,6 +16,7 @@ import { RequirePermission } from 'src/auth/decorators/role.decorator';
 import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { Role } from 'src/auth/enums/role.enum';
 import { AdminService } from 'src/admin/admin.service';
+import { AddSuperadminVideosDTO } from './dto/video.dto';
 
 @UseGuards(JwtGuard)
 @Controller('web/videos')
@@ -45,10 +46,17 @@ export class WebVideosController {
   @Post('/')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(RolesGuard)
-  @RequirePermission(Role.ADMIN, Role.SUPERADMIN)
+  @RequirePermission(Role.ADMIN)
   public async addVideos(@Body() body: AddVideosDTO, @GetUser() user: UserRes) {
     const branchId = await this.adminService.getBranchId(user.id);
     console.log(branchId.id);
     return this.videosService.addVideo(body, user.id, branchId.id);
+  }
+  @Post('/video-superadmin')
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.SUPERADMIN)
+  public async addSuperadminVideos(@Body() body: AddSuperadminVideosDTO, @GetUser() user: UserRes) {
+    return this.videosService.addSuperadminVideos(body, user.id);
   }
 }

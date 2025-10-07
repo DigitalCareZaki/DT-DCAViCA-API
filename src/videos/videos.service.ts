@@ -6,6 +6,7 @@ import { AddVideosDTO } from './dto/add.dto';
 
 import type { VideoPriority, VideoCategory, MeasurementType } from '@prisma/client';
 import { Role } from 'src/auth/enums/role.enum';
+import { AddSuperadminVideosDTO } from './dto/video.dto';
 
 @Injectable()
 export class VideosService {
@@ -103,6 +104,35 @@ export class VideosService {
           branch: {
             connect: {
               id: branchId,
+            },
+          },
+        },
+      });
+      return video;
+
+    } catch (error) {
+      console.log('error', error);
+    }
+
+  }
+  public async addSuperadminVideos(data: AddSuperadminVideosDTO, userId: string) {
+
+    try {
+      const video = await this.prisma.videos.create({
+        data: {
+          title: data.title,
+          description: data.description,
+          uri: data.uri,
+          priority: data.priority as VideoPriority,
+          category: data.category as MeasurementType,
+          author: {
+            connect: {
+              id: userId,
+            },
+          },
+          branch: {
+            connect: {
+              id: data.branch_id,
             },
           },
         },
