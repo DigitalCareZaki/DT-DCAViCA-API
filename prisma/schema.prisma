@@ -113,6 +113,8 @@ model User {
   organization    Organization? @relation(name: "userOrganization", fields: [organization_id], references: [id])
   organization_id String?
 
+  organizationMedicationsAdded OrganizationMedication[] @relation("addedByUser")
+
   user_meta_data      UserMetaData[]
   associated_branches Branch[] @relation("BranchToUser")
 
@@ -484,7 +486,10 @@ model OrganizationMedication {
 
   organization    Organization @relation(name: "organizationMedication", fields: [organization_id], references: [id])
   organization_id String
-
+   
+  addedBy         User?         @relation("addedByUser", fields: [added_by], references: [id])
+  added_by        String?
+  
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

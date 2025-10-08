@@ -334,6 +334,7 @@ export class OrganizationWebController extends OrganizationController {
     return this.getOrganizationService().addOrganizationMedicines(
       organizationId,
       data.names,
+      user.id
     );
   }
 
@@ -347,6 +348,7 @@ export class OrganizationWebController extends OrganizationController {
     return this.getOrganizationService().addOrganizationMedicine(
       organizationId,
       data.name,
+      user.id
     );
   }
 

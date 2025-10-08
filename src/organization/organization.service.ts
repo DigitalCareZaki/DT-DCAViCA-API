@@ -632,6 +632,7 @@ export class OrganizationService {
   public async addOrganizationMedicines(
     organizationId: string,
     names: string[],
+    userId: string
   ) {
 
     const medicine = await this.prisma.organizationMedication.findFirst({
@@ -643,13 +644,14 @@ export class OrganizationService {
       data: names.map((name) => ({
         name,
         organization_id: organizationId,
+        added_by: userId,
       })),
     });
 
     return 'Success';
   }
 
-  public async addOrganizationMedicine(organizationId: string, name: string) {
+  public async addOrganizationMedicine(organizationId: string, name: string, userId) {
     const medicine = await this.prisma.organizationMedication.findFirst({
       where: { name: name },
     });
@@ -659,6 +661,7 @@ export class OrganizationService {
       data: {
         name,
         organization_id: organizationId,
+        added_by: userId,
       },
     });
 
@@ -674,9 +677,18 @@ export class OrganizationService {
         where: {
           organization_id: organizationId,
         },
+
         select: {
           id: true,
           name: true,
+          added_by: true,
+          addedBy: {
+            select: {
+              id: true,
+              first_name: true,
+              email: true,
+            },
+          },
           organization: {
             select: {
               id: true,
@@ -684,10 +696,13 @@ export class OrganizationService {
             },
           },
           created_at: true,
+
         },
+
         orderBy: {
           created_at: 'desc',
         },
+
 
       }),
       this.prisma.organizationMedication.count({
