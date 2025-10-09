@@ -21,19 +21,28 @@ import { TabletDTO, ManageTabletDTO } from './dto';
 
 import type { UserRes } from '@types';
 import type { Tablet } from './types';
+import { AccessoriesDTO } from './dto/accessories.dto';
+import { AdminService } from 'src/admin/admin.service';
+import { Role } from '@prisma/client';
 
 @Controller('web/tablets')
 export class TabletWebController extends TabletController {
-  constructor(tabletService: TabletService) {
+  constructor(tabletService: TabletService, private readonly adminService: AdminService) {
     super(tabletService);
   }
 
   @HttpCode(HttpStatus.OK)
   @Get()
   public async getAllTablets(@Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes, @Query('search') search: string) {
+    let branchId: any;
+    if (user.role === Role.ADMIN) {
+      branchId = await this.adminService.getBranchId(user.id);
+    }
+    const targetId =
+      user.role === Role.SUPERADMIN ? user.organization_id : branchId.id;
+    console.log('targetId', targetId);
     return this.getTabletService().getAllTablets(
-      user.id,
-      user.organization_id,
+      targetId,
       user.role,
       search,
       +page,
@@ -75,8 +84,24 @@ export class TabletWebController extends TabletController {
   public async createTablet(
     @GetUser() user: UserRes,
     @Body() data: TabletDTO,
-  ): Promise<Tablet> {
+  ) {
+
+    const branchId = await this.adminService.getBranchId(user.id);
+    console.log(branchId.id);
     return this.getTabletService().createTablet(
+      user.id,
+      user.organization_id,
+      data,
+      branchId.id,
+    );
+  }
+  @HttpCode(HttpStatus.CREATED)
+  @Post('/accessories-superadmin')
+  public async createSuperAdminTablet(
+    @GetUser() user: UserRes,
+    @Body() data: AccessoriesDTO,
+  ) {
+    return this.getTabletService().createSuperAdminTablet(
       user.id,
       user.organization_id,
       data,

@@ -297,6 +297,11 @@ model Tablet {
   created_by User   @relation(references: [id], fields: [user_id], onDelete: Cascade)
   user_id    String
 
+  branchId  String? 
+  branch    Branch?   @relation(fields: [branchId], references: [id])
+
+  
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -536,6 +541,7 @@ model Branch {
   users User[] @relation("BranchToUser")
   departments Department[] @relation("branchDepartments")
   videos Videos[]
+  tablet Tablet[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

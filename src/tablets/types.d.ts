@@ -13,6 +13,7 @@ export type Tablet = {
     last_name: string;
     email: string;
   };
+
   patient_tablets: PatientTablet[];
   created_at: Date;
   updated_at: Date | null;

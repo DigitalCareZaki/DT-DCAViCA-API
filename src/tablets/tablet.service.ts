@@ -4,317 +4,448 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 import { TabletDTO, ManageTabletDTO } from './dto';
 
-import type { MeasurementType } from '@prisma/client';
+import { Role, type MeasurementType } from '@prisma/client';
 import type { UserRole } from '@types';
 import type { Tablet } from './types';
+import { AccessoriesDTO } from './dto/accessories.dto';
 
 @Injectable()
 export class TabletService {
   constructor(private prisma: PrismaService) { }
 
   public async getAllTablets(
-    userId: string,
-    organizationId: string,
+    targetId: string,
     role: UserRole,
     search: string,
     page: number = 1,
     limit: number = 10
   ) {
-    if (role === 'SUPERADMIN') {
-      const skip = (page - 1) * limit;
-      const [tablets, totalItems] = await this.prisma.$transaction([
-        this.prisma.tablet.findMany({
-          skip,
-          take: limit,
-          where: {
-            created_by: {
-              organization: {
-                id: organizationId,
+
+    const isSuperAdmin = role === Role.SUPERADMIN;
+    const whereCondition: any = isSuperAdmin
+      ? search
+        ? {
+          OR: [
+            {
+              title: {
+                contains: search,
+                mode: 'insensitive',
               },
             },
-            OR: [
-              {
-                title: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
-              {
-                serial_number: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              }
-            ],
-          },
-          select: {
-            id: true,
-            title: true,
-            serial_number: true,
-            uri: true,
-            category: true,
-            created_by: {
-              select: {
-                id: true,
-                first_name: true,
-                middle_name: true,
-                last_name: true,
-                email: true,
+            {
+              serial_number: {
+                contains: search,
+                mode: 'insensitive',
               },
             },
-            patient_tablets: {
-              select: {
-                issued_to: {
-                  select: {
-                    user: {
-                      select: {
-                        id: true,
-                        first_name: true,
-                        middle_name: true,
-                        last_name: true,
-                        email: true,
-                      },
-                    },
-                  },
-                },
-                issued_by: {
-                  select: {
-                    id: true,
-                    first_name: true,
-                    middle_name: true,
-                    last_name: true,
-                    email: true,
-                  },
-                },
-                issued_at: true,
-              },
-            },
-            created_at: true,
-            updated_at: true,
-          },
-          orderBy: {
-            created_at: 'desc',
-          },
-        }),
-        this.prisma.tablet.count({
-          where: {
-            created_by: {
-              organization: {
-                id: organizationId,
-              },
-            },
-            OR: [
-              {
-                title: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
-              {
-                serial_number: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              }
-            ],
-          },
-        }),
-      ]);
-      const totalPages = Math.ceil(totalItems / limit);
-      const hasNextPage = page < totalPages;
-      const hasPrevPage = page > 1;
-      return {
-        data: tablets,
-        pagination: {
-          totalItems,
-          perPage: limit,
-          currentPage: page,
-          totalPages,
-          hasNextPage,
-          hasPrevPage,
-          nextPage: hasNextPage ? page + 1 : null,
-          prevPage: hasPrevPage ? page - 1 : null,
-        },
-      };
-    } else {
-      // For ADMIN, DOCTOR and NURSE
-      const res = await this.prisma.user.findUniqueOrThrow({
-        where: { id: userId },
+          ],
+        }
+        : {}
+      : { branchId: targetId };
+
+    const skip = (page - 1) * limit;
+    const [tablets, totalItems] = await this.prisma.$transaction([
+      this.prisma.tablet.findMany({
+        skip,
+        take: limit,
+        where: whereCondition,
         select: {
-          associated_branches: {
-            select: {
-              id: true,
-            },
-          },
-          organization: {
-            select: {
-              id: true,
-            },
-          },
-        },
-      });
-      const skip = (page - 1) * limit;
-      const [tablets, totalItems] = await this.prisma.$transaction([
-        this.prisma.tablet.findMany({
-          skip,
-          take: limit,
-          where: {
-            AND: [
-              {
-                OR: [
-                  {
-                    created_by: {
-                      associated_branches: {
-                        some: {
-                          id: res.associated_branches[0]?.id,
-                        },
-                      },
-                    },
-                  },
-                  {
-                    created_by: {
-                      organization_id: res.organization.id,
-                    },
-                  },
-                ],
-              },
-              {
-                OR: [
-                  {
-                    title: {
-                      contains: search,
-                      mode: 'insensitive',
-                    },
-                  },
-                  {
-                    serial_number: {
-                      contains: search,
-                      mode: 'insensitive',
-                    },
+          id: true,
+          title: true,
+          serial_number: true,
+          uri: true,
+          category: true,
 
-                  }
-                ],
-              },
-            ],
-          },
-          select: {
-            id: true,
-            title: true,
-            serial_number: true,
-            uri: true,
-            category: true,
-            created_by: {
-              select: {
-                id: true,
-                first_name: true,
-                middle_name: true,
-                last_name: true,
-                email: true,
-              },
+          created_by: {
+            select: {
+              id: true,
+              first_name: true,
+              middle_name: true,
+              last_name: true,
+              email: true,
             },
-            patient_tablets: {
-              select: {
-                issued_to: {
-                  select: {
-                    user: {
-                      select: {
-                        id: true,
-                        first_name: true,
-                        middle_name: true,
-                        last_name: true,
-                        email: true,
-                      },
+          },
+          branch: {
+            select: {
+              id: true,
+              name: true,
+              location: true,
+            },
+          },
+          patient_tablets: {
+            select: {
+              issued_to: {
+                select: {
+                  user: {
+                    select: {
+                      id: true,
+                      first_name: true,
+                      middle_name: true,
+                      last_name: true,
+                      email: true,
                     },
                   },
                 },
-                issued_by: {
-                  select: {
-                    id: true,
-                    first_name: true,
-                    middle_name: true,
-                    last_name: true,
-                    email: true,
-                  },
+              },
+              issued_by: {
+                select: {
+                  id: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                  email: true,
                 },
-                issued_at: true,
               },
+              issued_at: true,
             },
-            created_at: true,
-            updated_at: true,
           },
-          orderBy: {
-            created_at: 'desc',
-          },
-        }),
-        this.prisma.tablet.count({
-          where: {
-            AND: [
-              {
-                OR: [
-                  {
-                    created_by: {
-                      associated_branches: {
-                        some: {
-                          id: res.associated_branches[0]?.id,
-                        },
-                      },
-                    },
-                  },
-                  {
-                    created_by: {
-                      organization_id: res.organization.id,
-                    },
-                  },
-                ],
-              },
-              {
-                OR: [
-                  {
-                    title: {
-                      contains: search,
-                      mode: 'insensitive',
-                    },
-                  },
-                  {
-                    serial_number: {
-                      contains: search,
-                      mode: 'insensitive',
-                    },
-                  }
-                ],
-              },
-            ],
-          },
-        }),
-      ]);
-
-
-      const totalPages = Math.ceil(totalItems / limit);
-      const hasNextPage = page < totalPages;
-      const hasPrevPage = page > 1;
-      const enrichedtablet = tablets.map((tablet) => {
-        const isAssigned = tablet.patient_tablets && tablet.patient_tablets.length > 0;
-        return {
-          ...tablet,
-          assigned: isAssigned,
-        };
-      });
-
-      return {
-        data: enrichedtablet,
-        pagination: {
-          totalItems,
-          perPage: limit,
-          currentPage: page,
-          totalPages,
-          hasNextPage,
-          hasPrevPage,
-          nextPage: hasNextPage ? page + 1 : null,
-          prevPage: hasPrevPage ? page - 1 : null,
+          created_at: true,
+          updated_at: true,
         },
-      };
-    }
+        orderBy: {
+          created_at: 'desc',
+        },
+      }),
+      this.prisma.tablet.count({
+        where: whereCondition,
+      }),
+    ]);
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+    return {
+      data: tablets,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+      },
+    };
+
   }
+  // public async getAllTablets(
+  //   userId: string,
+  //   organizationId: string,
+  //   role: UserRole,
+  //   search: string,
+  //   page: number = 1,
+  //   limit: number = 10
+  // ) {
+  //   if (role === 'SUPERADMIN') {
+  //     const skip = (page - 1) * limit;
+  //     const [tablets, totalItems] = await this.prisma.$transaction([
+  //       this.prisma.tablet.findMany({
+  //         skip,
+  //         take: limit,
+  //         where: {
+  //           created_by: {
+  //             organization: {
+  //               id: organizationId,
+  //             },
+  //           },
+  //           OR: [
+  //             {
+  //               title: {
+  //                 contains: search,
+  //                 mode: 'insensitive',
+  //               },
+  //             },
+  //             {
+  //               serial_number: {
+  //                 contains: search,
+  //                 mode: 'insensitive',
+  //               },
+  //             }
+  //           ],
+  //         },
+  //         select: {
+  //           id: true,
+  //           title: true,
+  //           serial_number: true,
+  //           uri: true,
+  //           category: true,
+
+  //           created_by: {
+  //             select: {
+  //               id: true,
+  //               first_name: true,
+  //               middle_name: true,
+  //               last_name: true,
+  //               email: true,
+  //             },
+  //           },
+  //           branch: {
+  //             select: {
+  //               id: true,
+  //               name: true,
+  //               location: true,
+  //             },
+  //           },
+  //           patient_tablets: {
+  //             select: {
+  //               issued_to: {
+  //                 select: {
+  //                   user: {
+  //                     select: {
+  //                       id: true,
+  //                       first_name: true,
+  //                       middle_name: true,
+  //                       last_name: true,
+  //                       email: true,
+  //                     },
+  //                   },
+  //                 },
+  //               },
+  //               issued_by: {
+  //                 select: {
+  //                   id: true,
+  //                   first_name: true,
+  //                   middle_name: true,
+  //                   last_name: true,
+  //                   email: true,
+  //                 },
+  //               },
+  //               issued_at: true,
+  //             },
+  //           },
+  //           created_at: true,
+  //           updated_at: true,
+  //         },
+  //         orderBy: {
+  //           created_at: 'desc',
+  //         },
+  //       }),
+  //       this.prisma.tablet.count({
+  //         where: {
+  //           created_by: {
+  //             organization: {
+  //               id: organizationId,
+  //             },
+  //           },
+  //           OR: [
+  //             {
+  //               title: {
+  //                 contains: search,
+  //                 mode: 'insensitive',
+  //               },
+  //             },
+  //             {
+  //               serial_number: {
+  //                 contains: search,
+  //                 mode: 'insensitive',
+  //               },
+  //             }
+  //           ],
+  //         },
+  //       }),
+  //     ]);
+  //     const totalPages = Math.ceil(totalItems / limit);
+  //     const hasNextPage = page < totalPages;
+  //     const hasPrevPage = page > 1;
+  //     return {
+  //       data: tablets,
+  //       pagination: {
+  //         totalItems,
+  //         perPage: limit,
+  //         currentPage: page,
+  //         totalPages,
+  //         hasNextPage,
+  //         hasPrevPage,
+  //         nextPage: hasNextPage ? page + 1 : null,
+  //         prevPage: hasPrevPage ? page - 1 : null,
+  //       },
+  //     };
+  //   } else {
+  //     // For ADMIN, DOCTOR and NURSE
+  //     const res = await this.prisma.user.findUniqueOrThrow({
+  //       where: { id: userId },
+  //       select: {
+  //         associated_branches: {
+  //           select: {
+  //             id: true,
+  //           },
+  //         },
+  //         organization: {
+  //           select: {
+  //             id: true,
+  //           },
+  //         },
+  //       },
+  //     });
+  //     const skip = (page - 1) * limit;
+  //     const [tablets, totalItems] = await this.prisma.$transaction([
+  //       this.prisma.tablet.findMany({
+  //         skip,
+  //         take: limit,
+  //         where: {
+  //           AND: [
+  //             {
+  //               OR: [
+  //                 {
+  //                   created_by: {
+  //                     associated_branches: {
+  //                       some: {
+  //                         id: res.associated_branches[0]?.id,
+  //                       },
+  //                     },
+  //                   },
+  //                 },
+  //                 {
+  //                   created_by: {
+  //                     organization_id: res.organization.id,
+  //                   },
+  //                 },
+  //               ],
+  //             },
+  //             {
+  //               OR: [
+  //                 {
+  //                   title: {
+  //                     contains: search,
+  //                     mode: 'insensitive',
+  //                   },
+  //                 },
+  //                 {
+  //                   serial_number: {
+  //                     contains: search,
+  //                     mode: 'insensitive',
+  //                   },
+
+  //                 }
+  //               ],
+  //             },
+  //           ],
+  //         },
+  //         select: {
+  //           id: true,
+  //           title: true,
+  //           serial_number: true,
+  //           uri: true,
+  //           category: true,
+  //           created_by: {
+  //             select: {
+  //               id: true,
+  //               first_name: true,
+  //               middle_name: true,
+  //               last_name: true,
+  //               email: true,
+  //             },
+  //           },
+  //           branch: {
+  //             select: {
+  //               id: true,
+  //               name: true,
+  //               location: true,
+  //             },
+  //           },
+  //           patient_tablets: {
+  //             select: {
+  //               issued_to: {
+  //                 select: {
+  //                   user: {
+  //                     select: {
+  //                       id: true,
+  //                       first_name: true,
+  //                       middle_name: true,
+  //                       last_name: true,
+  //                       email: true,
+  //                     },
+  //                   },
+  //                 },
+  //               },
+  //               issued_by: {
+  //                 select: {
+  //                   id: true,
+  //                   first_name: true,
+  //                   middle_name: true,
+  //                   last_name: true,
+  //                   email: true,
+  //                 },
+  //               },
+  //               issued_at: true,
+  //             },
+  //           },
+  //           created_at: true,
+  //           updated_at: true,
+  //         },
+  //         orderBy: {
+  //           created_at: 'desc',
+  //         },
+  //       }),
+  //       this.prisma.tablet.count({
+  //         where: {
+  //           AND: [
+  //             {
+  //               OR: [
+  //                 {
+  //                   created_by: {
+  //                     associated_branches: {
+  //                       some: {
+  //                         id: res.associated_branches[0]?.id,
+  //                       },
+  //                     },
+  //                   },
+  //                 },
+  //                 {
+  //                   created_by: {
+  //                     organization_id: res.organization.id,
+  //                   },
+  //                 },
+  //               ],
+  //             },
+  //             {
+  //               OR: [
+  //                 {
+  //                   title: {
+  //                     contains: search,
+  //                     mode: 'insensitive',
+  //                   },
+  //                 },
+  //                 {
+  //                   serial_number: {
+  //                     contains: search,
+  //                     mode: 'insensitive',
+  //                   },
+  //                 }
+  //               ],
+  //             },
+  //           ],
+  //         },
+  //       }),
+  //     ]);
+
+
+  //     const totalPages = Math.ceil(totalItems / limit);
+  //     const hasNextPage = page < totalPages;
+  //     const hasPrevPage = page > 1;
+  //     const enrichedtablet = tablets.map((tablet) => {
+  //       const isAssigned = tablet.patient_tablets && tablet.patient_tablets.length > 0;
+  //       return {
+  //         ...tablet,
+  //         assigned: isAssigned,
+  //       };
+  //     });
+
+  //     return {
+  //       data: enrichedtablet,
+  //       pagination: {
+  //         totalItems,
+  //         perPage: limit,
+  //         currentPage: page,
+  //         totalPages,
+  //         hasNextPage,
+  //         hasPrevPage,
+  //         nextPage: hasNextPage ? page + 1 : null,
+  //         prevPage: hasPrevPage ? page - 1 : null,
+  //       },
+  //     };
+  //   }
+  // }
 
   public async getSingleTablet(
     tabletId: string,
@@ -659,7 +790,7 @@ export class TabletService {
     }
   }
 
-  public async createTablet(userId, organizationId: string, data: TabletDTO) {
+  public async createTablet(userId, organizationId: string, data: TabletDTO, branchId: string) {
     // check if tablet does not already exist in organization
     const tabletAlreadyExists = await this.prisma.tablet.findFirst({
       where: {
@@ -696,6 +827,11 @@ export class TabletService {
             id: userId,
           },
         },
+        branch: {
+          connect: {
+            id: branchId,
+          },
+        },
       },
       select: {
         id: true,
@@ -710,6 +846,113 @@ export class TabletService {
             middle_name: true,
             last_name: true,
             email: true,
+          },
+        },
+        branch: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
+          },
+        },
+        patient_tablets: {
+          select: {
+            issued_to: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+            issued_by: {
+              select: {
+                id: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+                email: true,
+              },
+            },
+            issued_at: true,
+          },
+        },
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    return tablet;
+  }
+  public async createSuperAdminTablet(userId, organizationId: string, data: AccessoriesDTO) {
+    // check if tablet does not already exist in organization
+    const tabletAlreadyExists = await this.prisma.tablet.findFirst({
+      where: {
+        AND: [
+          {
+            serial_number: data.serial_number,
+          },
+          {
+            created_by: {
+              organization: {
+                id: organizationId,
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (tabletAlreadyExists) {
+      throw new BadRequestException('Accessory already exists in your organization.');
+    }
+
+    const tablet = await this.prisma.tablet.create({
+      data: {
+        title: data.title,
+        serial_number: data.serial_number,
+        uri: data.uri,
+        category: data.category as MeasurementType,
+        created_by: {
+          connect: {
+            id: userId,
+          },
+        },
+        branch: {
+          connect: {
+            id: data.branch_id,
+          },
+        },
+
+      },
+      select: {
+        id: true,
+        title: true,
+        serial_number: true,
+        uri: true,
+        category: true,
+        created_by: {
+          select: {
+            id: true,
+            first_name: true,
+            middle_name: true,
+            last_name: true,
+            email: true,
+          },
+        },
+        branch: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
           },
         },
         patient_tablets: {
