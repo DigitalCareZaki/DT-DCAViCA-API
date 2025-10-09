@@ -20,11 +20,13 @@ import { DeviceDTO, ManageDeviceDTO, PatientDeviceDTO } from './dto';
 
 import type { HealthRes, UserRes } from '@types';
 import type { Device } from './types';
-import { Measurement, MeasurementType } from '@prisma/client';
+import { Measurement, MeasurementType, Role } from '@prisma/client';
+import { AdminService } from 'src/admin/admin.service';
+import { DeviceSuperAdminDTO } from './dto/deviceSuperadmin.dto';
 
 @Controller('web/devices')
 export class DeviceWebController extends DeviceController {
-  constructor(deviceService: DeviceService) {
+  constructor(deviceService: DeviceService, private readonly adminService: AdminService) {
     super(deviceService);
   }
 
@@ -41,9 +43,15 @@ export class DeviceWebController extends DeviceController {
   @Get()
   public async getAllDevices(@Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes,
     @Query('search') search: string = '',) {
+    let branchId: any;
+    if (user.role === Role.ADMIN) {
+      branchId = await this.adminService.getBranchId(user.id);
+    }
+    const targetId =
+      user.role === Role.SUPERADMIN ? user.organization_id : branchId.id;
+    console.log('targetId', targetId);
     return this.getDeviceService().getAllDevices(
-      user.id,
-      user.organization_id,
+      targetId,
       user.role,
       search,
       +page,
@@ -97,10 +105,13 @@ export class DeviceWebController extends DeviceController {
     @GetUser() user: UserRes,
     @Body() data: DeviceDTO,
   ) {
+    const branchId = await this.adminService.getBranchId(user.id);
+    console.log(branchId.id);
     return this.getDeviceService().createDevice(
       user.id,
       user.organization_id,
       data,
+      branchId.id,
     );
   }
 
@@ -110,10 +121,26 @@ export class DeviceWebController extends DeviceController {
     @GetUser() user: UserRes,
     @Body() data: DeviceDTO,
   ) {
+    const branchId = await this.adminService.getBranchId(user.id);
+    console.log(branchId.id);
     return this.getDeviceService().createDevice(
       user.id,
       user.organization_id,
       data,
+      branchId.id,
+    );
+  }
+  @HttpCode(HttpStatus.CREATED)
+  @Post('/device-superadmin')
+  public async createSuperAdminDevice(
+    @GetUser() user: UserRes,
+    @Body() data: DeviceSuperAdminDTO,
+  ) {
+
+    return this.getDeviceService().createSuperAdminDevice(
+      user.id,
+      user.organization_id,
+      data
     );
   }
 

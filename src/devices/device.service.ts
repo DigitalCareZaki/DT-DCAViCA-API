@@ -4,320 +4,132 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 import { DeviceDTO, ManageDeviceDTO, PatientDeviceDTO } from './dto';
 
-import type { MeasurementType } from '@prisma/client';
+import { Role, type MeasurementType } from '@prisma/client';
 import type { UserRole } from '@types';
 import type { Device } from './types';
 import puppeteer from 'puppeteer';
+import { DeviceSuperAdminDTO } from './dto/deviceSuperadmin.dto';
 @Injectable()
 export class DeviceService {
   constructor(private prisma: PrismaService) { }
 
   public async getAllDevices(
-    userId: string,
-    organizationId: string,
+    targetId: string,
     role: UserRole,
     search: string,
     page: number = 1,
     limit: number = 10
   ) {
-    console.log('Fetching all devices with search:', search);
-    if (role === 'SUPERADMIN') {
-      const skip = (page - 1) * limit;
-      const [devices, totalItems] = await this.prisma.$transaction([
-        this.prisma.device.findMany({
-          skip,
-          take: limit,
-          where: {
-            created_by: {
-              organization: {
-                id: organizationId,
+    const isSuperAdmin = role === Role.SUPERADMIN;
+    const whereCondition: any = isSuperAdmin
+      ? search
+        ? {
+          OR: [
+            {
+              title: {
+                contains: search,
+                mode: 'insensitive',
               },
             },
-            OR: [
-              {
-                title: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
+            {
+              description: {
+                contains: search,
+                mode: 'insensitive',
               },
-              {
-                description: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
-            ],
-          },
+            },
+          ],
+        }
+        : {}
+      : { branchId: targetId };
 
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            serial_number: true,
-            uri: true,
-            category: true,
-            created_by: {
-              select: {
-                id: true,
-                first_name: true,
-                middle_name: true,
-                last_name: true,
-                email: true,
-              },
-            },
-            patient_devices: {
-              select: {
-                issued_to: {
-                  select: {
-                    user: {
-                      select: {
-                        id: true,
-                        first_name: true,
-                        middle_name: true,
-                        last_name: true,
-                        email: true,
-                      },
-                    },
-                  },
-                },
-                issued_by: {
-                  select: {
-                    id: true,
-                    first_name: true,
-                    middle_name: true,
-                    last_name: true,
-                    email: true,
-                  },
-                },
-                issued_at: true,
-              },
-            },
-            created_at: true,
-            updated_at: true,
-          },
-          orderBy: {
-            created_at: 'desc',
-          },
-        }),
-        this.prisma.device.count({
-          where: {
-            created_by: {
-              organization: {
-                id: organizationId,
-              },
-            },
-            OR: [
-              {
-                title: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
-              {
-                description: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
-            ],
-          },
-        }),
-      ]);
-      const totalPages = Math.ceil(totalItems / limit);
-      const hasNextPage = page < totalPages;
-      const hasPrevPage = page > 1;
-      return {
-        data: devices,
-        pagination: {
-          totalItems,
-          perPage: limit,
-          currentPage: page,
-          totalPages,
-          hasNextPage,
-          hasPrevPage,
-          nextPage: hasNextPage ? page + 1 : null,
-          prevPage: hasPrevPage ? page - 1 : null,
-        },
-      };
+    const skip = (page - 1) * limit;
+    const [devices, totalItems] = await this.prisma.$transaction([
+      this.prisma.device.findMany({
+        skip,
+        take: limit,
+        where: whereCondition,
 
-    } else {
-      // For ADMIN, DOCTOR and NURSE
-      const res = await this.prisma.user.findUniqueOrThrow({
-
-        where: { id: userId },
         select: {
-          associated_branches: {
+          id: true,
+          title: true,
+          description: true,
+          serial_number: true,
+          uri: true,
+          category: true,
+          created_by: {
             select: {
               id: true,
+              first_name: true,
+              middle_name: true,
+              last_name: true,
+              email: true,
             },
           },
-          organization: {
+          branch: {
             select: {
               id: true,
+              name: true,
+              location: true,
             },
           },
-        },
-      });
-      const skip = (page - 1) * limit;
-      const [devices, totalItems] = await this.prisma.$transaction([
-        this.prisma.device.findMany({
-          skip,
-          take: limit,
-          where: {
-            AND: [
-              {
-                OR: [
-                  {
-                    created_by: {
-                      associated_branches: {
-                        some: {
-                          id: res.associated_branches[0]?.id,
-                        },
-                      },
-                    },
-                  },
-                  {
-                    created_by: {
-                      organization_id: res.organization.id,
-                    },
-                  },
-                ],
-              },
-              {
-                OR: [
-                  {
-                    title: {
-                      contains: search,
-                      mode: 'insensitive',
-                    },
-                  },
-                  {
-                    description: {
-                      contains: search,
-                      mode: 'insensitive',
-                    },
-                  },
-                ],
-              },
-            ],
-          },
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            serial_number: true,
-            uri: true,
-            category: true,
-            created_by: {
-              select: {
-                id: true,
-                first_name: true,
-                middle_name: true,
-                last_name: true,
-                email: true,
-              },
-            },
-            patient_devices: {
-              select: {
-                issued_to: {
-                  select: {
-                    user: {
-                      select: {
-                        id: true,
-                        first_name: true,
-                        middle_name: true,
-                        last_name: true,
-                        email: true,
-                      },
+          patient_devices: {
+            select: {
+              issued_to: {
+                select: {
+                  user: {
+                    select: {
+                      id: true,
+                      first_name: true,
+                      middle_name: true,
+                      last_name: true,
+                      email: true,
                     },
                   },
                 },
-                issued_by: {
-                  select: {
-                    id: true,
-                    first_name: true,
-                    middle_name: true,
-                    last_name: true,
-                    email: true,
-                  },
+              },
+              issued_by: {
+                select: {
+                  id: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                  email: true,
                 },
-                issued_at: true,
               },
+              issued_at: true,
             },
-            created_at: true,
-            updated_at: true,
           },
-          orderBy: {
-            created_at: 'desc',
-          },
-        }),
-        this.prisma.device.count({
-          where: {
-            AND: [
-              {
-                OR: [
-                  {
-                    created_by: {
-                      associated_branches: {
-                        some: {
-                          id: res.associated_branches[0]?.id,
-                        },
-                      },
-                    },
-                  },
-                  {
-                    created_by: {
-                      organization_id: res.organization.id,
-                    },
-                  },
-                ],
-              },
-              {
-                OR: [
-                  {
-                    title: {
-                      contains: search,
-                      mode: 'insensitive',
-                    },
-                  },
-                  {
-                    description: {
-                      contains: search,
-                      mode: 'insensitive',
-                    },
-                  },
-                ],
-              },
-            ],
-          },
-        }),
-      ]);
-
-      const totalPages = Math.ceil(totalItems / limit);
-      const hasNextPage = page < totalPages;
-      const hasPrevPage = page > 1;
-      const enrichedDevices = devices.map((device) => {
-        const isAssigned = device.patient_devices && device.patient_devices.length > 0;
-        return {
-          ...device,
-          assigned: isAssigned,
-        };
-      });
-
-      return {
-        data: enrichedDevices,
-        pagination: {
-          totalItems,
-          perPage: limit,
-          currentPage: page,
-          totalPages,
-          hasNextPage,
-          hasPrevPage,
-          nextPage: hasNextPage ? page + 1 : null,
-          prevPage: hasPrevPage ? page - 1 : null,
+          created_at: true,
+          updated_at: true,
         },
-      };
-    }
+        orderBy: {
+          created_at: 'desc',
+        },
+      }),
+      this.prisma.device.count({
+        where: whereCondition
+      }),
+    ]);
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+    return {
+      data: devices,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+      },
+    };
+
+
+
+
 
 
   }
@@ -704,7 +516,7 @@ export class DeviceService {
     }
   }
 
-  public async createDevice(userId, organizationId: string, data: DeviceDTO) {
+  public async createDevice(userId, organizationId: string, data: DeviceDTO, branchId: string) {
     const vlDevice = {
       id: data.serial_number,
       serial_number: data.serial_number,
@@ -752,6 +564,122 @@ export class DeviceService {
           created_by: {
             connect: {
               id: userId,
+            },
+          },
+          branch: {
+            connect: {
+              id: branchId,
+            },
+          },
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          serial_number: true,
+          uri: true,
+          category: true,
+          created_by: {
+            select: {
+              id: true,
+              first_name: true,
+              middle_name: true,
+              last_name: true,
+              email: true,
+            },
+          },
+          patient_devices: {
+            select: {
+              issued_to: {
+                select: {
+                  user: {
+                    select: {
+                      id: true,
+                      first_name: true,
+                      middle_name: true,
+                      last_name: true,
+                      email: true,
+                    },
+                  },
+                },
+              },
+              issued_by: {
+                select: {
+                  id: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                  email: true,
+                },
+              },
+              issued_at: true,
+            },
+          },
+          created_at: true,
+          updated_at: true,
+        },
+      });
+
+      return device;
+    } else {
+
+      return false;
+    }
+  }
+
+  public async createSuperAdminDevice(userId, organizationId: string, data: DeviceSuperAdminDTO) {
+    const vlDevice = {
+      id: data.serial_number,
+      serial_number: data.serial_number,
+      category: data.category as MeasurementType,
+      site: "Pakistan"
+
+    };
+
+    const deviceAlreadyExists = await this.prisma.device.findFirst({
+      where: {
+        AND: [
+          {
+            serial_number: data.serial_number,
+          },
+          {
+            created_by: {
+              organization: {
+                id: organizationId,
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (deviceAlreadyExists) {
+
+      throw new BadRequestException('Device already exists in your organization.');
+
+    }
+    const result = await this.vlDevice(vlDevice); // will return true or false
+    console.log('device add on VivaLink ===========>>>', result);
+    if (result) {
+
+      const device = await this.prisma.device.create({
+        data: {
+          title: data.title,
+          description: data.description,
+          serial_number: data.serial_number,
+          uri: data.uri,
+          category: data.category as MeasurementType,
+          created_by: {
+            connect: {
+              id: userId,
+            },
+          },
+          branch: {
+            connect: {
+              id: data.branch_id,
             },
           },
         },

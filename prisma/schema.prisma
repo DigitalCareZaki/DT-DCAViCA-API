@@ -257,6 +257,9 @@ model Device {
   created_by User   @relation(references: [id], fields: [user_id], onDelete: Cascade)
   user_id    String
 
+  branchId  String? 
+  branch    Branch?   @relation(fields: [branchId], references: [id])
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -542,6 +545,7 @@ model Branch {
   departments Department[] @relation("branchDepartments")
   videos Videos[]
   tablet Tablet[]
+  device Device[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
