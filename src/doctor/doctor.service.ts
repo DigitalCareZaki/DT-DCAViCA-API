@@ -417,15 +417,25 @@ export class DoctorService {
   }
   public async getPatientsByDoctors(
 
-    doctorId: string,
+    userId: string,
 
   ) {
 
-    console.log(doctorId, 'doctorId in service');
+    const doctor = await this.prisma.doctor.findFirst({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+    });
+
+    if (doctor?.id === undefined) {
+      throw new BadRequestException('Doctor not found');
+    }
     return await this.prisma.patient.findMany({
       where: {
         doctors: {
-          some: { id: doctorId },
+          some: { id: doctor.id },
         },
       },
       select: {
