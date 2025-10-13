@@ -506,14 +506,14 @@ export class PatientService {
         where: {
           patient: { user_id: userId },
           end_date: { gte: startOfDay },
-          patient_medication_alerts: {
-            some: {
-              alert_time: {
-                gte: startOfDay,
-                lt: endOfDay,
-              },
-            },
-          },
+          // patient_medication_alerts: {
+          //   some: {
+          //     alert_time: {
+          //       gte: startOfDay,
+          //       lt: endOfDay,
+          //     },
+          //   },
+          // },
         },
         select: {
           id: true,
