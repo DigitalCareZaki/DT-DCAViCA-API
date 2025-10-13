@@ -155,8 +155,8 @@ export class DoctorWebController extends DoctorController {
   }
   @HttpCode(HttpStatus.OK)
   @Get('/patientsbydoctor')
-  public async getPatientsByDoctors(@Query('userId') userId: string) {
-    return this.getDoctorService().getPatientsByDoctors(userId);
+  public async getPatientsByDoctors(@Query('doctorId') doctorId: string) {
+    return this.getDoctorService().getPatientsByDoctors(doctorId);
   }
   @HttpCode(HttpStatus.OK)
   @Get('/speciality')
