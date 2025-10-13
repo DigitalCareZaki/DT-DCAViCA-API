@@ -415,7 +415,47 @@ export class DoctorService {
       message: 'Contact Deleted',
     };
   }
+  public async getPatientsByDoctors(
 
+    doctorId: string,
+
+  ) {
+
+    console.log(doctorId, 'doctorId in service');
+    return await this.prisma.patient.findMany({
+      where: {
+        doctors: {
+          some: { id: doctorId },
+        },
+      },
+      select: {
+        id: true,
+        emr: true,
+        weight: true,
+        height: true,
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            middle_name: true,
+            last_name: true,
+            dob: true,
+            uri: true,
+            role: true,
+            gender: true,
+            title: true,
+            email: true,
+            phone_number: true,
+            username: true,
+            created_at: true,
+            updated_at: true,
+          },
+        },
+        created_at: true,
+        updated_at: true,
+      },
+    });
+  }
   public async getPatientDoctors(
     id: string,
     doctorId: string,

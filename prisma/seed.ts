@@ -526,13 +526,14 @@ async function createNurse() {
   const department = await prisma.department.findFirstOrThrow({
     orderBy: { created_at: 'desc' },
   });
-
   await prisma.nurse.create({
     data: {
       user_id: user.id,
       npi_number: 'AGH-3159',
       employee_id: 'AGH-311',
-      department_id: department.id,
+      departments: {
+        connect: [{ id: department.id }],
+      },
     },
   });
 
