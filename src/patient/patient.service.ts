@@ -488,13 +488,16 @@ export class PatientService {
   }
 
   public async getAllPatientMedicationAlertsForToday(userId: string, page: number, limit: number) {
+    console.log('Fetching medication alerts for user:', userId, 'Page:', page, 'Limit:', limit);
     const skip = (page - 1) * limit;
     const take = limit;
-    const date = new Date();
-    const today = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setDate(endOfDay.getDate() + 1);
 
-    const tomorrow = new Date(today);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    console.log('Local startOfDay:', startOfDay);
+    console.log('Local endOfDay:', endOfDay);
 
     const [data, totalItems] = await this.prisma.$transaction([
       this.prisma.medication.findMany({
@@ -502,35 +505,25 @@ export class PatientService {
         take,
         where: {
           patient: { user_id: userId },
-          end_date: { gte: today },
+          end_date: { gte: startOfDay },
           patient_medication_alerts: {
             some: {
-              alert_time: { gte: today, lte: tomorrow },
+              alert_time: {
+                gte: startOfDay,
+                lt: endOfDay,
+              },
             },
           },
         },
         select: {
           id: true,
           name: true,
-          start_date: true,
-          end_date: true,
-          time: true,
-          dosage: true,
-          frequency: true,
-          unit: true,
-          created_at: true,
-          updated_at: true,
           patient_medication_alerts: {
             where: {
               alert_time: {
-                gte: today,
-                lte: tomorrow,
+                gte: startOfDay,
+                lt: endOfDay,
               },
-            },
-            select: {
-              id: true,
-              alert_time: true,
-              taken: true,
             },
           },
         },
@@ -538,18 +531,78 @@ export class PatientService {
       this.prisma.medication.count({
         where: {
           patient: { user_id: userId },
-          end_date: { gte: today },
+          end_date: { gte: startOfDay },
           patient_medication_alerts: {
             some: {
               alert_time: {
-                gte: today,
-                lte: tomorrow,
+                gte: startOfDay,
+                lt: endOfDay,
               },
             },
           },
         },
       }),
     ]);
+    // const date = new Date();
+    // const today = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+
+    // const tomorrow = new Date(today);
+    // tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+
+    // const [data, totalItems] = await this.prisma.$transaction([
+    //   this.prisma.medication.findMany({
+    //     skip,
+    //     take,
+    //     where: {
+    //       patient: { user_id: userId },
+    //       end_date: { gte: today },
+    //       patient_medication_alerts: {
+    //         some: {
+    //           alert_time: { gte: today, lte: tomorrow },
+    //         },
+    //       },
+    //     },
+    //     select: {
+    //       id: true,
+    //       name: true,
+    //       start_date: true,
+    //       end_date: true,
+    //       time: true,
+    //       dosage: true,
+    //       frequency: true,
+    //       unit: true,
+    //       created_at: true,
+    //       updated_at: true,
+    //       patient_medication_alerts: {
+    //         where: {
+    //           alert_time: {
+    //             gte: today,
+    //             lte: tomorrow,
+    //           },
+    //         },
+    //         select: {
+    //           id: true,
+    //           alert_time: true,
+    //           taken: true,
+    //         },
+    //       },
+    //     },
+    //   }),
+    //   this.prisma.medication.count({
+    //     where: {
+    //       patient: { user_id: userId },
+    //       end_date: { gte: today },
+    //       patient_medication_alerts: {
+    //         some: {
+    //           alert_time: {
+    //             gte: today,
+    //             lte: tomorrow,
+    //           },
+    //         },
+    //       },
+    //     },
+    //   }),
+    // ]);
 
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;
