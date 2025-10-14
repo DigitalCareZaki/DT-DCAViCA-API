@@ -672,7 +672,7 @@ export class OrganizationService {
       where: { name: name, branchId: branchId },
     });
 
-    if (medicines) throw new AppError('Medicine already existing', HttpStatus.BAD_REQUEST);
+    if (medicines.length > 0) throw new AppError('Medicine already existing', HttpStatus.BAD_REQUEST);
     return await this.prisma.organizationMedication.create({
       data: {
         name,
