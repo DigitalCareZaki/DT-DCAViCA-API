@@ -497,7 +497,8 @@ model OrganizationMedication {
    
   addedBy         User?         @relation("addedByUser", fields: [added_by], references: [id])
   added_by        String?
-  
+  branchId  String? 
+  branch    Branch?   @relation(fields: [branchId], references: [id])
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -545,6 +546,7 @@ model Branch {
   departments Department[] @relation("branchDepartments")
   videos Videos[]
   tablet Tablet[]
+  organizationMedication OrganizationMedication[]
   device Device[]
 
   created_at DateTime @default(now())

@@ -651,9 +651,9 @@ export class OrganizationService {
     return 'Success';
   }
 
-  public async addOrganizationMedicine(organizationId: string, name: string, userId) {
+  public async addOrganizationMedicine(organizationId: string, branchId: string, name: string, userId) {
     const medicine = await this.prisma.organizationMedication.findFirst({
-      where: { name: name },
+      where: { name: name, branchId: branchId },
     });
 
     if (medicine) throw new AppError('Medicine already existing', HttpStatus.BAD_REQUEST);
@@ -662,26 +662,51 @@ export class OrganizationService {
         name,
         organization_id: organizationId,
         added_by: userId,
+        branchId: branchId,
       },
     });
-
   }
 
-  public async getOrganizationMedicines(organizationId: string, page: number, limit: number) {
+  public async addSuperAdminMedicine(organizationId: string, branchId: string, name: string, userId) {
+    const medicines = await this.prisma.organizationMedication.findMany({
+      where: { name: name, branchId: branchId },
+    });
+
+    if (medicines) throw new AppError('Medicine already existing', HttpStatus.BAD_REQUEST);
+    return await this.prisma.organizationMedication.create({
+      data: {
+        name,
+        organization_id: organizationId,
+        added_by: userId,
+        branchId: branchId,
+      },
+    });
+  }
+
+
+
+  public async getOrganizationMedicines(targetId: string, role: string, page: number, limit: number) {
+
+    console.log('targetId', targetId, role, page, limit);
     const skip = (page - 1) * limit;
+    const isSuperAdmin = role === Role.SUPERADMIN;
+    const whereCondition: any = isSuperAdmin
+      ? { organization_id: targetId }
+      : { branchId: targetId };
+
+
 
     const [medicines, totalItems] = await this.prisma.$transaction([
       this.prisma.organizationMedication.findMany({
         skip,
         take: limit,
-        where: {
-          organization_id: organizationId,
-        },
+        where: whereCondition,
 
         select: {
           id: true,
           name: true,
           added_by: true,
+          branchId: true,
           addedBy: {
             select: {
               id: true,
@@ -695,6 +720,13 @@ export class OrganizationService {
               name: true,
             },
           },
+          branch: { // ✅ include branch info here
+            select: {
+              id: true,
+              name: true,
+              location: true,
+            },
+          },
           created_at: true,
 
         },
@@ -706,9 +738,7 @@ export class OrganizationService {
 
       }),
       this.prisma.organizationMedication.count({
-        where: {
-          organization_id: organizationId,
-        },
+        where: whereCondition,
       }),
     ]);
 

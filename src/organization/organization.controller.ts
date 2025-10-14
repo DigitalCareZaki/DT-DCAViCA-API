@@ -28,7 +28,8 @@ export class OrganizationController {
     private nurseService: NurseService,
     private doctorService: DoctorService,
     private adminService: AdminService,
-  ) {}
+
+  ) { }
 
   @HttpCode(HttpStatus.OK)
   @Get('/')

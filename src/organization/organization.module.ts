@@ -6,10 +6,11 @@ import { LocationModule } from 'src/location/location.module';
 import { DoctorModule } from 'src/doctor/doctor.module';
 import { NurseModule } from 'src/nurse/nurse.module';
 import { PatientModule } from 'src/patient/patient.module';
+import { AdminService } from 'src/admin/admin.service';
 
 @Module({
   controllers: [OrganizationWebController],
-  providers: [OrganizationService],
+  providers: [OrganizationService, AdminService],
   imports: [
     AdminModule,
     LocationModule,
@@ -18,4 +19,4 @@ import { PatientModule } from 'src/patient/patient.module';
     PatientModule,
   ],
 })
-export class OrganizationModule {}
+export class OrganizationModule { }

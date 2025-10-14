@@ -35,6 +35,7 @@ import { AddAdminDTO } from './dto/addAdmin.dto';
 import { AdminService } from 'src/admin/admin.service';
 import { AddSuperadminDTO } from './dto/addSuperadmin.dto';
 import { AddMedicineDTO, AddMedicinesDTO } from './dto/addMedicines.dto';
+import { AddSuperAdminMedicineDTO, AddSuperAdminMedicinesDTO } from './dto/addMedicinesuperadmin.dto';
 
 @Controller('web/organization')
 export class OrganizationWebController extends OrganizationController {
@@ -45,6 +46,7 @@ export class OrganizationWebController extends OrganizationController {
     nurseService: NurseService,
     doctorService: DoctorService,
     adminService: AdminService,
+
   ) {
     super(
       organizationService,
@@ -329,6 +331,7 @@ export class OrganizationWebController extends OrganizationController {
     @Body() data: AddMedicinesDTO,
     @GetUser() user: UserRes,
   ) {
+
     const organizationId = await this.getOrganizationService().getOrganizationId(user.id);
 
     return this.getOrganizationService().addOrganizationMedicines(
@@ -344,9 +347,25 @@ export class OrganizationWebController extends OrganizationController {
   @RequirePermission(Role.SUPERADMIN, Role.ADMIN)
   public async addOrganizationMedicine(@Body() data: AddMedicineDTO, @GetUser() user: UserRes) {
     const organizationId = await this.getOrganizationService().getOrganizationId(user.id);
-
+    const branchId = await this.getAdminService().getBranchId(user.id);
     return this.getOrganizationService().addOrganizationMedicine(
       organizationId,
+      branchId.id,
+      data.name,
+      user.id
+    );
+  }
+
+  @HttpCode(HttpStatus.CREATED)
+  @Post('/medicine-superadmin')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.SUPERADMIN, Role.ADMIN)
+  public async addSuperAdminMedicine(@Body() data: AddSuperAdminMedicineDTO, @GetUser() user: UserRes) {
+    const organizationId = await this.getOrganizationService().getOrganizationId(user.id);
+
+    return this.getOrganizationService().addSuperAdminMedicine(
+      organizationId,
+      data.branch_id,
       data.name,
       user.id
     );
@@ -357,11 +376,17 @@ export class OrganizationWebController extends OrganizationController {
   @UseGuards(RolesGuard)
   @RequirePermission(Role.SUPERADMIN, Role.ADMIN)
   public async getOrganizationMedicine(@Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes) {
-    const organizationId =
-      await this.getOrganizationService().getOrganizationId(user.id);
+    let branchId: any;
+    if (user.role === Role.ADMIN) {
+      branchId = await this.getAdminService().getBranchId(user.id);
+    }
+    const targetId =
+      user.role === Role.SUPERADMIN ? user.organization_id : branchId.id;
+    console.log('targetId', targetId);
 
     return this.getOrganizationService().getOrganizationMedicines(
-      organizationId,
+      targetId,
+      user.role,
       +page,
       +limit
     );

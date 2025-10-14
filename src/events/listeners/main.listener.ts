@@ -169,6 +169,15 @@ export class EventListener {
 
 
       }
+    } else {
+      await this.prisma.measurement.update({
+        where: {
+          id: payload.measurement.id,
+        },
+        data: {
+          status: category,
+        },
+      });
     }
 
 
