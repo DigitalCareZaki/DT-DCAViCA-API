@@ -36,18 +36,27 @@ import type {
 import type { UserRes } from '@types';
 import { TelemedActionDTO } from './dto/action.dto';
 import { JwtGuard } from 'src/auth/guards';
+import { AdminService } from 'src/admin/admin.service';
 
 @Controller('web/telemed')
 @UseGuards(JwtGuard)
 export class TelemedWebController {
-  constructor(private telemedService: TelemedService) { }
+  constructor(private telemedService: TelemedService, private adminService: AdminService) { }
+
 
   @HttpCode(HttpStatus.OK)
   @Get()
   public async getTelemed(@GetUser() user: UserRes): Promise<GetAppointmentsType[]> {
     return this.telemedService.getAppointments(user.id);
   }
-
+  @HttpCode(HttpStatus.OK)
+  @Get('/branch-appointments')
+  public async getbranchTelemed(@GetUser() user: UserRes, @Query('page') page: number,
+    @Query('limit') limit: number) {
+    const branch = await this.adminService.getBranchId(user.id);
+    return this.telemedService.getbranchTelemed(branch.id, page ? +page : 1,
+      limit ? +limit : 10,);
+  }
 
   @Get('/organization-appointments')
   public async getAppointments(@GetUser() user: UserRes, @Query('page') page: number,
@@ -92,14 +101,6 @@ export class TelemedWebController {
     return this.telemedService.requested(user, isPending);
   }
 
-
-  // @HttpCode(HttpStatus.OK)
-  // @Get('/patientappointments')
-  // public async patientAppointments(
-  //   @Query('patientId') patientId?: string,
-  // ): Promise<RequestedAppointmentProps[]> {
-  //   return this.getTelemedService().patientAppointments(patientId);
-  // }
   @HttpCode(HttpStatus.OK)
   @Get('/patientappointments')
   public async patientAppointments(

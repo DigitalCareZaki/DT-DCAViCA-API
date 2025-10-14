@@ -157,6 +157,54 @@ export class TelemedService {
     });
   }
 
+  public async getbranchTelemed(branchId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [data, totalItems] = await this.prisma.$transaction([
+      this.prisma.appointment.findMany({
+        skip,
+        take: limit,
+        where: {
+          participants: {
+            some: {
+              user: {
+                associated_branches: {
+                  some: {
+                    id: branchId, // match the branch you want
+                  },
+                },
+              },
+            },
+          },
+        },
+        include: {
+          participants: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      }),
+      this.prisma.appointment.count()
+
+    ]);
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+    return {
+      data: data,
+      pagination: {
+        totalItems,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+      },
+    };
+  }
+
   public async assignParticipientPatient(
     userId: string,
     appointmentId: string,
