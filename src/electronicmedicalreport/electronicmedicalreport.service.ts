@@ -113,17 +113,46 @@ export class ElectronicmedicalreportService {
 
   }
 
-  public async getAllPatientReports(page: number, limit: number) {
-    const skip = (page - 1) * limit;
+  public async getAllPatientReports(branchId: string, userId: string, page: number, limit: number) {
 
+    const skip = (page - 1) * limit;
+    const whereCondition = {
+      patient: {
+        AND: [
+          {
+            // ✅ only patients assigned to this doctor
+            doctors: {
+              some: {
+                user_id: userId, // pass the logged-in doctor's user_id here
+              },
+            },
+          },
+          {
+            // ✅ only patients whose user is linked to the given branch
+            user: {
+              associated_branches: {
+                some: {
+                  id: branchId, // target branch ID
+                },
+              },
+            },
+          },
+        ],
+      },
+    };
     const [reports, totalItems] = await this.prisma.$transaction([
+
+
+
       this.prisma.electronicMedicalReport.findMany({
         skip,
         take: limit,
         orderBy: {
           created: 'desc',
         },
+        where: whereCondition,
         select: {
+          id: true,
           title: true,
           uri: true,
           created: true,
@@ -131,22 +160,22 @@ export class ElectronicmedicalreportService {
           type: true,
           patient: {
             select: {
+              id: true,
               user: {
                 select: {
-                  first_name: true,
-                  last_name: true,
-                  middle_name: true,
-                  uri: true,
                   id: true,
+                  first_name: true,
+                  middle_name: true,
+                  last_name: true,
+                  uri: true,
                 },
               },
             },
           },
         },
       }),
-      this.prisma.electronicMedicalReport.count(),
+      this.prisma.electronicMedicalReport.count({ where: whereCondition }),
     ]);
-
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;

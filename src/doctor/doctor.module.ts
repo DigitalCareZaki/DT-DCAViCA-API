@@ -5,11 +5,12 @@ import { DoctorAppController } from './app.controller';
 import { EventListener } from 'src/events';
 import { ElectronicmedicalreportModule } from 'src/electronicmedicalreport/electronicmedicalreport.module';
 import { TwilioService } from 'src/twilio/twilio.service';
+import { AdminService } from 'src/admin/admin.service';
 
 @Module({
   imports: [ElectronicmedicalreportModule],
   controllers: [DoctorWebController, DoctorAppController],
-  providers: [DoctorService, EventListener, TwilioService],
+  providers: [DoctorService, EventListener, TwilioService, AdminService],
   exports: [DoctorService],
 })
 export class DoctorModule { }

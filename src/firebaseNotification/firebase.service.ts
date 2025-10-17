@@ -41,18 +41,18 @@ export class FirebaseService implements OnModuleInit {
         const now = new Date();
         const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
         console.log(fiveMinutesAgo, 'fiveMinutesAgo')
-        await this.prisma.patientMedicationAlerts.updateMany({
-            where: {
-                alert_time: {
-                    lte: now,
-                },
-                taken: 'PENDING',
-                notification_sent: true,
-            },
-            data: {
-                taken: 'MISSED',
-            },
-        });
+        // await this.prisma.patientMedicationAlerts.updateMany({
+        //     where: {
+        //         alert_time: {
+        //             lte: now,
+        //         },
+        //         taken: 'PENDING',
+        //         notification_sent: true,
+        //     },
+        //     data: {
+        //         taken: 'MISSED',
+        //     },
+        // });
         const alerts = await this.prisma.patientMedicationAlerts.findMany({
             where: {
                 alert_time: {

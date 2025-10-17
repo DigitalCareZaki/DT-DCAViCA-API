@@ -12,53 +12,58 @@ export class SuperadminService {
   public async getStats(organizationId: string): Promise<StatsProps> {
     const doctors = this.prisma.user.count({
       where: {
-        AND: [
-          {
-            organization_id: organizationId,
-          },
-          {
-            role: 'DOCTOR',
-          },
-        ],
+        role: 'DOCTOR',
+        // AND: [
+        //   {
+        //     organization_id: organizationId,
+        //   },
+        //   {
+        //     role: 'DOCTOR',
+        //   },
+        // ],
       },
     });
 
     const patients = this.prisma.user.count({
       where: {
-        AND: [
-          {
-            role: 'PATIENT',
-          },
-          {
-            organization_id: organizationId,
-          },
-        ],
+        role: 'PATIENT',
+        // AND: [
+        //   {
+        //     role: 'PATIENT',
+        //   },
+        //   {
+        //     organization_id: organizationId,
+        //   },
+        // ],
       },
     });
 
     const nurses = this.prisma.user.count({
       where: {
-        AND: [
-          {
-            role: 'NURSE',
-          },
-          {
-            organization_id: organizationId,
-          },
-        ],
+
+        role: 'NURSE',
+
+        // AND: [
+        //   {
+        //     role: 'NURSE',
+        //   },
+        //   {
+        //     organization_id: organizationId,
+        //   },
+        // ],
       },
     });
 
     const branches = this.prisma.branch.count({
-      where: { organization_id: organizationId },
+      // where: { organization_id: organizationId },
     });
 
-    const appointments = this.prisma.appointmentParticipants.count({
+    const appointments = this.prisma.appointment.count({
       // where: { organizer_id: organizationId },
     });
 
-    const medications = this.prisma.medication.count({
-      where: { patient: { user: { organization_id: organizationId } } },
+    const medications = this.prisma.organizationMedication.count({
+      // where: { patient: { user: { organization_id: organizationId } } },
     });
 
     const [

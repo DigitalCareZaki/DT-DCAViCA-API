@@ -33,17 +33,21 @@ import {
 import { DoctorPatientGuard } from 'src/auth/guards';
 import { LinkNurseDTO } from 'src/common/dto/linkNurse.dto';
 import { ElectronicmedicalreportService } from 'src/electronicmedicalreport/electronicmedicalreport.service';
+import { AdminService } from 'src/admin/admin.service';
 
 @Controller('web/doctor')
 export class DoctorWebController extends DoctorController {
-  constructor(doctorService: DoctorService, private emrService: ElectronicmedicalreportService) {
+  constructor(doctorService: DoctorService,
+    private emrService: ElectronicmedicalreportService,
+    private adminService: AdminService) {
     super(doctorService);
   }
 
   @HttpCode(HttpStatus.OK)
   @Get('/all-reports')
-  public fetchReports(@Query('page') page = 1, @Query('limit') limit = 10) {
-    return this.emrService.getAllPatientReports(+page, +limit);
+  public async fetchReports(@GetUser() user: UserRes, @Query('page') page = 1, @Query('limit') limit = 10) {
+    const branch = await this.adminService.getBranchId(user.id);
+    return this.emrService.getAllPatientReports(branch.id, user.id, +page, +limit);
   }
 
   @HttpCode(HttpStatus.OK)
