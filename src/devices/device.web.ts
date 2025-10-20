@@ -43,8 +43,10 @@ export class DeviceWebController extends DeviceController {
   @Get()
   public async getAllDevices(@Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes,
     @Query('search') search: string = '',) {
+
+    console.log('user ====>>', user);
     let branchId: any;
-    if (user.role === Role.ADMIN) {
+    if (user.role === Role.ADMIN || user.role === Role.DOCTOR) {
       branchId = await this.adminService.getBranchId(user.id);
     }
     const targetId =

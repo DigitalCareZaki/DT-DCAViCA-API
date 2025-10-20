@@ -159,23 +159,24 @@ export class TelemedService {
 
   public async getbranchTelemed(branchId: string, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
-    const [data, totalItems] = await this.prisma.$transaction([
-      this.prisma.appointment.findMany({
-        skip,
-        take: limit,
-        where: {
-          participants: {
-            some: {
-              user: {
-                associated_branches: {
-                  some: {
-                    id: branchId, // match the branch you want
-                  },
-                },
+    const whereCondition = {
+      participants: {
+        some: {
+          user: {
+            associated_branches: {
+              some: {
+                id: branchId, // match the branch you want
               },
             },
           },
         },
+      },
+    }
+    const [data, totalItems] = await this.prisma.$transaction([
+      this.prisma.appointment.findMany({
+        skip,
+        take: limit,
+        where: whereCondition,
         include: {
           participants: {
             include: {
@@ -184,7 +185,7 @@ export class TelemedService {
           },
         },
       }),
-      this.prisma.appointment.count()
+      this.prisma.appointment.count({ where: whereCondition })
 
     ]);
     const totalPages = Math.ceil(totalItems / limit);
