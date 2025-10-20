@@ -528,34 +528,47 @@ export class OrganizationService {
     });
   }
 
-  public async getOrganizationNurses(userId: string) {
-    const orgnization = await this.validateOrganization(userId);
+  public async getOrganizationNurses(targetId: string, role: string) {
+    try {
 
-    return await this.prisma.user.findMany({
-      where: {
-        AND: [
-          {
-            role: 'NURSE',
-          },
-          {
-            organization_id: orgnization.organization_id,
-          },
-        ],
-      },
+      const isSuperAdmin = role === Role.SUPERADMIN;
 
-      select: {
-        first_name: true,
-        middle_name: true,
-        last_name: true,
-        nurse: {
-          select: {
-            employee_id: true,
+      const whereCondition: any = isSuperAdmin
+        ? {
+
+          role: 'NURSE',
+
+        }
+        : {
+          role: 'NURSE',
+          associated_branches: {
+            some: {
+              id: targetId,
+            },
           },
+        };
+
+      return await this.prisma.user.findMany({
+        where: whereCondition, // ✅ use your dynamic condition here
+        select: {
+          first_name: true,
+          middle_name: true,
+          last_name: true,
+          nurse: {
+            select: {
+              employee_id: true,
+            },
+          },
+          id: true,
         },
-        id: true,
-      },
-    });
+      });
+    } catch (error) {
+      console.log('error in getOrganizationNurses service ====>>', error);
+      throw error;
+    }
   }
+
+
 
   public async getOrganizationDepartments(
     branchId: string,

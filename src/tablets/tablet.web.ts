@@ -35,7 +35,7 @@ export class TabletWebController extends TabletController {
   @Get()
   public async getAllTablets(@Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes, @Query('search') search: string) {
     let branchId: any;
-    if (user.role === Role.ADMIN) {
+    if (user.role === Role.ADMIN || user.role === Role.DOCTOR) {
       branchId = await this.adminService.getBranchId(user.id);
     }
     const targetId =

@@ -34,7 +34,7 @@ export class WebVideosController {
   @HttpCode(HttpStatus.OK)
   public async getAllVideos(@GetUser() user: UserRes, @Query('category') category?: string) {
     let branchId: any;
-    if (user.role === Role.ADMIN) {
+    if (user.role === Role.ADMIN || user.role === Role.DOCTOR) {
       branchId = await this.adminService.getBranchId(user.id);
     }
     const targetId =

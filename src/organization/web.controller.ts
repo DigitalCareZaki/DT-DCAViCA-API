@@ -84,7 +84,14 @@ export class OrganizationWebController extends OrganizationController {
   @UseGuards(RolesGuard)
   @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER)
   public async getOrganizationNurses(@GetUser() user: UserRes) {
-    return this.getOrganizationService().getOrganizationNurses(user.id);
+    let branchId: any;
+    if (user.role === Role.ADMIN || user.role === Role.DOCTOR) {
+      branchId = await this.getAdminService().getBranchId(user.id);
+    }
+    const targetId =
+      user.role === Role.SUPERADMIN ? user.organization_id : branchId.id;
+    console.log('targetId', targetId);
+    return this.getOrganizationService().getOrganizationNurses(targetId, user.role);
   }
 
   @HttpCode(HttpStatus.OK)
