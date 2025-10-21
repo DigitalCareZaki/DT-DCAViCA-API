@@ -1395,6 +1395,23 @@ export class TelemedService {
       },
     });
     console.log('appointments: >>>>>>>>', appointments);
+    const appointment = await this.prisma.appointment.findFirst({
+      where: {
+        id: data.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (appointment) {
+      this.prisma.appointment.update({
+        where: { id: appointment.id },
+        data: { status: data.status },
+      });
+
+    }
+
     if (appointments.length > 0) {
       const updatePromises = appointments.map(appoint =>
         this.prisma.appointmentParticipants.update({
