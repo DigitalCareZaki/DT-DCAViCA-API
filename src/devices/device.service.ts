@@ -113,8 +113,16 @@ export class DeviceService {
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
+
+    const enrichedTablet = devices.map((device) => {
+      const isAssigned = device.patient_devices && device.patient_devices.length > 0;
+      return {
+        ...device,
+        assigned: isAssigned,
+      };
+    });
     return {
-      data: devices,
+      data: enrichedTablet,
       pagination: {
         totalItems,
         perPage: limit,

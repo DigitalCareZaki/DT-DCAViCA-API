@@ -803,55 +803,110 @@ export class DoctorService {
       });
   }
 
-  public async getStats(userId: string): Promise<DoctorStats> {
-    console.log(userId, '=======>>userId');
-    const todayAppointments = await this.prisma.appointment.groupBy({
-      by: ['status'],
-      where: {
-        OR: [
-          {
-            organizer: {
-              id: userId,
-            },
-          },
-          {
-            participants: {
-              some: {
-                user_id: userId,
-              },
-            },
-          },
-        ],
-        AND: {
-          start_date: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          },
-          end_date: {
-            lte: new Date(new Date().setHours(23, 59, 59, 999)),
+
+  public async getStats(userId: string): Promise<{
+    today: Record<string, number>;
+    tomorrow: Record<string, number>;
+  }> {
+    const now = new Date();
+    const todayStart = new Date(now.setHours(0, 0, 0, 0));
+    const todayEnd = new Date(now.setHours(23, 59, 59, 999));
+
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    const tomorrowEnd = new Date(todayEnd);
+    tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+
+    // Helper to get grouped counts for a given range
+    const getCounts = async (start: Date, end: Date) => {
+      const grouped = await this.prisma.appointment.groupBy({
+        by: ['status'],
+        where: {
+          OR: [
+            { organizer: { id: userId } },
+            { participants: { some: { user_id: userId } } },
+          ],
+          AND: {
+            start_date: { gte: start },
+            end_date: { lte: end },
           },
         },
-      },
-      _count: {
-        status: true,
-      },
-    });
+        _count: { status: true },
+      });
 
-    const statusCounts = {
-      hold: 0,
-      cancelled: 0,
-      ongoing: 0,
-      active: 0,
-      completed: 0,
-      pending: 0,
+      const counts = {
+        hold: 0,
+        cancelled: 0,
+        ongoing: 0,
+        active: 0,
+        completed: 0,
+        pending: 0,
+      };
+
+      grouped.forEach((item) => {
+        const status = item.status.toLowerCase();
+        if (counts[status] !== undefined) counts[status] = item._count.status;
+      });
+
+      return counts;
     };
 
-    todayAppointments.forEach((item) => {
-      const status = item.status.toLowerCase();
-      statusCounts[status] = item._count.status;
-    });
+    const [today, tomorrow] = await Promise.all([
+      getCounts(todayStart, todayEnd),
+      getCounts(tomorrowStart, tomorrowEnd),
+    ]);
 
-    return statusCounts;
+    return { today, tomorrow };
   }
+  // public async getStats(userId: string): Promise<DoctorStats> {
+  //   console.log(userId, '=======>>userId');
+  //   const todayAppointments = await this.prisma.appointment.groupBy({
+  //     by: ['status'],
+  //     where: {
+  //       OR: [
+  //         {
+  //           organizer: {
+  //             id: userId,
+  //           },
+  //         },
+  //         {
+  //           participants: {
+  //             some: {
+  //               user_id: userId,
+  //             },
+  //           },
+  //         },
+  //       ],
+  //       AND: {
+  //         start_date: {
+  //           gte: new Date(new Date().setHours(0, 0, 0, 0)),
+  //         },
+  //         end_date: {
+  //           lte: new Date(new Date().setHours(23, 59, 59, 999)),
+  //         },
+  //       },
+  //     },
+  //     _count: {
+  //       status: true,
+  //     },
+  //   });
+
+  //   const statusCounts = {
+  //     hold: 0,
+  //     cancelled: 0,
+  //     ongoing: 0,
+  //     active: 0,
+  //     completed: 0,
+  //     pending: 0,
+  //   };
+
+  //   todayAppointments.forEach((item) => {
+  //     const status = item.status.toLowerCase();
+  //     statusCounts[status] = item._count.status;
+  //   });
+
+  //   return statusCounts;
+  // }
 
   public async getDoctorList(search: string) {
     const doctorList = await this.prisma.doctor.findMany({
