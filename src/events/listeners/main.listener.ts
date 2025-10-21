@@ -41,6 +41,7 @@ export class EventListener {
     let category: MeasurementStatus = 'ALERT_NOT_SET';
     console.log('patientReadingRange:======>>>', patientReadingRange);
     if (patientReadingRange && patientReadingRange.range.length > 0) {
+
       if (payload.measurement.type === 'BLOODPRESSURE') {
         const [systolic, diastolic] = payload.measurement.values;
         const [systolic_low, systolic_high, diastolic_low, diastolic_high] = patientReadingRange.range;
@@ -170,6 +171,8 @@ export class EventListener {
 
       }
     } else {
+
+
       await this.prisma.measurement.update({
         where: {
           id: payload.measurement.id,

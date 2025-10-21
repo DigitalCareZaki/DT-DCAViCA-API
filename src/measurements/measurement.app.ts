@@ -23,19 +23,18 @@ export class MeasurementAppController {
   @UseGuards(JwtGuard, RolesGuard)
   @RequirePermission(Role.DOCTOR)
   @Get('/rag')
-  public async getRagForDoctor(@GetUser() user: UserRes, @Query('type') type?: string, @Query('page') page?: number, @Query('limit') limit?: number) {
-    const data = await this.measurementService.getMeasurementsOfAllPatients(
+  public async getRagForDoctor(@GetUser() user: UserRes, @Query('type') type?: string) {
+    const data = await this.measurementService.getAppMeasurementsOfAllPatients(
       user.id,
       user.role,
       type || '',
-      page ? +page : 1,
-      limit ? +limit : 10,
+
     );
 
     let result;
 
-    if (Array.isArray(data?.data) && data.data.length > 0) {
-      result = data.data.map((m) => {
+    if (Array.isArray(data) && data.length > 0) {
+      result = data.map((m) => {
         return {
           id: m.id,
           status: m.status,
