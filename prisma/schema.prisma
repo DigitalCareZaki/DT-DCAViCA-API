@@ -722,7 +722,7 @@ model JoinedParticipants {
 
     type   AppointmentType   @default(ONLINE)
     about  AppointmentAbout  @default(CASUAL)
-    status AppointmentStatus @default(ACTIVE)
+    status AppointmentStatus @default(PENDING)
 
     start_date DateTime
     end_date   DateTime

@@ -1385,7 +1385,7 @@ export class TelemedService {
     data: TelemedActionDTO,
   ): Promise<TelemedActionProps> {
 
-
+    console.log('id: >>>>>>>>', data);
     const appointments = await this.prisma.appointmentParticipants.findMany({
       where: {
         appointment_id: data.id,
@@ -1403,7 +1403,7 @@ export class TelemedService {
         id: true,
       },
     });
-
+    console.log('single: >>>>>>>>', appointment);
     if (appointment) {
       this.prisma.appointment.update({
         where: { id: appointment.id },
