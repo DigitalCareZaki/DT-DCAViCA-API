@@ -493,40 +493,28 @@ export class MessageService {
     });
   }
 
-  public async searchUsers(value: string): Promise<SearchUserRes[]> {
+  public async searchUsers(value: string, targetId: string, role: string): Promise<SearchUserRes[]> {
+    const isSuperAdmin = role === "SUPERADMIN";
+    console.log(role, value, "==>>>user role and value")
+    const whereConditions: any = {
+      OR: [
+        { first_name: { contains: value, mode: "insensitive" } },
+        { last_name: { contains: value, mode: "insensitive" } },
+        { middle_name: { contains: value, mode: "insensitive" } },
+        { email: { contains: value, mode: "insensitive" } },
+        { username: { contains: value, mode: "insensitive" } },
+      ],
+    };
+
+    // Add branch restriction only if NOT superadmin
+    if (!isSuperAdmin) {
+      whereConditions.associated_branches = {
+        some: { id: targetId }
+      };
+    }
+
     return this.prisma.user.findMany({
-      where: {
-        OR: [
-          {
-            first_name: {
-              contains: value,
-              mode: 'insensitive',
-            },
-          },
-          {
-            last_name: {
-              contains: value,
-              mode: 'insensitive',
-            },
-          },
-          {
-            middle_name: {
-              contains: value,
-              mode: 'insensitive',
-            },
-          },
-          {
-            email: {
-              contains: value,
-            },
-          },
-          {
-            username: {
-              contains: value,
-            },
-          },
-        ],
-      },
+      where: whereConditions,
 
       select: {
         email: true,
@@ -538,6 +526,52 @@ export class MessageService {
       },
     });
   }
+
+  // public async searchUsers(value: string, targetId: string, role: string): Promise<SearchUserRes[]> {
+  //   return this.prisma.user.findMany({
+  //     where: {
+  //       OR: [
+  //         {
+  //           first_name: {
+  //             contains: value,
+  //             mode: 'insensitive',
+  //           },
+  //         },
+  //         {
+  //           last_name: {
+  //             contains: value,
+  //             mode: 'insensitive',
+  //           },
+  //         },
+  //         {
+  //           middle_name: {
+  //             contains: value,
+  //             mode: 'insensitive',
+  //           },
+  //         },
+  //         {
+  //           email: {
+  //             contains: value,
+  //           },
+  //         },
+  //         {
+  //           username: {
+  //             contains: value,
+  //           },
+  //         },
+  //       ],
+  //     },
+
+  //     select: {
+  //       email: true,
+  //       uri: true,
+  //       role: true,
+  //       first_name: true,
+  //       last_name: true,
+  //       middle_name: true,
+  //     },
+  //   });
+  // }
   public async getThreadByParent(messageId: string) {
     const message = await this.prisma.message.findUniqueOrThrow({
       where: { id: messageId },

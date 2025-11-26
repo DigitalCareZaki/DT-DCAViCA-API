@@ -16,10 +16,12 @@ import { ComposeDTO } from './dto/compose.dto';
 
 import type { InboxRes, Message, SearchUserRes } from './types';
 import type { HealthRes, UserRes } from '@types';
+import { Role } from 'src/auth/enums/role.enum';
+import { AdminService } from 'src/admin/admin.service';
 
 @Controller('web/message')
 export class MessageWebController extends MessageController {
-  constructor(messageService: MessageService) {
+  constructor(messageService: MessageService, private readonly adminService: AdminService) {
     super(messageService);
   }
 
@@ -94,9 +96,19 @@ export class MessageWebController extends MessageController {
   @HttpCode(HttpStatus.OK)
   @Get('/search/users')
   public async searchUsers(
+    @GetUser() user: UserRes,
     @Query('value') value: string,
   ): Promise<SearchUserRes[]> {
-    return this.getMessageService().searchUsers(value);
+    console.log('Searching users for user:', user.id, 'with value:', value);
+    let branchId: any;
+    if (user.role === Role.ADMIN || user.role === Role.DOCTOR) {
+      branchId = await this.adminService.getBranchId(user.id);
+    }
+    const targetId =
+      user.role === Role.SUPERADMIN ? user.organization_id : branchId.id;
+    console.log('targetId', targetId);
+    console.log(user.role, value, "==>>>user role and value")
+    return this.getMessageService().searchUsers(value, targetId, user.role);
   }
 
   @HttpCode(HttpStatus.OK)

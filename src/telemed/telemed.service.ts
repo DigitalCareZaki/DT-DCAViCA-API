@@ -1403,9 +1403,10 @@ export class TelemedService {
         id: true,
       },
     });
-    console.log('single: >>>>>>>>', appointment);
-    if (appointment) {
-      this.prisma.appointment.update({
+
+    if (appointment.id) {
+
+      await this.prisma.appointment.update({
         where: { id: appointment.id },
         data: { status: data.status },
       });

@@ -318,6 +318,9 @@ export class AuthService {
       },
     });
 
+    const hash = await argon.hash(dto.pincode);
+    console.log('Hashing pincode:', userDB.pincode, '=>', hash);
+
     const isValidPincode = await argon.verify(userDB.pincode, dto.pincode);
 
     if (!isValidPincode) {

@@ -20,9 +20,12 @@ export class DeviceService {
     page: number = 1,
     limit: number = 10
   ) {
+
     const isSuperAdmin = role === Role.SUPERADMIN;
-    const whereCondition: any = isSuperAdmin
-      ? search
+
+    const whereCondition: any = {
+      ...(isSuperAdmin ? {} : { branchId: targetId }),
+      ...(search
         ? {
           OR: [
             {
@@ -39,8 +42,29 @@ export class DeviceService {
             },
           ],
         }
-        : {}
-      : { branchId: targetId };
+        : {}),
+    };
+    // const isSuperAdmin = role === Role.SUPERADMIN;
+    // const whereCondition: any = isSuperAdmin
+    //   ? search
+    //     ? {
+    //       OR: [
+    //         {
+    //           title: {
+    //             contains: search,
+    //             mode: 'insensitive',
+    //           },
+    //         },
+    //         {
+    //           description: {
+    //             contains: search,
+    //             mode: 'insensitive',
+    //           },
+    //         },
+    //       ],
+    //     }
+    //     : {}
+    //   : { branchId: targetId };
 
     const skip = (page - 1) * limit;
     const [devices, totalItems] = await this.prisma.$transaction([
