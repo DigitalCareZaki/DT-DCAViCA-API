@@ -21,6 +21,7 @@ export class DeviceService {
     limit: number = 10
   ) {
 
+    console.log(search, "===>")
     const isSuperAdmin = role === Role.SUPERADMIN;
 
     const whereCondition: any = {
@@ -34,6 +35,16 @@ export class DeviceService {
                 mode: 'insensitive',
               },
             },
+            {
+              serial_number: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            // {
+            //   category: search.toUpperCase() as MeasurementType
+
+            // },
             {
               description: {
                 contains: search,
