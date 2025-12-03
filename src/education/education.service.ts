@@ -184,9 +184,18 @@ export class EducationService {
     }
   }
 
-  public async getTrendingPosts(): Promise<PostRes[]> {
+  public async getTrendingPosts(branchId: string): Promise<PostRes[]> {
     return await this.prisma.post.findMany({
-      where: { active: true },
+      where: {
+        active: true,
+        author: {
+          associated_branches: {
+            some: {
+              id: branchId,
+            },
+          },
+        },
+      },
       select: {
         id: true,
         uri: true,

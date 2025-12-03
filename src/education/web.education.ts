@@ -18,11 +18,12 @@ import { GetUser } from 'src/auth/decorators';
 import { PostDTO } from './dto';
 import type { HealthRes, JsonRes, UserRes } from '@types';
 import type { PostRes, Post as PostSchemaTypes } from './types';
+import { AdminService } from 'src/admin/admin.service';
 
 @Controller('web/education')
 @UseGuards(JwtGuard)
 export class EducationWebController {
-  constructor(private readonly educationService: EducationService) { }
+  constructor(private readonly educationService: EducationService, private readonly adminService: AdminService) { }
 
   @HttpCode(HttpStatus.OK)
   @Get('/health')
@@ -61,8 +62,9 @@ export class EducationWebController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/trending-posts')
-  public async getTrendingPosts(): Promise<PostRes[]> {
-    return this.educationService.getTrendingPosts();
+  public async getTrendingPosts(@GetUser() user: UserRes): Promise<PostRes[]> {
+    const branch = await this.adminService.getBranchId(user.id);
+    return this.educationService.getTrendingPosts(branch.id);
   }
 
   @HttpCode(HttpStatus.OK)
