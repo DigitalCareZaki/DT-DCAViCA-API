@@ -10,20 +10,24 @@ import { MultiValueMeasurementDTO, SingleValueMeasurementDTO } from 'src/measure
 import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 import { Role } from 'src/auth/enums/role.enum';
+import { AdminService } from 'src/admin/admin.service';
 
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
-    private readonly measurementService: MeasurementService
+    private readonly measurementService: MeasurementService,
+    private readonly adminService: AdminService
   ) { }
 
+  @UseGuards(JwtGuard)
   @Get()
-  findAll(@Query('role') role: string, @Query('search') search = "") {
-    if (!role) throw new AppError('role in query parameter is required', 400);
+  async findAll(@Query('role') role: string, @Query('search') search = "", @GetUser() user: UserRes,) {
 
-    return this.usersService.findAll(role, search);
+    if (!role) throw new AppError('role in query parameter is required', 400);
+    const branch = await this.adminService.getBranchId(user.id);
+    return this.usersService.findAll(role, search, branch.id);
   }
 
   @UseGuards(JwtGuard)

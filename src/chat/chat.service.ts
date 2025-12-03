@@ -176,11 +176,20 @@ export class ChatService {
   public async searchRooms(
     search: string,
     userId: string,
+    branchId: string,
   ): Promise<SearchUsersProps[]> {
     return await this.prisma.user.findMany({
       where: {
         AND: [
           {
+            associated_branches: {
+              some: {
+                id: branchId,  // 🔥 Only users from this branch
+              },
+            },
+          },
+          {
+
             OR: [
               {
                 first_name: {

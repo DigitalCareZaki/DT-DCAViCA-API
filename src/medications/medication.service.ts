@@ -262,8 +262,9 @@ export class MedicationService {
               },
             },
           ],
-        },
 
+        },
+        orderBy: { created_at: 'desc' },
         select: {
           id: true,
           name: true,
@@ -298,6 +299,7 @@ export class MedicationService {
             },
           ],
         },
+        orderBy: { created_at: 'desc' },
         select: {
           id: true,
           name: true,

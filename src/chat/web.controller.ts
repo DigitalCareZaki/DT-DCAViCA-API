@@ -14,10 +14,11 @@ import { GetUser } from 'src/auth/decorators';
 import { UserRes } from '@types';
 import { RoomDTO } from './dto/room.dto';
 import { CreateRoomProps, GetRoomsProps, SearchUsersProps } from './types';
+import { AdminService } from 'src/admin/admin.service';
 
 @Controller('web/chat')
 export class ChatWebController extends ChatController {
-  constructor(chatService: ChatService) {
+  constructor(chatService: ChatService, private readonly adminService: AdminService) {
     super(chatService);
   }
 
@@ -47,11 +48,12 @@ export class ChatWebController extends ChatController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/search/users')
-  public searchRooms(
+  public async searchRooms(
     @Query('search') search: string,
     @GetUser() user: UserRes,
   ): Promise<SearchUsersProps[]> {
-    return this.getChatService().searchRooms(search, user.id);
+    const branch = await this.adminService.getBranchId(user.id);
+    return this.getChatService().searchRooms(search, user.id, branch.id);
   }
 
   @HttpCode(HttpStatus.OK)
