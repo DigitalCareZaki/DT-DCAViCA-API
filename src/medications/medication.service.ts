@@ -158,6 +158,7 @@ export class MedicationService {
               },
             ],
           },
+          orderBy: { created_at: 'desc' },
           skip: (page - 1) * limit,
           take: limit,
           select: {

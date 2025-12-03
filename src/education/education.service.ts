@@ -159,25 +159,34 @@ export class EducationService {
   }
 
   public async getIndividualPost(postId: string) {
-    return await this.prisma.post.findFirstOrThrow({
-      where: {
-        AND: [
-          {
-            id: postId,
-          },
-          {
-            active: true,
-          },
-        ],
-      },
-      select: {
-        id: true,
-      },
-    });
+    try {
+      const post = await this.prisma.post.findFirst({
+        where: {
+          AND: [
+            { id: postId },
+            { active: true },
+          ],
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!post) {
+        throw new AppError("Post not found", 404);
+      }
+
+      console.log('Individual Post >>>>', post);
+      return post;
+    } catch (error) {
+      console.log('Error in getIndividualPost >>>>', error);
+      throw error;
+    }
   }
 
   public async getTrendingPosts(): Promise<PostRes[]> {
     return await this.prisma.post.findMany({
+      where: { active: true },
       select: {
         id: true,
         uri: true,

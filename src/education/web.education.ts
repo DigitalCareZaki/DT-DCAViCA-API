@@ -97,7 +97,9 @@ export class EducationWebController {
     @GetUser() user: UserRes,
     @Param('id') postId: string,
   ): Promise<any> {
+    console.log(postId, '======>>>');
     const post = await this.educationService.getIndividualPost(postId);
+    console.log(post, '======>>>');
     await this.educationService.viewPost(postId, user.id);
 
     return post;
