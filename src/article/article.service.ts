@@ -3,12 +3,19 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ArticleService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  public async getArticles(): Promise<any> {
+  public async getArticles(branchId): Promise<any> {
     return await this.prisma.post.findMany({
       where: {
         active: true,
+        author: {
+          associated_branches: {
+            some: {
+              id: branchId,
+            },
+          },
+        },
       },
       include: {
         author: {
