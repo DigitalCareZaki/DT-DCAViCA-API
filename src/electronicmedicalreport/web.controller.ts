@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Query,
   UseGuards,
@@ -11,6 +13,8 @@ import {
 import { ElectronicmedicalreportService } from './electronicmedicalreport.service';
 import { JwtGuard } from 'src/auth/guards';
 import { EMR_DTO } from './dto/emr.dto';
+import { GetUser } from 'src/auth/decorators';
+import { UserRes } from '@types';
 
 @Controller('web/emr')
 @UseGuards(JwtGuard)
@@ -34,5 +38,14 @@ export class EMRWebController {
     console.log('getting records');
     console.log({ patient_id, search });
     return this.service.getPatientRecords(patient_id, search ?? '', +page, +limit);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Delete('/:id') // :id -> contact_id
+  public async deleteReport(
+    @GetUser() user: UserRes,
+    @Param('id') id: string,
+  ) {
+    return this.service.deleteReport(id);
   }
 }

@@ -194,7 +194,23 @@ export class ElectronicmedicalreportService {
       },
     };
   }
+  public async deleteReport(id: string) {
+    try {
+      await this.prisma.electronicMedicalReport.delete({
+        where: {
+          id: id,
+        },
+      });
 
+      return {
+        status: 'success',
+        message: 'Report Deleted',
+      };
+    } catch (error) {
+      throw new AppError('Report not found', HttpStatus.NOT_FOUND);
+    }
+
+  }
 
   // before pagination old code
   // public async getAllPatientReports() {
