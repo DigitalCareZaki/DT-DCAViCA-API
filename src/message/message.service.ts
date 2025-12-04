@@ -405,9 +405,9 @@ export class MessageService {
     return this.prisma.message.findMany({
       where: {
         AND: [
-          {
-            reciever_id: userId,
-          },
+          // {
+          //   reciever_id: userId,
+          // },
           {
             starred: true,
           },
