@@ -184,18 +184,74 @@ export class EducationService {
     }
   }
 
-  public async getTrendingPosts(branchId: string): Promise<PostRes[]> {
-    return await this.prisma.post.findMany({
-      where: {
-        active: true,
-        author: {
-          associated_branches: {
-            some: {
-              id: branchId,
-            },
+  public async getTrendingPosts(branchId: string, value: string): Promise<PostRes[]> {
+
+    console.log(value, '=====>>value')
+
+    const whereCondition: any = value ? {
+      active: true,
+      author: {
+        associated_branches: {
+          some: {
+            id: branchId,
           },
         },
       },
+      OR: [
+        {
+          title: {
+            contains: value,
+            mode: 'insensitive',
+          },
+        },
+        {
+          content: {
+            contains: value,
+            mode: 'insensitive',
+          },
+        },
+        {
+          author: {
+            email: value,
+          },
+        },
+        {
+          author: {
+            OR: [
+              {
+                first_name: {
+                  contains: value,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                last_name: {
+                  contains: value,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                middle_name: {
+                  contains: value,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          },
+        },
+      ],
+    } : {
+      active: true,
+      author: {
+        associated_branches: {
+          some: {
+            id: branchId,
+          },
+        },
+      }
+    };
+    return await this.prisma.post.findMany({
+      where: whereCondition,
       select: {
         id: true,
         uri: true,
@@ -284,10 +340,17 @@ export class EducationService {
     });
   }
 
-  public async search(value: string): Promise<PostRes[]> {
+  public async search(value: string, branchId: string): Promise<PostRes[]> {
     return await this.prisma.post.findMany({
       where: {
         active: true,
+        author: {
+          associated_branches: {
+            some: {
+              id: branchId,
+            },
+          },
+        },
         OR: [
           {
             title: {

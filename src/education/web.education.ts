@@ -62,9 +62,9 @@ export class EducationWebController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/trending-posts')
-  public async getTrendingPosts(@GetUser() user: UserRes): Promise<PostRes[]> {
+  public async getTrendingPosts(@GetUser() user: UserRes, @Query('value') value: string): Promise<PostRes[]> {
     const branch = await this.adminService.getBranchId(user.id);
-    return this.educationService.getTrendingPosts(branch.id);
+    return this.educationService.getTrendingPosts(branch.id, value);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -76,8 +76,9 @@ export class EducationWebController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/search')
-  public async search(@Query('value') value: string): Promise<PostRes[]> {
-    return this.educationService.search(value);
+  public async search(@GetUser() user: UserRes, @Query('value') value: string): Promise<PostRes[]> {
+    const branch = await this.adminService.getBranchId(user.id);
+    return this.educationService.search(value, branch.id);
   }
 
   @HttpCode(HttpStatus.OK)
