@@ -502,74 +502,167 @@ export class MessageService {
     });
   }
 
-  public async searchUsers(value: string, targetId: string, role: string): Promise<SearchUserRes[]> {
-    const isSuperAdmin = role === "SUPERADMIN";
-    console.log(role, value, "==>>>user role and value")
-    const whereConditions: any = {
-      OR: [
-        { first_name: { contains: value, mode: "insensitive" } },
-        { last_name: { contains: value, mode: "insensitive" } },
-        { middle_name: { contains: value, mode: "insensitive" } },
-        { email: { contains: value, mode: "insensitive" } },
-        { username: { contains: value, mode: "insensitive" } },
-      ],
-    };
 
-    // Add branch restriction only if NOT superadmin
-    if (!isSuperAdmin) {
-      whereConditions.associated_branches = {
-        some: { id: targetId }
+  public async searchUsers(
+    value: string,
+    branchId: string,
+    role: string,
+    loggedInUserId: string
+  ) {
+    try {
+      const isSuperAdmin = role === "SUPERADMIN";
+
+      const searchFilter = {
+        OR: [
+          { first_name: { contains: value, mode: "insensitive" } },
+          { last_name: { contains: value, mode: "insensitive" } },
+          { middle_name: { contains: value, mode: "insensitive" } },
+          { email: { contains: value, mode: "insensitive" } },
+          { username: { contains: value, mode: "insensitive" } },
+        ],
       };
+
+      let roleFilter: any = {};
+
+      if (!isSuperAdmin) {
+        // ========================
+        // DOCTOR LOGIC
+        // ========================
+        if (role === "DOCTOR") {
+          const doctor = await this.prisma.doctor.findUnique({
+            where: { user_id: loggedInUserId },
+            select: { id: true },
+          });
+
+          roleFilter = {
+            AND: [
+              {
+                OR: [
+                  // assigned patients
+                  {
+                    patient: {
+                      doctors: {
+                        some: { id: doctor.id },
+                      },
+                    },
+                  },
+                  // admins same branch
+                  {
+                    role: "ADMIN",
+                    associated_branches: { some: { id: branchId } },
+                  },
+                  // nurses same branch
+                  {
+                    role: "NURSE",
+                    associated_branches: { some: { id: branchId } },
+                  },
+                ],
+              },
+              {
+                associated_branches: { some: { id: branchId } },
+              },
+            ],
+          };
+        }
+
+        // ========================
+        // PATIENT LOGIC (Assigned doctor + assigned nurse)
+        // ========================
+        if (role === "PATIENT") {
+          const patient = await this.prisma.patient.findUnique({
+            where: { user_id: loggedInUserId },
+            select: {
+              id: true,
+              doctors: { select: { user_id: true } }, // fetch User IDs
+              nurses: { select: { user_id: true } },  // fetch User IDs
+            },
+          });
+
+          const assignedDoctorIds = patient.doctors.map(d => d.user_id);
+          const assignedNurseIds = patient.nurses.map(n => n.user_id);
+
+          roleFilter = {
+            AND: [
+              {
+                OR: [
+                  { id: { in: assignedDoctorIds } },
+                  { id: { in: assignedNurseIds } },
+                ],
+              },
+              { associated_branches: { some: { id: branchId } } },
+            ],
+          };
+        }
+
+        // ========================
+        // ADMIN LOGIC
+        // ========================
+        if (role === "ADMIN") {
+          roleFilter = {
+            associated_branches: { some: { id: branchId } },
+          };
+        }
+
+        // ========================
+        // NURSE LOGIC (optional: same as doctor)
+        // ========================
+        if (role === "NURSE") {
+          roleFilter = {
+            AND: [
+              {
+                role: { in: ["DOCTOR", "NURSE"] },
+              },
+              {
+                associated_branches: { some: { id: branchId } },
+              },
+            ],
+          };
+        }
+      }
+
+      return this.prisma.user.findMany({
+        where: {
+          AND: [searchFilter, roleFilter],
+        },
+        select: {
+          id: true,
+          email: true,
+          first_name: true,
+          last_name: true,
+          middle_name: true,
+          uri: true,
+          role: true,
+        },
+      });
+
+    } catch (error) {
+      console.error("Error searching users: ", error);
+      throw error;
     }
-
-    return this.prisma.user.findMany({
-      where: whereConditions,
-
-      select: {
-        email: true,
-        uri: true,
-        role: true,
-        first_name: true,
-        last_name: true,
-        middle_name: true,
-      },
-    });
   }
 
   // public async searchUsers(value: string, targetId: string, role: string): Promise<SearchUserRes[]> {
+  //   const isSuperAdmin = role === "SUPERADMIN";
+  //   console.log(role, value, "==>>>user role and value")
+  //   const whereConditions: any = {
+  //     OR: [
+  //       { first_name: { contains: value, mode: "insensitive" } },
+  //       { last_name: { contains: value, mode: "insensitive" } },
+  //       { middle_name: { contains: value, mode: "insensitive" } },
+  //       { email: { contains: value, mode: "insensitive" } },
+  //       { username: { contains: value, mode: "insensitive" } },
+  //     ],
+  //   };
+
+  //   // Add branch restriction only if NOT superadmin
+  //   if (!isSuperAdmin) {
+  //     whereConditions.associated_branches = {
+  //       some: { id: targetId }
+  //     };
+  //   }
+
   //   return this.prisma.user.findMany({
-  //     where: {
-  //       OR: [
-  //         {
-  //           first_name: {
-  //             contains: value,
-  //             mode: 'insensitive',
-  //           },
-  //         },
-  //         {
-  //           last_name: {
-  //             contains: value,
-  //             mode: 'insensitive',
-  //           },
-  //         },
-  //         {
-  //           middle_name: {
-  //             contains: value,
-  //             mode: 'insensitive',
-  //           },
-  //         },
-  //         {
-  //           email: {
-  //             contains: value,
-  //           },
-  //         },
-  //         {
-  //           username: {
-  //             contains: value,
-  //           },
-  //         },
-  //       ],
-  //     },
+  //     where: whereConditions,
 
   //     select: {
   //       email: true,
@@ -581,6 +674,8 @@ export class MessageService {
   //     },
   //   });
   // }
+
+
   public async getThreadByParent(messageId: string) {
     const message = await this.prisma.message.findUniqueOrThrow({
       where: { id: messageId },

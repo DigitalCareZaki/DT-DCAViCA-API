@@ -98,17 +98,17 @@ export class MessageWebController extends MessageController {
   public async searchUsers(
     @GetUser() user: UserRes,
     @Query('value') value: string,
-  ): Promise<SearchUserRes[]> {
-    console.log('Searching users for user:', user.id, 'with value:', value);
+  ) {
+
     let branchId: any;
-    if (user.role === Role.ADMIN || user.role === Role.DOCTOR) {
+    if (user.role === Role.ADMIN || user.role === Role.DOCTOR || user.role === Role.PATIENT) {
       branchId = await this.adminService.getBranchId(user.id);
     }
     const targetId =
       user.role === Role.SUPERADMIN ? user.organization_id : branchId.id;
     console.log('targetId', targetId);
-    console.log(user.role, value, "==>>>user role and value")
-    return this.getMessageService().searchUsers(value, targetId, user.role);
+
+    return this.getMessageService().searchUsers(value, targetId, user.role, user.id);
   }
 
   @HttpCode(HttpStatus.OK)
