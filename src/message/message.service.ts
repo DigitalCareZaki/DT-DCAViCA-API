@@ -599,7 +599,16 @@ export class MessageService {
         // ========================
         if (role === "ADMIN") {
           roleFilter = {
-            associated_branches: { some: { id: branchId } },
+            OR: [
+              // Users of the same branch
+              {
+                associated_branches: { some: { id: branchId } },
+              },
+              // Superadmins (global)
+              {
+                role: "SUPERADMIN",
+              },
+            ],
           };
         }
 

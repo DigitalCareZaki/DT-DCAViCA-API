@@ -101,7 +101,7 @@ export class MessageWebController extends MessageController {
   ) {
 
     let branchId: any;
-    if (user.role === Role.ADMIN || user.role === Role.DOCTOR || user.role === Role.PATIENT) {
+    if (user.role === Role.ADMIN || user.role === Role.DOCTOR || user.role === Role.PATIENT || user.role === Role.NURSE) {
       branchId = await this.adminService.getBranchId(user.id);
     }
     const targetId =
