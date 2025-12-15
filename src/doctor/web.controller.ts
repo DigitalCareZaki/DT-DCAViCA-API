@@ -45,9 +45,9 @@ export class DoctorWebController extends DoctorController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/all-reports')
-  public async fetchReports(@GetUser() user: UserRes, @Query('page') page = 1, @Query('limit') limit = 10) {
+  public async fetchReports(@Query('search') search: string, @GetUser() user: UserRes, @Query('page') page = 1, @Query('limit') limit = 10) {
     const branch = await this.adminService.getBranchId(user.id);
-    return this.emrService.getAllPatientReports(branch.id, user.id, +page, +limit);
+    return this.emrService.getAllPatientReports(branch.id, user.id, search, +page, +limit);
   }
 
   @HttpCode(HttpStatus.OK)

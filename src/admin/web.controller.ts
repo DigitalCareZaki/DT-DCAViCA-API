@@ -23,8 +23,9 @@ export class WebAdminController extends AdminController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/patient')
-  public async getPatient(@Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes) {
-    return this.getAdminService().getPatients(user, +page, +limit);
+  public async getPatient(@Query('search') search: string, @Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes) {
+    console.log('search query:', search);
+    return this.getAdminService().getPatients(search, user, +page, +limit);
   }
 
   @HttpCode(HttpStatus.OK)

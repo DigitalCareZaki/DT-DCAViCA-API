@@ -88,7 +88,11 @@ export class VideosService {
   }
   public async addVideo(data: AddVideosDTO, userId: string, branchId: string) {
 
+
+
     try {
+      data.uri = this.convertToAndroidYouTubeUrl(data.uri);
+      console.log('Converted URL:', data.uri);
       const video = await this.prisma.videos.create({
         data: {
           title: data.title,
@@ -118,6 +122,7 @@ export class VideosService {
   public async addSuperadminVideos(data: AddSuperadminVideosDTO, userId: string) {
 
     try {
+
       const video = await this.prisma.videos.create({
         data: {
           title: data.title,
@@ -143,5 +148,33 @@ export class VideosService {
       console.log('error', error);
     }
 
+  }
+
+  public convertToAndroidYouTubeUrl(url: string): string {
+    try {
+      const parsed = new URL(url);
+      let videoId = "";
+
+      // Case 1: youtu.be/<id>
+      if (parsed.hostname.includes("youtu.be")) {
+        videoId = parsed.pathname.substring(1);
+      }
+
+      // Case 2: youtube.com/watch?v=<id>
+      else if (parsed.searchParams.get("v")) {
+        videoId = parsed.searchParams.get("v")!;
+      }
+
+      // Case 3: youtube.com/shorts/<id>
+      else if (parsed.pathname.startsWith("/shorts/")) {
+        videoId = parsed.pathname.replace("/shorts/", "");
+      }
+
+      if (!videoId) return url;
+
+      return `https://www.youtube.com/watch?v=${videoId}`;
+    } catch {
+      return url;
+    }
   }
 }

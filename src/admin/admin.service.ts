@@ -66,9 +66,9 @@ export class AdminService {
     return true;
   }
 
-  public async getPatients(user: UserRes, page: number, limit: number) {
+  public async getPatients(search: string, user: UserRes, page: number, limit: number) {
     const skip = (page - 1) * limit;
-
+    console.log(search, 'search>>>>>>>>>>>>')
     const currentOrganization = await this.prisma.user.findUniqueOrThrow({
       where: { id: user.id },
       select: {
@@ -80,16 +80,24 @@ export class AdminService {
     const branchId = currentOrganization.associated_branches[0]?.id;
     if (!branchId) throw new Error('No branch is associated with this user');
 
+    const whereCondition: any = {
+      role: 'PATIENT',
+      associated_branches: { some: { id: branchId } },
+    };
+
+    // ✅ apply search only if value exists
+    if (search?.trim()) {
+      whereCondition.OR = [
+        { first_name: { contains: search, mode: 'insensitive' } },
+        { last_name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
     const [patients, totalItems] = await this.prisma.$transaction([
       this.prisma.user.findMany({
         skip,
         take: limit,
-        where: {
-          AND: [
-            { role: 'PATIENT' },
-            { associated_branches: { some: { id: branchId } } },
-          ],
-        },
+        where: whereCondition,
         select: {
           id: true,
           email: true,
