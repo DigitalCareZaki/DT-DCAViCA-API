@@ -234,18 +234,10 @@ export class ElectronicmedicalreportService {
       const enumTypes = Object.values(EMRType);
 
       const orConditions: Prisma.ElectronicMedicalReportWhereInput[] = [
-        {
-          title: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          description: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
+        { title: { contains: search, mode: Prisma.QueryMode.insensitive } },
+        { description: { contains: search, mode: Prisma.QueryMode.insensitive } },
+        { patient: { user: { first_name: { contains: search, mode: Prisma.QueryMode.insensitive } } } },
+        { patient: { user: { last_name: { contains: search, mode: Prisma.QueryMode.insensitive } } } },
       ];
 
       if (enumTypes.includes(search as EMRType)) {
