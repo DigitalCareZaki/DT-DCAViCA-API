@@ -22,6 +22,7 @@ import type {
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
 import { SENDGRID_TEMPLATES } from 'src/constant';
 import { TwilioService } from 'src/twilio/twilio.service';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class TelemedService {
@@ -243,45 +244,95 @@ export class TelemedService {
     search: string,
     currentUser: string,
   ): Promise<SearchResProps[]> {
+
     return await this.prisma.user.findMany({
       where: {
         AND: [
+          // Only DOCTORS
           {
-            email: {
-              contains: search,
-              mode: 'insensitive',
+            role: Role.DOCTOR,
+          },
+
+          // Only doctors assigned to this patient
+          {
+            doctor: {
+              patients: {
+                some: {
+                  user_id: currentUser,
+                },
+              },
             },
           },
-          {
-            NOT: {
-              id: currentUser,
-            },
-          },
+
+          //  Search filters
           {
             OR: [
-              {
-                role: 'DOCTOR',
-              },
-              {
-                role: 'NURSE',
-              },
-              {
-                role: 'PATIENT',
-              },
+              { email: { contains: search, mode: 'insensitive' } },
+              { first_name: { contains: search, mode: 'insensitive' } },
+              { last_name: { contains: search, mode: 'insensitive' } },
+              { middle_name: { contains: search, mode: 'insensitive' } },
             ],
+          },
+
+          //  Exclude self (extra safety)
+          {
+            NOT: { id: currentUser },
           },
         ],
       },
-
       select: {
+        id: true,
         email: true,
         first_name: true,
         last_name: true,
         middle_name: true,
-        id: true,
       },
     });
   }
+
+  // public async searchTelemed(
+  //   search: string,
+  //   currentUser: string,
+  // ): Promise<SearchResProps[]> {
+  //   return await this.prisma.user.findMany({
+  //     where: {
+  //       AND: [
+  //         {
+  //           email: {
+  //             contains: search,
+  //             mode: 'insensitive',
+  //           },
+  //         },
+  //         {
+  //           NOT: {
+  //             id: currentUser,
+  //           },
+  //         },
+  //         {
+  //           OR: [
+  //             {
+  //               role: 'DOCTOR',
+  //             },
+  //             {
+  //               role: 'NURSE',
+  //             },
+  //             {
+  //               role: 'PATIENT',
+  //             },
+  //           ],
+  //         },
+  //       ],
+  //     },
+
+  //     select: {
+  //       email: true,
+  //       first_name: true,
+  //       last_name: true,
+  //       middle_name: true,
+  //       id: true,
+  //     },
+  //   });
+  // }
 
   public async requested(user: UserRes, isPending: boolean): Promise<RequestedAppointmentProps[]> {
     this.markPastAppointmentsCompleted();

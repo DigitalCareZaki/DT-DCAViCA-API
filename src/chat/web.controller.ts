@@ -24,8 +24,9 @@ export class ChatWebController extends ChatController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/room')
-  public getRooms(@GetUser() user: UserRes): Promise<GetRoomsProps[]> {
-    return this.getChatService().getChatRooms(user);
+  public async getRooms(@GetUser() user: UserRes): Promise<GetRoomsProps[]> {
+    const branchId = await this.adminService.getBranchId(user.id);
+    return this.getChatService().getChatRooms(user, branchId.id);
   }
 
   @HttpCode(HttpStatus.CREATED)
@@ -53,7 +54,7 @@ export class ChatWebController extends ChatController {
     @GetUser() user: UserRes,
   ): Promise<SearchUsersProps[]> {
     const branch = await this.adminService.getBranchId(user.id);
-    return this.getChatService().searchRooms(search, user.id, branch.id);
+    return this.getChatService().searchRooms(search, user, branch.id);
   }
 
   @HttpCode(HttpStatus.OK)
