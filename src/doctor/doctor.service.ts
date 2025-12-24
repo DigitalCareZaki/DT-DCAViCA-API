@@ -767,6 +767,8 @@ export class DoctorService {
     id: string,
     search: string,
   ): Promise<OrganizationMedication[]> {
+
+    console.log('Getting organization medications for user ID:', id, 'with search:', search);
     return this.prisma.user
       .findFirst({
         where: {
@@ -799,7 +801,7 @@ export class DoctorService {
         orderBy: {
           created_at: 'desc',
         },
-        take: 10,
+        // take: 10,
       });
   }
 
