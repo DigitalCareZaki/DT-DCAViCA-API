@@ -581,15 +581,22 @@ export class MessageService {
           const assignedDoctorIds = patient.doctors.map(d => d.user_id);
           const assignedNurseIds = patient.nurses.map(n => n.user_id);
 
+
           roleFilter = {
-            AND: [
+            OR: [
+              // ✅ Assigned doctors (no branch check needed)
+              { id: { in: assignedDoctorIds } },
+
+              // ✅ Assigned nurses
+              { id: { in: assignedNurseIds } },
+
+              // ✅ Admins of same branch
               {
-                OR: [
-                  { id: { in: assignedDoctorIds } },
-                  { id: { in: assignedNurseIds } },
+                AND: [
+                  { role: "ADMIN" },
+                  { associated_branches: { some: { id: branchId } } },
                 ],
               },
-              { associated_branches: { some: { id: branchId } } },
             ],
           };
         }
