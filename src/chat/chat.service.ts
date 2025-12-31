@@ -481,8 +481,16 @@ export class ChatService {
           select: { user_id: true },
         });
 
+        const admins = await this.prisma.user.findMany({
+          where: {
+            role: Role.ADMIN,
+            associated_branches: { some: { id: branchId } },
+          },
+          select: { id: true },
+        });
 
-        return [...doctors.map(d => d.user_id), ...nurses.map(n => n.user_id)];
+
+        return [...doctors.map(d => d.user_id), ...nurses.map(n => n.user_id), ...admins.map(a => a.id)];
       }
 
       /* ===================== DOCTOR ===================== */
