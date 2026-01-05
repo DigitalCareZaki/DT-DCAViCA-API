@@ -337,6 +337,9 @@ export class EducationService {
         views_count: true,
         created_at: true,
       },
+      orderBy: {
+        created_at: 'desc',
+      },
     });
   }
 
