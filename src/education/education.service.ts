@@ -204,12 +204,12 @@ export class EducationService {
             mode: 'insensitive',
           },
         },
-        {
-          content: {
-            contains: value,
-            mode: 'insensitive',
-          },
-        },
+        // {
+        //   content: {
+        //     contains: value,
+        //     mode: 'insensitive',
+        //   },
+        // },
         {
           author: {
             email: value,
