@@ -360,11 +360,11 @@ export class EducationService {
               contains: value,
             },
           },
-          {
-            content: {
-              contains: value,
-            },
-          },
+          // {
+          //   content: {
+          //     contains: value,
+          //   },
+          // },
           {
             author: {
               email: value,
