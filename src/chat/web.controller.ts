@@ -15,6 +15,7 @@ import { UserRes } from '@types';
 import { RoomDTO } from './dto/room.dto';
 import { CreateRoomProps, GetRoomsProps, SearchUsersProps } from './types';
 import { AdminService } from 'src/admin/admin.service';
+import { Role } from '@prisma/client';
 
 @Controller('web/chat')
 export class ChatWebController extends ChatController {
@@ -25,8 +26,15 @@ export class ChatWebController extends ChatController {
   @HttpCode(HttpStatus.OK)
   @Get('/room')
   public async getRooms(@GetUser() user: UserRes): Promise<GetRoomsProps[]> {
-    const branchId = await this.adminService.getBranchId(user.id);
-    return this.getChatService().getChatRooms(user, branchId.id);
+    // const branchId = await this.adminService.getBranchId(user.id);
+    let branchId: any;
+    if (user.role === Role.ADMIN || user.role === Role.DOCTOR || user.role === Role.PATIENT || user.role === Role.NURSE) {
+      branchId = await this.adminService.getBranchId(user.id);
+    }
+    const targetId =
+      user.role === Role.SUPERADMIN ? user.organization_id : branchId.id;
+    console.log('targetId', targetId);
+    return this.getChatService().getChatRooms(user, targetId);
   }
 
   @HttpCode(HttpStatus.CREATED)

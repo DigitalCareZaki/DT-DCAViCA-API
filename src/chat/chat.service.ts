@@ -563,6 +563,13 @@ export class ChatService {
 
         return users.map(u => u.id);
       }
+      case Role.SUPERADMIN: {
+        const users = await this.prisma.user.findMany({
+          select: { id: true },
+        });
+
+        return users.map(u => u.id);
+      }
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TelemedCreateDTO } from './dto';
 import { TelemedActionDTO } from './dto/action.dto';
@@ -29,6 +29,36 @@ export class TelemedService {
   constructor(private prisma: PrismaService, private mail: SendgridService, private sms: TwilioService) { }
 
   public async createAppointment(user: UserRes, dto: TelemedCreateDTO) {
+
+    // const hasConflict = await this.prisma.appointmentParticipants.findFirst({
+    //   where: {
+    //     user_id: { in: dto.users }, // doctor IDs
+    //     appointment: {
+    //       AND: [
+    //         {
+    //           start_date: { lt: dto.end_date },
+    //         },
+    //         {
+    //           end_date: { gt: dto.start_date },
+    //         },
+    //         {
+    //           // optional: exclude cancelled appointments
+    //           status: { not: 'CANCELLED' },
+    //         },
+    //       ],
+    //     },
+    //   },
+    //   include: {
+    //     appointment: true,
+    //   },
+    // });
+
+    // if (hasConflict) {
+    //   throw new BadRequestException(
+    //     'Doctor already has an appointment in this time slot',
+    //   );
+    // }
+
     const appointment = await this.prisma.appointment.create({
       data: {
         title: dto.title,
