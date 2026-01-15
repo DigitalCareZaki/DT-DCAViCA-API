@@ -22,7 +22,8 @@ export class TelemedAppController {
 
     const appointments = await this.telemedService.patientAppointmentList(user);
     console.log('appointments:===========>>', appointments);
-    const analytics = await this.telemedService.appointmentAnalyticsGroup(user);
+    const analytics = await this.telemedService.todayappointments(user);
+    // const analytics = await this.telemedService.appointmentAnalyticsGroup(user);
 
     return {
       analytics,
@@ -34,7 +35,8 @@ export class TelemedAppController {
 
     const appointments = await this.telemedService.patientAppointmentAnalytics(user, patientId,);
     console.log('appointments:===========>>', appointments);
-    const analytics = await this.telemedService.PatientAppointmentAnalyticsGroup(user, patientId);
+    const analytics = await this.telemedService.todayappointments(user);
+    // const analytics = await this.telemedService.PatientAppointmentAnalyticsGroup(user, patientId);
 
     return {
       analytics,
