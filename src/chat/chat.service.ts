@@ -267,95 +267,118 @@ export class ChatService {
     return result;
   }
 
+  // public async searchRooms(
+  //   search: string,
+  //   user: UserRes,
+  //   branchId: string,
+  // ): Promise<SearchUsersProps[]> {
+
+  //   const allowedUserIds = await this.getAllowedChatUserIds(user, branchId);
+  //   console.log('allowedUserIds>>>>', allowedUserIds);
+  //   return await this.prisma.user.findMany({
+  //     where: {
+  //       id: {
+  //         in: allowedUserIds,
+  //         not: user.id,
+  //       },
+  //       associated_branches: {
+  //         some: { id: branchId },
+  //       },
+  //       OR: [
+  //         { first_name: { contains: search, mode: 'insensitive' } },
+  //         { last_name: { contains: search, mode: 'insensitive' } },
+  //         { middle_name: { contains: search, mode: 'insensitive' } },
+  //         { email: { contains: search, mode: 'insensitive' } },
+  //         { username: { contains: search, mode: 'insensitive' } },
+  //       ],
+  //     },
+
+  //     // where: {
+  //     //   AND: [
+  //     //     {
+  //     //       id: { in: allowedUserIds }, // 🔒 role-based security
+  //     //     },
+  //     //     {
+  //     //       associated_branches: {
+  //     //         some: { id: branchId },
+  //     //       },
+  //     //     },
+  //     //     {
+  //     //       OR: [
+  //     //         { first_name: { contains: search, mode: 'insensitive' } },
+  //     //         { last_name: { contains: search, mode: 'insensitive' } },
+  //     //         { middle_name: { contains: search, mode: 'insensitive' } },
+  //     //         { email: { contains: search, mode: 'insensitive' } },
+  //     //         { username: { contains: search, mode: 'insensitive' } },
+  //     //       ],
+  //     //     },
+  //     //     {
+  //     //       NOT: { id: user.id },
+  //     //     },
+  //     //   ],
+  //     // },
+
+
+  //     select: {
+  //       first_name: true,
+  //       last_name: true,
+  //       middle_name: true,
+  //       id: true,
+  //       uri: true,
+  //       email: true,
+  //       role: true,
+  //     },
+  //   });
+  // }
+
   public async searchRooms(
     search: string,
     user: UserRes,
-    branchId: string,
+    branchId?: string,
   ): Promise<SearchUsersProps[]> {
 
+    if (!search?.trim()) return [];
+
+    search = search.trim();
+
     const allowedUserIds = await this.getAllowedChatUserIds(user, branchId);
-    return await this.prisma.user.findMany({
+
+    const branchCondition =
+      user.role === Role.SUPERADMIN
+        ? {}
+        : {
+          associated_branches: {
+            some: { id: branchId },
+          },
+        };
+
+    return this.prisma.user.findMany({
       where: {
-        AND: [
-          {
-            id: { in: allowedUserIds }, // 🔒 role-based security
-          },
-          {
-            associated_branches: {
-              some: { id: branchId },
-            },
-          },
-          {
-            OR: [
-              { first_name: { contains: search, mode: 'insensitive' } },
-              { last_name: { contains: search, mode: 'insensitive' } },
-              { middle_name: { contains: search, mode: 'insensitive' } },
-              { email: { contains: search, mode: 'insensitive' } },
-              { username: { contains: search, mode: 'insensitive' } },
-            ],
-          },
-          {
-            NOT: { id: user.id },
-          },
+        id: {
+          in: allowedUserIds,
+          not: user.id,
+        },
+        ...branchCondition,
+        OR: [
+          { first_name: { contains: search, mode: 'insensitive' } },
+          { last_name: { contains: search, mode: 'insensitive' } },
+          { middle_name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { username: { contains: search, mode: 'insensitive' } },
         ],
       },
-      // where: {
-      //   AND: [
-      //     {
-      //       associated_branches: {
-      //         some: {
-      //           id: branchId,  // 🔥 Only users from this branch
-      //         },
-      //       },
-      //     },
-      //     {
-
-      //       OR: [
-      //         {
-      //           first_name: {
-      //             contains: search,
-      //             mode: 'insensitive',
-      //           },
-      //         },
-      //         {
-      //           last_name: {
-      //             contains: search,
-      //             mode: 'insensitive',
-      //           },
-      //         },
-      //         {
-      //           middle_name: {
-      //             contains: search,
-      //             mode: 'insensitive',
-      //           },
-      //         },
-      //         {
-      //           email: search,
-      //         },
-      //         {
-      //           username: search,
-      //         },
-      //       ],
-      //     },
-      //     {
-      //       NOT: {
-      //         id: user.id,
-      //       },
-      //     },
-      //   ],
-      // },
-
       select: {
+        id: true,
         first_name: true,
         last_name: true,
         middle_name: true,
-        id: true,
         uri: true,
         email: true,
         role: true,
       },
     });
   }
+
 
 
   public async getRoomChats(roomId: string) {
@@ -388,7 +411,7 @@ export class ChatService {
         },
       },
     });
-
+    console.log(room, "roommmmmmmmmm")
     const modifiedChats = room?.chats.map(chat => ({
       id: chat.id,
       message: chat.message,

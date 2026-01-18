@@ -61,8 +61,15 @@ export class ChatWebController extends ChatController {
     @Query('search') search: string,
     @GetUser() user: UserRes,
   ): Promise<SearchUsersProps[]> {
-    const branch = await this.adminService.getBranchId(user.id);
-    return this.getChatService().searchRooms(search, user, branch.id);
+    let branchId: any;
+    if (user.role === Role.ADMIN || user.role === Role.DOCTOR || user.role === Role.PATIENT || user.role === Role.NURSE) {
+      branchId = await this.adminService.getBranchId(user.id);
+    }
+    const targetId =
+      user.role === Role.SUPERADMIN ? user.organization_id : branchId.id;
+    console.log('targetId', targetId);
+
+    return this.getChatService().searchRooms(search, user, targetId);
   }
 
   @HttpCode(HttpStatus.OK)
