@@ -1424,7 +1424,7 @@ export class TelemedService {
           }
         }
       } else {
-        // Create new SlotWrapper if it doesn't exist
+        // Create new SlotWrapper if it doesn't existasdfasd
         const newWrapper = await this.prisma.slotWrapper.create({
           data: {
             day: incomingWrapper.day,
