@@ -499,21 +499,29 @@ export class OrganizationService {
     return (await this.validateOrganization(userId)).organization_id;
   }
 
-  public async getOrganizationDoctors(userId: string) {
-    const orgnization = await this.validateOrganization(userId);
+  public async getOrganizationDoctors(targetId: string, role: string) {
+    // const orgnization = await this.validateOrganization(userId);
+
+    console.log('targetId', targetId, role);
+    const isSuperAdmin = role === Role.SUPERADMIN;
+
+    const whereCondition: any = isSuperAdmin
+      ? {
+
+        role: 'DOCTOR',
+
+      }
+      : {
+        role: 'DOCTOR',
+        associated_branches: {
+          some: {
+            id: targetId,
+          },
+        },
+      };
 
     return await this.prisma.user.findMany({
-      where: {
-        AND: [
-          {
-            role: 'DOCTOR',
-          },
-          {
-            organization_id: orgnization.organization_id,
-          },
-        ],
-      },
-
+      where: whereCondition, // ✅ use your dynamic condition here
       select: {
         first_name: true,
         middle_name: true,
@@ -526,6 +534,30 @@ export class OrganizationService {
         id: true,
       },
     });
+    // return await this.prisma.user.findMany({
+    //   where: {
+    //     AND: [
+    //       {
+    //         role: 'DOCTOR',
+    //       },
+    //       {
+    //         organization_id: orgnization.organization_id,
+    //       },
+    //     ],
+    //   },
+
+    //   select: {
+    //     first_name: true,
+    //     middle_name: true,
+    //     last_name: true,
+    //     doctor: {
+    //       select: {
+    //         employee_id: true,
+    //       },
+    //     },
+    //     id: true,
+    //   },
+    // });
   }
 
   public async getOrganizationNurses(targetId: string, role: string) {
