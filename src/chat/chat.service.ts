@@ -99,12 +99,28 @@ export class ChatService {
         last_message_at: lastMessageAtMap.get(r.id) ?? null,
       }))
       .sort((a, b) => {
-        const unreadDelta = (b.unread_count ?? 0) - (a.unread_count ?? 0);
-        if (unreadDelta !== 0) return unreadDelta;
-        const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-        const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-        return bTime - aTime;
+        const aTime = a.last_message_at
+          ? new Date(a.last_message_at).getTime()
+          : 0;
+        const bTime = b.last_message_at
+          ? new Date(b.last_message_at).getTime()
+          : 0;
+
+        //  newest activity first
+        if (bTime !== aTime) {
+          return bTime - aTime;
+        }
+
+        //  if same activity time, then unread count
+        return (b.unread_count ?? 0) - (a.unread_count ?? 0);
       });
+    // .sort((a, b) => {
+    //   const unreadDelta = (b.unread_count ?? 0) - (a.unread_count ?? 0);
+    //   if (unreadDelta !== 0) return unreadDelta;
+    //   const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+    //   const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+    //   return bTime - aTime;
+    // });
 
     console.log('enriched latest on top>>>>>>>>> ', enriched);
 
