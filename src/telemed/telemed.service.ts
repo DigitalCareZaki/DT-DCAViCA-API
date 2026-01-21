@@ -4,6 +4,7 @@ import { TelemedCreateDTO } from './dto';
 import { TelemedActionDTO } from './dto/action.dto';
 import { SendMailPayload } from '@types';
 import type { UserRes } from '@types';
+
 import type {
   Appointment,
   GetAppointmentsType,
@@ -23,10 +24,59 @@ import { SendgridService } from 'src/sendGrid/sendgrid.service';
 import { SENDGRID_TEMPLATES } from 'src/constant';
 import { TwilioService } from 'src/twilio/twilio.service';
 import { Role } from '@prisma/client';
+import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 
 @Injectable()
 export class TelemedService {
   constructor(private prisma: PrismaService, private mail: SendgridService, private sms: TwilioService) { }
+
+  private generateTenMinuteSlots(start: Date, end: Date) {
+    const slots = [];
+    let current = new Date(start);
+
+    while (current < end) {
+      const next = new Date(current.getTime() + 10 * 60000);
+
+      if (next > end) break;
+
+      slots.push({
+        startTime: new Date(current),
+        endTime: new Date(next),
+      });
+
+      current = next;
+    }
+
+    return slots;
+  }
+  isOverlapping(start1: number, end1: number, start2: number, end2: number) {
+
+    return start1 < end2 && end1 > start2;
+  }
+
+  private applyDate(base: Date, target: Date): Date {
+    return new Date(
+      target.getFullYear(),
+      target.getMonth(),
+      target.getDate(),
+      base.getHours(),
+      base.getMinutes(),
+      base.getSeconds(),
+      base.getMilliseconds()
+    );
+  }
+
+  startOfDay(date: Date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  endOfDay(date: Date) {
+    const d = new Date(date);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }
 
   public async createAppointment(user: UserRes, dto: TelemedCreateDTO) {
 
@@ -1212,6 +1262,147 @@ export class TelemedService {
 
   }
 
+  // public async calendar(userId: string) {
+  //   let slotParent = await this.prisma.slotParent.findUnique({
+  //     where: { id: userId },
+  //     include: {
+  //       slots: {
+  //         include: {
+  //           slots: true,
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   // 🔹 YOUR LOGIC — KEEP IT
+  //   if (!slotParent) {
+  //     await this.prisma.slotParent.create({
+  //       data: { id: userId },
+  //     });
+
+  //     await Promise.all(
+  //       [0, 1, 2, 3, 4, 5, 6].map((day) =>
+  //         this.prisma.slotWrapper.create({
+  //           data: {
+  //             day,
+  //             slotParentId: userId,
+  //           },
+  //         }),
+  //       ),
+  //     );
+
+  //     slotParent = await this.prisma.slotParent.findUnique({
+  //       where: { id: userId },
+  //       include: {
+  //         slots: {
+  //           include: {
+  //             slots: true,
+  //           },
+  //         },
+  //       },
+  //     });
+  //   }
+
+  //   // 🔹 TRANSFORM RESPONSE (10-minute slots)
+  //   return {
+  //     id: slotParent.id,
+  //     startTime: slotParent.startTime,
+  //     endTime: slotParent.endTime,
+  //     days: slotParent.slots.map(wrapper => ({
+  //       day: wrapper.day,
+  //       slots: wrapper.slots.flatMap(slot =>
+  //         this.generateTenMinuteSlots(
+  //           new Date(slot.startTime),
+  //           new Date(slot.endTime),
+  //         ),
+  //       ),
+  //     })),
+  //   };
+  // }
+  public async getSlotsByDate(userId: string, dateStr: string) {
+    try {
+      const date = new Date(dateStr);
+      const day = date.getDay();
+
+      const slotParent = await this.prisma.slotParent.findUnique({
+        where: { id: userId },
+        include: {
+          slots: { include: { slots: true } }
+        }
+      });
+
+      if (!slotParent) return null;
+
+      const wrapper = slotParent.slots.find(w => w.day === day);
+      if (!wrapper) {
+        return { date: dateStr, day, slots: [] };
+      }
+
+      // STEP 1 — Generate Raw Slots & Convert Doctor Local → UTC
+      const generatedSlots = wrapper.slots.flatMap(slot => {
+        const slotStartLocal = this.applyDate(new Date(slot.startTime), date);
+        const slotEndLocal = this.applyDate(new Date(slot.endTime), date);
+
+        // Doctor timezone offset to convert local -> true UTC
+        const offsetMs = slotStartLocal.getTimezoneOffset() * 60 * 1000;
+
+        const slotStartUTC = new Date(slotStartLocal.getTime() + offsetMs);
+        const slotEndUTC = new Date(slotEndLocal.getTime() + offsetMs);
+
+        return this.generateTenMinuteSlots(slotStartUTC, slotEndUTC).map(s => ({
+          startTime: new Date(s.startTime),
+          endTime: new Date(s.endTime)
+        }));
+      });
+
+      // STEP 2 — Normalize Slots before filtering
+      const normalizedSlots = generatedSlots.map(s => ({
+        startTime: new Date(s.startTime.toISOString()),
+        endTime: new Date(s.endTime.toISOString())
+      }));
+
+      // STEP 3 — Fetch appointments for that same day
+      const appointments = await this.prisma.appointment.findMany({
+        where: {
+          participants: { some: { user_id: userId } },
+          start_date: { gte: this.startOfDay(date), lt: this.endOfDay(date) },
+          status: { not: 'CANCELLED' }   // 👈 this line excludes cancelled appointments
+        },
+        select: { start_date: true, end_date: true }
+      });
+
+      console.log('Appointments ====>>>', appointments);
+      console.log('normalizedSlots ====>>>', normalizedSlots);
+
+      // STEP 4 — Filter Out Booked Slots (UTC → UTC compare)
+      const availableSlots = normalizedSlots.filter(slot =>
+        !appointments.some(appt =>
+          this.isOverlapping(
+            slot.startTime.getTime(),
+            slot.endTime.getTime(),
+            new Date(appt.start_date).getTime(),
+            new Date(appt.end_date).getTime()
+          )
+        )
+      );
+
+      return {
+        date: dateStr,
+        day,
+        slots: availableSlots.map(s => ({
+          startTime: s.startTime.toISOString(),
+          endTime: s.endTime.toISOString()
+        }))
+      };
+
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  }
+
+
+
   public async calendar(userId: string): Promise<SlotParent> {
     console.log(`Fetching calendar for user: ${userId}`);
     // console.log(`Fetching calendar for user: ${userId}`);
@@ -1917,4 +2108,7 @@ export class TelemedService {
 
     return null;
   }
+
+
+
 }

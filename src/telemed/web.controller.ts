@@ -150,6 +150,19 @@ export class TelemedWebController {
 
     return this.telemedService.calendar(calendarUserId);
   }
+  @HttpCode(HttpStatus.OK)
+  @Get('/slots')
+  public async getDoctorAvailableSlots(
+    @GetUser() user: UserRes, // Authenticated user
+    @Query('userId') userId?: string,
+    @Query('date') date?: string, // Optional userId query parameter
+  ) {
+    const calendarUserId = userId || user.id; // Use the provided userId or fallback to authenticated user
+    // console.log(`Fetching calendar for user: ${calendarUserId}`);
+    console.log('Date String:', date);
+
+    return this.telemedService.getSlotsByDate(userId, date);
+  }
 
   @HttpCode(HttpStatus.OK)
   @Post('/calendar')
