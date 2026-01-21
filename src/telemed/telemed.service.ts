@@ -1344,10 +1344,10 @@ export class TelemedService {
         const slotEndLocal = this.applyDate(new Date(slot.endTime), date);
 
         // Doctor timezone offset to convert local -> true UTC
+        const offsetMs = slotStartLocal.getTimezoneOffset() * 60 * 1000;
 
-
-        const slotStartUTC = new Date(slotStartLocal.getTime());
-        const slotEndUTC = new Date(slotEndLocal.getTime());
+        const slotStartUTC = new Date(slotStartLocal.getTime() - offsetMs);
+        const slotEndUTC = new Date(slotEndLocal.getTime() - offsetMs);
         // const offsetMs = slotStartLocal.getTimezoneOffset() * 60 * 1000;
 
         // const slotStartUTC = new Date(slotStartLocal.getTime() + offsetMs);
@@ -1361,8 +1361,8 @@ export class TelemedService {
 
       // STEP 2 — Normalize Slots before filtering
       const normalizedSlots = generatedSlots.map(s => ({
-        startTime: new Date(s.startTime),
-        endTime: new Date(s.endTime)
+        startTime: new Date(s.startTime.toISOString()),
+        endTime: new Date(s.endTime.toISOString())
       }));
 
       // STEP 3 — Fetch appointments for that same day
@@ -1397,8 +1397,8 @@ export class TelemedService {
         date: dateStr,
         day,
         slots: availableSlots.map(s => ({
-          startTime: s.startTime,
-          endTime: s.endTime
+          startTime: s.startTime.toISOString(),
+          endTime: s.endTime.toISOString()
         }))
       };
 
