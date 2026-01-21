@@ -1344,10 +1344,12 @@ export class TelemedService {
         const slotEndLocal = this.applyDate(new Date(slot.endTime), date);
 
         // Doctor timezone offset to convert local -> true UTC
-        const offsetMs = slotStartLocal.getTimezoneOffset() * 60 * 1000;
+        // const offsetMs = slotStartLocal.getTimezoneOffset() * 60 * 1000;
 
-        const slotStartUTC = new Date(slotStartLocal.getTime() + offsetMs);
-        const slotEndUTC = new Date(slotEndLocal.getTime() + offsetMs);
+        const slotStartUTC = new Date(slotStartLocal.getTime());
+        const slotEndUTC = new Date(slotEndLocal.getTime());
+        // const slotStartUTC = new Date(slotStartLocal.getTime() + offsetMs);
+        // const slotEndUTC = new Date(slotEndLocal.getTime() + offsetMs);
 
         return this.generateTenMinuteSlots(slotStartUTC, slotEndUTC).map(s => ({
           startTime: new Date(s.startTime),
