@@ -158,9 +158,6 @@ export class TelemedWebController {
     @Query('date') date?: string, // Optional userId query parameter
   ) {
     const calendarUserId = userId || user.id; // Use the provided userId or fallback to authenticated user
-    // console.log(`Fetching calendar for user: ${calendarUserId}`);
-    console.log('Date String:', date);
-
     return this.telemedService.getSlotsByDate(userId, date);
   }
 
