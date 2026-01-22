@@ -216,6 +216,12 @@ model Doctor {
   pmdc_number String? @unique
   employee_id String
 
+  // // Vivalink AViCardia Monitoring fields
+  // avicardia_monitoring   VivalinkSyncStatus @default(NO)
+  // vivalink_synced        Boolean            @default(false)
+  // vivalink_sync_error    String?
+  // vivalink_synced_at     DateTime?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -259,6 +265,12 @@ model Device {
 
   branchId  String? 
   branch    Branch?   @relation(fields: [branchId], references: [id])
+
+  // Vivalink AViCardia Monitoring fields
+  cardiac_monitoring     VivalinkSyncStatus @default(NO)
+  vivalink_synced        Boolean            @default(false)
+  vivalink_sync_error    String?
+  vivalink_synced_at     DateTime?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -389,6 +401,12 @@ model Patient {
   tablets PatientTablet[] @relation("patientTablets")
 
   measurement_ranges PatientMeasurementRange[] @relation("patientMeasurementRange")
+
+  // Vivalink Cardiac Remote Monitoring fields
+  cardiac_monitoring     VivalinkSyncStatus @default(NO)
+  vivalink_synced        Boolean            @default(false)
+  vivalink_sync_error    String?
+  vivalink_synced_at     DateTime?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -980,4 +998,10 @@ enum EMRType {
   MEDICATION_HISTORY
   DIAGNOSIS
   RECORD
+}
+
+enum VivalinkSyncStatus {
+  YES
+  NO
+  LATER
 }
