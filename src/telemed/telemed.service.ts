@@ -1340,6 +1340,7 @@ export class TelemedService {
 
       // STEP 1 — Generate Raw Slots & Convert Doctor Local → UTC
       const generatedSlots = wrapper.slots.flatMap(slot => {
+        console.log(slot, '==========>>>slot');
         const slotStartLocal = this.applyDate(new Date(slot.startTime), date);
         const slotEndLocal = this.applyDate(new Date(slot.endTime), date);
 
@@ -1375,16 +1376,18 @@ export class TelemedService {
       console.log('normalizedSlots ====>>>', normalizedSlots);
 
       // STEP 4 — Filter Out Booked Slots (UTC → UTC compare)
-      const availableSlots = normalizedSlots.filter(slot =>
-        !appointments.some(appt =>
-          this.isOverlapping(
-            slot.startTime.getTime(),
-            slot.endTime.getTime(),
-            new Date(appt.start_date).getTime(),
-            new Date(appt.end_date).getTime()
-          )
-        )
-      );
+      const availableSlots = normalizedSlots.filter(slot => {
+        if (!appointments || appointments.length === 0) return true;
+
+        return !appointments.some(appt => {
+          const apptStart = new Date(appt.start_date).getTime();
+          const apptEnd = new Date(appt.end_date).getTime();
+          const slotStart = slot.startTime.getTime();
+          const slotEnd = slot.endTime.getTime();
+
+          return this.isOverlapping(slotStart, slotEnd, apptStart, apptEnd);
+        });
+      });
 
       return {
         date: dateStr,
