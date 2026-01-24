@@ -80,41 +80,14 @@ export class TelemedService {
 
   public async createAppointment(user: UserRes, dto: TelemedCreateDTO) {
 
-    // const hasConflict = await this.prisma.appointmentParticipants.findFirst({
-    //   where: {
-    //     user_id: { in: dto.users }, // doctor IDs
-    //     appointment: {
-    //       AND: [
-    //         {
-    //           start_date: { lt: dto.end_date },
-    //         },
-    //         {
-    //           end_date: { gt: dto.start_date },
-    //         },
-    //         {
-    //           // optional: exclude cancelled appointments
-    //           status: { not: 'CANCELLED' },
-    //         },
-    //       ],
-    //     },
-    //   },
-    //   include: {
-    //     appointment: true,
-    //   },
-    // });
-
-    // if (hasConflict) {
-    //   throw new BadRequestException(
-    //     'Doctor already has an appointment in this time slot',
-    //   );
-    // }
-
+    const startDate = new Date(dto.start_date);
+    const endDate = new Date(dto.end_date);
     const appointment = await this.prisma.appointment.create({
       data: {
         title: dto.title,
         description: dto.description,
-        start_date: dto.start_date,
-        end_date: dto.end_date,
+        start_date: startDate,
+        end_date: endDate,
         type: dto.type,
         about: dto.about,
         organizer_id: user.id,  // patient id
@@ -1340,25 +1313,30 @@ export class TelemedService {
 
       // STEP 1 — Generate Raw Slots & Convert Doctor Local → UTC
       const generatedSlots = wrapper.slots.flatMap(slot => {
-        console.log(slot, '==========>>>slot');
-        const slotStartLocal = this.applyDate(new Date(slot.startTime), date);
-        const slotEndLocal = this.applyDate(new Date(slot.endTime), date);
+        const slotStart = this.applyDate(new Date(slot.startTime), date);
+        const slotEnd = this.applyDate(new Date(slot.endTime), date);
 
-        // Doctor timezone offset to convert local -> true UTC
-        const PKT_OFFSET = 5 * 60 * 60 * 1000;
-
-        const slotStartUTC = new Date(slotStartLocal.getTime() - PKT_OFFSET);
-        const slotEndUTC = new Date(slotEndLocal.getTime() - PKT_OFFSET);
-        // const offsetMs = slotStartLocal.getTimezoneOffset() * 60 * 1000;
-
-        // const slotStartUTC = new Date(slotStartLocal.getTime() + offsetMs);
-        // const slotEndUTC = new Date(slotEndLocal.getTime() + offsetMs);
-
-        return this.generateTenMinuteSlots(slotStartUTC, slotEndUTC).map(s => ({
+        return this.generateTenMinuteSlots(slotStart, slotEnd).map(s => ({
           startTime: new Date(s.startTime),
           endTime: new Date(s.endTime)
         }));
       });
+      // const generatedSlots = wrapper.slots.flatMap(slot => {
+      //   console.log(slot, '==========>>>slot');
+      //   const slotStartLocal = this.applyDate(new Date(slot.startTime), date);
+      //   const slotEndLocal = this.applyDate(new Date(slot.endTime), date);
+
+      //   // Doctor timezone offset to convert local -> true UTC
+      //   const PKT_OFFSET = 5 * 60 * 60 * 1000;
+
+      //   const slotStartUTC = new Date(slotStartLocal.getTime() - PKT_OFFSET);
+      //   const slotEndUTC = new Date(slotEndLocal.getTime() - PKT_OFFSET);
+
+      //   return this.generateTenMinuteSlots(slotStartUTC, slotEndUTC).map(s => ({
+      //     startTime: new Date(s.startTime),
+      //     endTime: new Date(s.endTime)
+      //   }));
+      // });
 
       // STEP 2 — Normalize Slots before filtering
       const normalizedSlots = generatedSlots.map(s => ({

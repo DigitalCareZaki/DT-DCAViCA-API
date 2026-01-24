@@ -64,6 +64,8 @@ export class ComplianceService {
             },
           },
         });
+
+      console.log('patientMedications:========>>>>', JSON.stringify(patientMedications))
       const Results = patientMedications.reduce((acc, patient) => {
         patient.medication.forEach((med) => {
           med.patient_medication_alerts.forEach((alert) => {
