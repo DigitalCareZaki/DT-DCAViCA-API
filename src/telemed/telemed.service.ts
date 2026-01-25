@@ -80,14 +80,14 @@ export class TelemedService {
 
   public async createAppointment(user: UserRes, dto: TelemedCreateDTO) {
 
-    // const startDate = new Date(dto.start_date);
-    // const endDate = new Date(dto.end_date);
+    const startDate = new Date(dto.start_date);
+    const endDate = new Date(dto.end_date);
     const appointment = await this.prisma.appointment.create({
       data: {
         title: dto.title,
         description: dto.description,
-        start_date: dto.start_date,
-        end_date: dto.end_date,
+        start_date: startDate,
+        end_date: endDate,
         type: dto.type,
         about: dto.about,
         organizer_id: user.id,  // patient id
@@ -1370,7 +1370,7 @@ export class TelemedService {
           return this.isOverlapping(slotStart, slotEnd, apptStart, apptEnd);
         });
       });
-      console.log("Available ===>", availableSlots)
+
 
       return {
         date: dateStr,
