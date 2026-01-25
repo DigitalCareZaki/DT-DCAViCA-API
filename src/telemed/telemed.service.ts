@@ -78,6 +78,11 @@ export class TelemedService {
     return d;
   }
 
+  toUTC(dateStr: string | Date) {
+    const d = new Date(dateStr);
+    return new Date(d.getTime() - (5 * 60 * 60 * 1000)); // PKT → UTC
+  }
+
   public async createAppointment(user: UserRes, dto: TelemedCreateDTO) {
 
     const startDate = new Date(dto.start_date);
@@ -1586,16 +1591,16 @@ export class TelemedService {
             await this.prisma.slot.update({
               where: { id: incomingSlot.id },
               data: {
-                startTime: incomingSlot.startTime,
-                endTime: incomingSlot.endTime,
-              },
+                startTime: this.toUTC(incomingSlot.startTime),
+                endTime: this.toUTC(incomingSlot.endTime),
+              }
             });
           } else {
             // Create new slot
             await this.prisma.slot.create({
               data: {
-                startTime: incomingSlot.startTime,
-                endTime: incomingSlot.endTime,
+                startTime: this.toUTC(incomingSlot.startTime),
+                endTime: this.toUTC(incomingSlot.endTime),
                 slotWrapperId: incomingWrapper.id,
               },
             });
@@ -1614,8 +1619,8 @@ export class TelemedService {
         for (const newSlot of incomingWrapper.slots) {
           await this.prisma.slot.create({
             data: {
-              startTime: newSlot.startTime,
-              endTime: newSlot.endTime,
+              startTime: this.toUTC(newSlot.startTime),
+              endTime: this.toUTC(newSlot.endTime),
               slotWrapperId: newWrapper.id,
             },
           });
@@ -1638,6 +1643,141 @@ export class TelemedService {
     // console.log(`Calendar fully updated for user ${user.id}`);
     return updatedSlotParent;
   }
+  // public async updateCalendar(
+  //   user: UserRes,
+  //   data: SlotParent,
+  // ): Promise<SlotParent> {
+  //   // console.log(`Updating calendar 100% for user: ${user.id}`);
+  //   console.log(data, 'data:===========>>');
+  //   // Fetch existing SlotParent with all nested relations
+  //   const existingSlotParent = await this.prisma.slotParent.findUnique({
+  //     where: { id: user.id },
+  //     include: {
+  //       slots: {
+  //         include: {
+  //           slots: true,
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   // If SlotParent doesn't exist, throw an error
+  //   if (!existingSlotParent) {
+  //     throw new Error(`SlotParent for user ${user.id} does not exist.`);
+  //   }
+
+  //   // Update the SlotParent fields
+  //   await this.prisma.slotParent.update({
+  //     where: { id: user.id },
+  //     data: {
+  //       startTime: data.startTime,
+  //       endTime: data.endTime,
+  //     },
+  //   });
+
+  //   // Get list of current SlotWrapper IDs and Slot IDs from the existing data
+  //   const existingWrapperIds = existingSlotParent.slots.map(
+  //     (wrapper) => wrapper.id,
+  //   );
+
+  //   const newWrapperIds = data.slots.map((wrapper) => wrapper.id);
+
+  //   // Identify and delete SlotWrappers that are missing in the incoming data
+  //   const wrappersToDelete = existingWrapperIds.filter(
+  //     (id) => !newWrapperIds.includes(id),
+  //   );
+
+  //   for (const wrapperId of wrappersToDelete) {
+  //     await this.prisma.slotWrapper.delete({
+  //       where: { id: wrapperId },
+  //     });
+  //   }
+
+  //   // Process SlotWrappers: Update existing or create new ones
+  //   console.log(data.slots, 'data.slots:===========>>');
+  //   for (const incomingWrapper of data.slots) {
+  //     if (incomingWrapper.id) {
+  //       // Update existing SlotWrapper
+  //       await this.prisma.slotWrapper.update({
+  //         where: { id: incomingWrapper.id },
+  //         data: { day: incomingWrapper.day },
+  //       });
+
+  //       // Handle Slots within the SlotWrapper
+  //       const existingSlotIds =
+  //         existingSlotParent.slots
+  //           .find((wrapper) => wrapper.id === incomingWrapper.id)
+  //           ?.slots.map((slot) => slot.id) || [];
+  //       const incomingSlotIds = incomingWrapper.slots.map((slot) => slot.id);
+
+  //       // Delete slots that are missing in the incoming data
+  //       const slotsToDelete = existingSlotIds.filter(
+  //         (id) => !incomingSlotIds.includes(id),
+  //       );
+
+  //       for (const slotId of slotsToDelete) {
+  //         await this.prisma.slot.delete({ where: { id: slotId } });
+  //       }
+
+  //       // Update existing slots and create new ones
+  //       for (const incomingSlot of incomingWrapper.slots) {
+  //         if (incomingSlot.id) {
+  //           // Update existing slot new Date(dto.start_date);
+  //           await this.prisma.slot.update({
+  //             where: { id: incomingSlot.id },
+  //             data: {
+  //               startTime: incomingSlot.startTime,
+  //               endTime: incomingSlot.endTime,
+  //             },
+  //           });
+  //         } else {
+  //           // Create new slot
+  //           await this.prisma.slot.create({
+  //             data: {
+  //               startTime: incomingSlot.startTime,
+  //               endTime: incomingSlot.endTime,
+  //               slotWrapperId: incomingWrapper.id,
+  //             },
+  //           });
+  //         }
+  //       }
+  //     } else {
+  //       // Create new SlotWrapper if it doesn't existasdfasd
+  //       const newWrapper = await this.prisma.slotWrapper.create({
+  //         data: {
+  //           day: incomingWrapper.day,
+  //           slotParentId: user.id,
+  //         },
+  //       });
+
+  //       // Create new slots for this new SlotWrapper
+  //       for (const newSlot of incomingWrapper.slots) {
+  //         await this.prisma.slot.create({
+  //           data: {
+  //             startTime: newSlot.startTime,
+  //             endTime: newSlot.endTime,
+  //             slotWrapperId: newWrapper.id,
+  //           },
+  //         });
+  //       }
+  //     }
+  //   }
+
+  //   // Fetch and return the fully updated SlotParent with all nested data
+  //   const updatedSlotParent = await this.prisma.slotParent.findUnique({
+  //     where: { id: user.id },
+  //     include: {
+  //       slots: {
+  //         include: {
+  //           slots: true,
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   // console.log(`Calendar fully updated for user ${user.id}`);
+  //   return updatedSlotParent;
+  // }
 
   public async action(
     user: UserRes,
