@@ -50,7 +50,7 @@ export class TelemedService {
     return slots;
   }
   isOverlapping(start1: number, end1: number, start2: number, end2: number) {
-
+    console.log(start1, end1, start2, end2, '>>>>>>>>>>>>>>>>>')
     return start1 < end2 && end1 > start2;
   }
 
@@ -80,14 +80,14 @@ export class TelemedService {
 
   public async createAppointment(user: UserRes, dto: TelemedCreateDTO) {
 
-    const startDate = new Date(dto.start_date);
-    const endDate = new Date(dto.end_date);
+    // const startDate = new Date(dto.start_date);
+    // const endDate = new Date(dto.end_date);
     const appointment = await this.prisma.appointment.create({
       data: {
         title: dto.title,
         description: dto.description,
-        start_date: startDate,
-        end_date: endDate,
+        start_date: dto.start_date,
+        end_date: dto.end_date,
         type: dto.type,
         about: dto.about,
         organizer_id: user.id,  // patient id
@@ -1362,14 +1362,15 @@ export class TelemedService {
         if (!appointments || appointments.length === 0) return true;
 
         return !appointments.some(appt => {
-          const apptStart = new Date(appt.start_date).getTime();
-          const apptEnd = new Date(appt.end_date).getTime();
+          const apptStart = appt.start_date.getTime();
+          const apptEnd = appt.end_date.getTime();
           const slotStart = slot.startTime.getTime();
           const slotEnd = slot.endTime.getTime();
 
           return this.isOverlapping(slotStart, slotEnd, apptStart, apptEnd);
         });
       });
+      console.log("Available ===>", availableSlots)
 
       return {
         date: dateStr,
@@ -1553,6 +1554,7 @@ export class TelemedService {
     }
 
     // Process SlotWrappers: Update existing or create new ones
+    console.log(data.slots, 'data.slots:===========>>');
     for (const incomingWrapper of data.slots) {
       if (incomingWrapper.id) {
         // Update existing SlotWrapper
@@ -1580,7 +1582,7 @@ export class TelemedService {
         // Update existing slots and create new ones
         for (const incomingSlot of incomingWrapper.slots) {
           if (incomingSlot.id) {
-            // Update existing slot
+            // Update existing slot new Date(dto.start_date);
             await this.prisma.slot.update({
               where: { id: incomingSlot.id },
               data: {
