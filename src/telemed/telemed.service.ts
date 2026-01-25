@@ -78,9 +78,9 @@ export class TelemedService {
     return d;
   }
 
-  toUTC(dateStr: string | Date) {
-    const d = new Date(dateStr);
-    return new Date(d.getTime() - (5 * 60 * 60 * 1000)); // PKT → UTC
+  pkToUtc(date: string | Date) {
+    const d = new Date(date);
+    return new Date(d.getTime() - (5 * 60 * 60 * 1000));
   }
 
   public async createAppointment(user: UserRes, dto: TelemedCreateDTO) {
@@ -1559,7 +1559,7 @@ export class TelemedService {
     }
 
     // Process SlotWrappers: Update existing or create new ones
-    console.log(data.slots, 'data.slots:===========>>');
+    console.log(JSON.stringify(data.slots, null, 2), 'data.slots:===========>>');
     for (const incomingWrapper of data.slots) {
       if (incomingWrapper.id) {
         // Update existing SlotWrapper
@@ -1591,16 +1591,16 @@ export class TelemedService {
             await this.prisma.slot.update({
               where: { id: incomingSlot.id },
               data: {
-                startTime: new Date(incomingSlot.startTime),
-                endTime: new Date(incomingSlot.endTime),
+                startTime: this.pkToUtc(incomingSlot.startTime),
+                endTime: this.pkToUtc(incomingSlot.endTime),
               }
             });
           } else {
             // Create new slot
             await this.prisma.slot.create({
               data: {
-                startTime: new Date(incomingSlot.startTime),
-                endTime: new Date(incomingSlot.endTime),
+                startTime: this.pkToUtc(incomingSlot.startTime),
+                endTime: this.pkToUtc(incomingSlot.endTime),
                 slotWrapperId: incomingWrapper.id,
               },
             });
@@ -1619,8 +1619,8 @@ export class TelemedService {
         for (const newSlot of incomingWrapper.slots) {
           await this.prisma.slot.create({
             data: {
-              startTime: new Date(newSlot.startTime),
-              endTime: new Date(newSlot.endTime),
+              startTime: this.pkToUtc(newSlot.startTime),
+              endTime: this.pkToUtc(newSlot.endTime),
               slotWrapperId: newWrapper.id,
             },
           });
