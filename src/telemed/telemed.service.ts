@@ -1356,7 +1356,7 @@ export class TelemedService {
           start_date: { gte: this.startOfDay(date), lt: this.endOfDay(date) },
           status: { not: 'CANCELLED' }   // 👈 this line excludes cancelled appointments
         },
-        select: { start_date: true, end_date: true }
+        // select: { start_date: true, end_date: true }
       });
 
       console.log('Appointments ====>>>', appointments);
