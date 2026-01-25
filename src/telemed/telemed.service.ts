@@ -1591,16 +1591,16 @@ export class TelemedService {
             await this.prisma.slot.update({
               where: { id: incomingSlot.id },
               data: {
-                startTime: this.toUTC(incomingSlot.startTime),
-                endTime: this.toUTC(incomingSlot.endTime),
+                startTime: new Date(incomingSlot.startTime),
+                endTime: new Date(incomingSlot.endTime),
               }
             });
           } else {
             // Create new slot
             await this.prisma.slot.create({
               data: {
-                startTime: this.toUTC(incomingSlot.startTime),
-                endTime: this.toUTC(incomingSlot.endTime),
+                startTime: new Date(incomingSlot.startTime),
+                endTime: new Date(incomingSlot.endTime),
                 slotWrapperId: incomingWrapper.id,
               },
             });
@@ -1619,8 +1619,8 @@ export class TelemedService {
         for (const newSlot of incomingWrapper.slots) {
           await this.prisma.slot.create({
             data: {
-              startTime: this.toUTC(newSlot.startTime),
-              endTime: this.toUTC(newSlot.endTime),
+              startTime: new Date(newSlot.startTime),
+              endTime: new Date(newSlot.endTime),
               slotWrapperId: newWrapper.id,
             },
           });
