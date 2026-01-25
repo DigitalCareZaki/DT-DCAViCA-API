@@ -1367,8 +1367,13 @@ export class TelemedService {
         if (!appointments || appointments.length === 0) return true;
 
         return !appointments.some(appt => {
-          const apptStart = appt.start_date.getTime();
-          const apptEnd = appt.end_date.getTime();
+          const PKT_OFFSET = 5 * 60 * 60 * 1000;
+
+          const apptStartPKT = new Date(appt.start_date.getTime() + PKT_OFFSET);
+          const apptEndPKT = new Date(appt.end_date.getTime() + PKT_OFFSET);
+
+          const apptStart = apptStartPKT.getTime();
+          const apptEnd = apptEndPKT.getTime();
           const slotStart = slot.startTime.getTime();
           const slotEnd = slot.endTime.getTime();
 
