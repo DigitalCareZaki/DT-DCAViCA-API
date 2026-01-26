@@ -90,6 +90,14 @@ export class TelemedService {
     return d;
   }
 
+  private startOfDayUTC(date: Date) {
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
+  }
+
+  private endOfDayUTC(date: Date) {
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+  }
+
   pkToUtc(date: string | Date) {
     const d = new Date(date);
     return new Date(d.getTime() - (5 * 60 * 60 * 1000));
@@ -1347,11 +1355,11 @@ export class TelemedService {
       }));
 
       // STEP 3 — Fetch appointments for that same day
-
+      console.log('Fetching appointments for user:', userId, 'on date:', date);
       const appointments = await this.prisma.appointment.findMany({
         where: {
           participants: { some: { user_id: userId } },
-          start_date: { gte: this.startOfDay(date), lt: this.endOfDay(date) },
+          start_date: { gte: this.startOfDayUTC(date), lt: this.endOfDayUTC(date) },
           status: { not: 'CANCELLED' }   // 👈 this line excludes cancelled appointments
         },
         select: { start_date: true, end_date: true }
