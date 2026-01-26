@@ -1,18 +1,16 @@
 import { Injectable } from '@nestjs/common';
-
 import * as argon from 'argon2';
-
 import { PrismaService } from 'src/prisma/prisma.service';
-
 import { PatientMedicationAlertDTO } from './dto';
 import { AddPatientDTO } from 'src/organization/dto/addPatient.dto';
 import puppeteer from 'puppeteer';
-
 import type { MedicationTaken } from '@prisma/client';
 import type { ProfileProps } from './types';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
 import { SendMailPayload } from '@types';
 import { SENDGRID_TEMPLATES } from 'src/constant';
+import { VivalinkSyncStatus } from '@prisma/client';
+import { AddPatientResult, VivalinkSyncResult, TriggerVivalinkSyncResult } from './types';
 
 @Injectable()
 export class PatientService {
@@ -22,7 +20,7 @@ export class PatientService {
     data: AddPatientDTO,
     organization_id: string,
     location_id: string,
-  ): Promise<boolean> {
+  ): Promise<AddPatientResult> {
 
     try {
 
@@ -108,8 +106,31 @@ export class PatientService {
       // } satisfies SendMailPayload;
 
       // await this.mail.sendSgMail(mailPayload);
-      if (patient) await this.vivalinkAuth(patient);
-      return true;
+      let vivalinkResult: VivalinkSyncResult = {
+        attempted: false,
+        success: false,
+      };
+
+      // Handle Vivalink Sync Logic
+      const cardiacMonitoring = data.cardiac_monitoring || VivalinkSyncStatus.NO;
+
+      // Update patient with initial cardiac monitoring status
+      await this.prisma.patient.update({
+        where: { id: patient.id },
+        data: { cardiac_monitoring: cardiacMonitoring },
+      });
+
+      if (cardiacMonitoring === VivalinkSyncStatus.YES) {
+        vivalinkResult = await this.syncPatientToVivalink(patient.id);
+      }
+
+      // Return detailed result
+      return {
+        success: true,
+        patientId: patient.id,
+        cardiacMonitoring: cardiacMonitoring,
+        vivalinkSync: vivalinkResult,
+      };
     }
     catch (error) {
       console.error('Error adding patient:', error);
@@ -119,54 +140,139 @@ export class PatientService {
 
 
 
-  async vivalinkAuth(pt: any) {
+  /**
+   * Sync a patient to Vivalink portal
+   * @param patientId AViCA Patient ID
+   */
+  async syncPatientToVivalink(patientId: string): Promise<VivalinkSyncResult> {
+    try {
+      const patientData = await this.prisma.patient.findUnique({
+        where: { id: patientId },
+        include: {
+          user: true,
+          doctors: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
 
-    // const doctor = await this.prisma.doctor.findFirst({
-    //   where: {
-    //     user_id: pt.doctor.id,
-    //   },
-    //   select:{
-    //     id:true,
-    //     user_id:true,
-    //     user:{
-    //       select:{
-    //         id:true,
-    //         email:true,
-    //         first_name:true,
-    //         last_name:true,
-    //         dob:true,
-    //         gender:true,
-    //       },
-    //     }
-    //   }
-    // });
-    console.log(pt, '=======> pt');
-    const patient = {
-      height: pt.height,
-      weight: pt.weight,
-      firstName: pt.user.first_name,
-      lastName: pt.user.last_name,
-      subjectId: pt.user.first_name,
-      birthDate: pt.user.dob ? pt.user.dob.toISOString().split('T')[0] : null,
-      gender: pt.user.gender,
-      site: 'Pakistan',
-      monitoringProtocol: 'Default Monitoring Protocol',
-      assignedPhysician: 'Hooria Choudry',
-      reportForThirdParty: false,
-      isRTRPMPatient: false,
+      if (!patientData) {
+        return {
+          attempted: true,
+          success: false,
+          error: 'Patient not found',
+        };
+      }
 
-    }
-    // VVE-14 VVE-14
-    const page = await this.vlLogin();
+      // // Check for assigned doctor
+      // const doctor = patientData.doctors[0];
+      // if (!doctor || !doctor.user) {
+      //   return {
+      //     attempted: true,
+      //     success: false,
+      //     error: 'No doctor assigned to this patient. Cannot sync to Vivalink.',
+      //   };
+      // }
 
-    const result = await this.vlAddPatient(page, patient);
-    console.log('result========================>>>Final', result);
-    if (result) {
-      return 'Patient added successfully';
-    } else {
-      return 'Failed to add patient';
+      // // Format patient data for Vivalink
+      // const doctorName = `${doctor.user.first_name} ${doctor.user.last_name}`;
+
+      const vivalinkPayload = {
+        firstName: patientData.user.first_name,
+        lastName: patientData.user.last_name,
+        subjectId: patientData.user.first_name, // Should ideally be unique ID or EMR
+        // Format date as YYYY-MM-DD
+        birthDate: patientData.user.dob ? new Date(patientData.user.dob).toISOString().split('T')[0] : null,
+        gender: patientData.user.gender,
+        height: patientData.height,
+        weight: patientData.weight,
+        site: 'Pakistan',
+        monitoringProtocol: 'Default Monitoring Protocol',
+        assignedPhysician: 'VVE-14 VVE-14',
+        reportForThirdParty: false,
+        isRTRPMPatient: false,
+      };
+
+      console.log('Syncing patient to Vivalink with payload:', vivalinkPayload);
+
+      const page = await this.vlLogin();
+
+      const syncSuccess = await this.vlAddPatient(page, vivalinkPayload);
+
+      // Update sync status in DB
+      if (syncSuccess) {
+        await this.prisma.patient.update({
+          where: { id: patientId },
+          data: {
+            vivalink_synced: true,
+            vivalink_synced_at: new Date(),
+            vivalink_sync_error: null,
+            cardiac_monitoring: VivalinkSyncStatus.YES, // Ensure status is YES on success
+          },
+        });
+
+        return {
+          attempted: true,
+          success: true,
+          syncedAt: new Date(),
+        };
+      } else {
+        const errorMsg = 'Failed to add patient in Vivalink portal';
+        await this.prisma.patient.update({
+          where: { id: patientId },
+          data: {
+            vivalink_synced: false,
+            vivalink_sync_error: errorMsg,
+          },
+        });
+
+        return {
+          attempted: true,
+          success: false,
+          error: errorMsg,
+        };
+      }
+    } catch (error) {
+      console.error('Vivalink sync error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
+
+      await this.prisma.patient.update({
+        where: { id: patientId },
+        data: {
+          vivalink_synced: false,
+          vivalink_sync_error: errorMessage,
+        },
+      });
+
+      return {
+        attempted: true,
+        success: false,
+        error: errorMessage,
+      };
     }
   }
+
+  async triggerVivalinkSync(patientId: string): Promise<TriggerVivalinkSyncResult> {
+    const patient = await this.prisma.patient.findUnique({
+      where: { id: patientId },
+      select: { cardiac_monitoring: true, vivalink_synced: true }
+    });
+
+    if (!patient) {
+      return { success: false, error: 'Patient not found' };
+    }
+
+    const syncResult = await this.syncPatientToVivalink(patientId);
+
+    return {
+      success: syncResult.success,
+      error: syncResult.error,
+      syncedAt: syncResult.syncedAt
+    };
+  }
+
 
 
   async vlLogin() {
@@ -204,7 +310,7 @@ export class PatientService {
       // Navigate to patient add page
       // await page.goto("https://webportal.vivalink.com/patient-management/add");
       await page.goto("https://webportal.vivalink.com/patient-management/add", {
-        waitUntil: "domcontentloaded", // instead of networkidle
+        waitUntil: "networkidle0",
         timeout: 120000
       });
       for (let i = 0; i < 6; i++) { // retry for ~30s
@@ -262,7 +368,7 @@ export class PatientService {
         await page.waitForSelector('.ant-select-dropdown');
 
         // Get site dropdown options
-        const siteOptions = await page.$$('.ant-select-item-option');
+        const siteOptions = await page.$$('.ant-select-selector');
 
         // Find and click the correct site option
         for (const option of siteOptions) {

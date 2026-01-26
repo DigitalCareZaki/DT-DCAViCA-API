@@ -38,3 +38,32 @@ type PatientDevices = {
   };
   issued_at: Date;
 };
+
+/**
+ * Result of Vivalink device sync operation
+ */
+export interface VivalinkDeviceSyncResult {
+  attempted: boolean;
+  success: boolean;
+  error?: string;
+  syncedAt?: Date;
+}
+
+/**
+ * Result of device creation with Vivalink sync status
+ */
+export interface AddDeviceResult {
+  success: boolean;
+  deviceId: string;
+  cardiacMonitoring: import('@prisma/client').VivalinkSyncStatus;
+  vivalinkSync: VivalinkDeviceSyncResult;
+}
+
+/**
+ * Result of manual Vivalink sync trigger for device
+ */
+export interface TriggerDeviceVivalinkSyncResult {
+  success: boolean;
+  error?: string;
+  syncedAt?: Date;
+}

@@ -3,6 +3,7 @@ import type {
   Title,
   MedicationUnit,
   MedicationTaken,
+  VivalinkSyncStatus,
 } from '@prisma/client';
 
 export interface ProfileProps {
@@ -41,4 +42,33 @@ export interface PatientMedicationAlert {
     alert_time: Date;
     taken: MedicationTaken;
   }[];
+}
+
+/**
+ * Result of Vivalink sync operation
+ */
+export interface VivalinkSyncResult {
+  attempted: boolean;
+  success: boolean;
+  error?: string;
+  syncedAt?: Date;
+}
+
+/**
+ * Result of patient creation with Vivalink sync status
+ */
+export interface AddPatientResult {
+  success: boolean;
+  patientId: string;
+  cardiacMonitoring: VivalinkSyncStatus;
+  vivalinkSync: VivalinkSyncResult;
+}
+
+/**
+ * Result of manual Vivalink sync trigger
+ */
+export interface TriggerVivalinkSyncResult {
+  success: boolean;
+  error?: string;
+  syncedAt?: Date;
 }

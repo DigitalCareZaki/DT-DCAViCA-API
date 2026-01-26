@@ -1,6 +1,7 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsEnum } from 'class-validator';
 
 import { AddUserBaseDTO } from './addUser.dto';
+import { VivalinkSyncStatusDTO } from './addDoctor.dto';
 
 export class AddPatientDTO extends AddUserBaseDTO {
   @IsOptional()
@@ -19,5 +20,7 @@ export class AddPatientDTO extends AddUserBaseDTO {
   @IsNumber()
   height: number;
 
-
+  @IsOptional()
+  @IsEnum(VivalinkSyncStatusDTO)
+  cardiac_monitoring?: VivalinkSyncStatusDTO;
 }
