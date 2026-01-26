@@ -1,5 +1,6 @@
-import { IsString, IsOptional, IsNotEmpty, Validate } from 'class-validator';
+import { IsString, IsOptional, IsNotEmpty, Validate, IsEnum } from 'class-validator';
 import { ValidateMeasurementType } from 'src/validators';
+import { VivalinkSyncStatusDTO } from 'src/organization/dto/addDoctor.dto';
 
 export class DeviceDTO {
   // @IsNotEmpty()
@@ -25,4 +26,8 @@ export class DeviceDTO {
   @IsString()
   @Validate(ValidateMeasurementType)
   category: string;
+
+  @IsOptional()
+  @IsEnum(VivalinkSyncStatusDTO)
+  cardiac_monitoring?: VivalinkSyncStatusDTO;
 }

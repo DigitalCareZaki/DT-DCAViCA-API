@@ -1,6 +1,12 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsEnum } from 'class-validator';
 
 import { AddUserBaseDTO } from './addUser.dto';
+
+export enum VivalinkSyncStatusDTO {
+  YES = 'YES',
+  NO = 'NO',
+  LATER = 'LATER',
+}
 
 export class AddDoctoreDTO extends AddUserBaseDTO {
   @IsNotEmpty()
@@ -18,4 +24,8 @@ export class AddDoctoreDTO extends AddUserBaseDTO {
   @IsOptional()
   @IsString()
   pmdc_number: string;
+
+  @IsOptional()
+  @IsEnum(VivalinkSyncStatusDTO)
+  avicardia_monitoring?: VivalinkSyncStatusDTO;
 }

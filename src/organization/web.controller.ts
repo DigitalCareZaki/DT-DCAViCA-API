@@ -157,7 +157,7 @@ export class OrganizationWebController extends OrganizationController {
   @Post('/patient')
   @UseGuards(RolesGuard)
   @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER)
-  public async createPatient(@Body() data: AddPatientDTO, @GetUser() user: UserRes): Promise<boolean> {
+  public async createPatient(@Body() data: AddPatientDTO, @GetUser() user: UserRes) {
     const organizationId = await this.getOrganizationService().getOrganizationId(user.id);
     console.log('organizationId <<<<< >>>>> ', organizationId);
 
@@ -183,6 +183,14 @@ export class OrganizationWebController extends OrganizationController {
     });
 
     return res;
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('/patient/sync/:id')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER)
+  public async triggerVivalinkSync(@Param('id') id: string) {
+    return this.getPatientService().triggerVivalinkSync(id);
   }
 
   @HttpCode(HttpStatus.CREATED)

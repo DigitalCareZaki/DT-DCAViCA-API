@@ -117,6 +117,15 @@ export class DeviceWebController extends DeviceController {
     );
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Post('/sync/:deviceId')
+  public async triggerVivalinkSync(
+    @Param('deviceId') deviceId: string,
+  ) {
+    return this.getDeviceService().triggerDeviceVivalinkSync(deviceId);
+  }
+
+
   @HttpCode(HttpStatus.CREATED)
   @Post('/create-device')
   public async createPatientDevice(
