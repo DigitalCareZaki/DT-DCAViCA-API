@@ -75,10 +75,7 @@ export class AuthWebController extends AuthController {
   @HttpCode(HttpStatus.OK)
   @Patch('verify-pincode')
   @UseGuards(JwtGuard)
-  public changePincode(
-    @GetUser() user: UserRes,
-    @Body() dto: VerifyPincodeDTO,
-  ) {
+  public changePincode(@GetUser() user: UserRes, @Body() dto: VerifyPincodeDTO) {
     return this.getAuthService().verifyPincode(user, dto);
   }
 

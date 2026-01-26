@@ -302,42 +302,25 @@ export class AuthService {
   public async verifyPincode(user: UserRes, dto: VerifyPincodeDTO) {
     console.log(user);
     console.log('verify pincode');
-    if (!user.isPincode) {
-      throw new AppError(
-        'Please set your pincode and relogin',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    if (!user.isPincode) throw new AppError('Please set your pincode and relogin', HttpStatus.BAD_REQUEST);
 
     const userDB = await this.prisma.user.findUniqueOrThrow({
-      where: {
-        id: user.id,
-      },
-      select: {
-        pincode: true,
-      },
+      where: { id: user.id },
+      select: { pincode: true },
     });
 
-    const hash = await argon.hash(dto.pincode);
-    console.log('Hashing pincode:', userDB.pincode, '=>', hash);
+    console.log({ DB_pincode: userDB.pincode });
 
     const isValidPincode = await argon.verify(userDB.pincode, dto.pincode);
-
-    if (!isValidPincode) {
-      throw new AppError('Invalid pincode', HttpStatus.BAD_REQUEST);
-    }
+    if (!isValidPincode) throw new AppError('Invalid pincode', HttpStatus.BAD_REQUEST);
 
     return user;
   }
 
   public async setPincode(user: UserRes, dto: SetPincodeDTO) {
     const userDB = await this.prisma.user.findUniqueOrThrow({
-      where: {
-        id: user.id,
-      },
-      select: {
-        password: true,
-      },
+      where: { id: user.id },
+      select: { password: true },
     });
 
     const isValidPassword = await argon.verify(userDB.password, dto.password);
