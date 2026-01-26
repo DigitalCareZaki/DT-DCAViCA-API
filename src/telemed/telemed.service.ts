@@ -90,13 +90,24 @@ export class TelemedService {
     return d;
   }
 
-  private startOfDayUTC(date: Date) {
-    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
+  private startOfDayPKTToUTC(date: Date) {
+    return new Date(Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate() - 1,
+      19, 0, 0, 0
+    ));
   }
 
-  private endOfDayUTC(date: Date) {
-    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+  private endOfDayPKTToUTC(date: Date) {
+    return new Date(Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      19, 0, 0, 0
+    ));
   }
+
 
   pkToUtc(date: string | Date) {
     const d = new Date(date);
@@ -1359,7 +1370,7 @@ export class TelemedService {
       const appointments = await this.prisma.appointment.findMany({
         where: {
           participants: { some: { user_id: userId } },
-          start_date: { gte: this.startOfDayUTC(date), lt: this.endOfDayUTC(date) },
+          start_date: { gte: this.startOfDayPKTToUTC(date), lt: this.endOfDayPKTToUTC(date) },
           status: { not: 'CANCELLED' }   // 👈 this line excludes cancelled appointments
         },
         select: { start_date: true, end_date: true }
