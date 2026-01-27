@@ -188,7 +188,7 @@ export class OrganizationWebController extends OrganizationController {
   @HttpCode(HttpStatus.OK)
   @Post('/patient/sync/:id')
   @UseGuards(RolesGuard)
-  @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER)
+  @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER, Role.DOCTOR)
   public async triggerVivalinkSync(@Param('id') id: string) {
     return this.getPatientService().triggerVivalinkSync(id);
   }
