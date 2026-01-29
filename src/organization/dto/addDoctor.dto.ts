@@ -29,7 +29,7 @@ export class AddDoctoreDTO extends AddUserBaseDTO {
   @IsEnum(VivalinkSyncStatusDTO)
   avicardia_monitoring?: VivalinkSyncStatusDTO;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  site_id: string;
+  site_id?: string;
 }

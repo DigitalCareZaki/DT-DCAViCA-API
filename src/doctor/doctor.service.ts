@@ -752,7 +752,6 @@ export class DoctorService {
     const password = await argon.hash(data.password);
     const avicardiaMonitoring = data.avicardia_monitoring === 'YES' ? VivalinkSyncStatus.YES :
       data.avicardia_monitoring === 'LATER' ? VivalinkSyncStatus.LATER : VivalinkSyncStatus.NO;
-    this.logger.log("Hello")
 
     const user = await this.prisma.user.create({
       data: {
@@ -760,7 +759,7 @@ export class DoctorService {
         middle_name: data.middle_name,
         last_name: data.last_name,
         email: data.email,
-        dob: data.dob,
+        dob: new Date(data.dob),
         role: 'DOCTOR',
         gender: data.gender,
         title: data.title,
@@ -780,11 +779,11 @@ export class DoctorService {
             pmdc_number: data.pmdc_number,
             employee_id: data.employee_id,
             avicardia_monitoring: avicardiaMonitoring,
-            site: {
+            site: data.site_id ? {
               connect: {
                 id: data.site_id,
               },
-            },
+            } : undefined,
             departments: {
               connect: {
                 id: data.department_id,
@@ -801,7 +800,7 @@ export class DoctorService {
 
     if (avicardiaMonitoring === VivalinkSyncStatus.YES && user.doctor) {
       this.syncDoctorToVivalink(user.doctor.id).catch(err => {
-        console.error(`Failed to sync doctor ${user.doctor.id} to Vivalink in background:`, err);
+        throw new BadRequestException('Error syncing doctor to Vivalink: ' + err.message);
       });
     }
 
@@ -841,23 +840,25 @@ export class DoctorService {
         email: doctor.user.email,
         firstName: doctor.user.first_name,
         lastName: doctor.user.last_name,
-        phone: doctor.user.phone_number, // Ensure format matches VL requirements
+        phone: doctor.user.phone_number,
         roles: [UserRoleMeta.PHYSICIAN.id],
         site: doctor.site.vivalinkSiteId,
       };
 
       const vlResponse = await this.addDoctorToVlWebPortal(vlPayload);
 
-      // Check for success - assuming VL returns object with id/email on success
-      // Adjust check based on actual VL response structure
-      if (vlResponse && (vlResponse.id || vlResponse._id)) {
+      const vivalinkDoctors = await this.getAllDoctorsFromVl();
+      const matchedDoctor = vivalinkDoctors.find((doc) => doc.email === doctor.user.email);
+
+      const isSuccess = vlResponse && vlResponse.code === 0;
+      if (isSuccess && matchedDoctor) {
         await this.prisma.doctor.update({
           where: { id: doctorId },
           data: {
             vivalink_synced: true,
             vivalink_synced_at: new Date(),
             vivalink_sync_error: null,
-            // Maybe store vl_id if needed, but schema didn't seem to have it on Doctor
+            vivalinkId: matchedDoctor._id,
           }
         });
         return { success: true, message: 'Doctor synced to Vivalink', data: vlResponse };
@@ -1238,14 +1239,26 @@ export class DoctorService {
   private async addDoctorToVlWebPortal(data: VivaLinkSyncDoctorDto) {
     const url = `${this.vlWebportalUrl}/users`;
     const response = await fetch(url, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.vlWebportalToken}`,
-      },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.vlWebportalToken}` },
       body: JSON.stringify(data),
     });
     const result = await response.json()
     return result;
   }
+
+  private async getAllDoctorsFromVl() {
+    const url = `${this.vlWebportalUrl}/users?$skip=0&$limit=100`;
+
+    const response = await fetch(url, {
+      method: 'GET', headers: { Authorization: `Bearer ${this.vlWebportalToken}` },
+    });
+
+    const result = await response.json();
+
+    const doctors = result.data.filter((user) => user.roleNames.split(',').map((r) => r.trim()).includes(UserRoleMeta.PHYSICIAN.name));
+
+    return doctors;
+  }
+
 }

@@ -228,6 +228,14 @@ export class OrganizationWebController extends OrganizationController {
     return res;
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Post('/doctor/sync/:id')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER)
+  public async triggerVivalinkSyncDoctor(@Param('id') id: string) {
+    return this.getDoctorService().syncDoctor(id);
+  }
+
   @HttpCode(HttpStatus.CREATED)
   @Post('/nurse')
   @UseGuards(RolesGuard)
