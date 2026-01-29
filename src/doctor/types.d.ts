@@ -145,3 +145,19 @@ export type DoctorStats = any;
 //   completed: number;
 //   pending: number;
 // };
+
+export type VivalinkSyncResult = {
+  attempted: boolean;
+  success: boolean;
+  message?: string;
+  error?: string;
+  syncedAt?: Date;
+  data?: unknown;
+};
+
+export type AddDoctorResult = {
+  success: boolean;
+  doctorId: string;
+  avicardiaMonitoring: string;
+  vivalinkSync: VivalinkSyncResult;
+};
