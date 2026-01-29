@@ -44,6 +44,7 @@ import { TwilioModule } from './twilio/twilio.module';
 import { FirebaseModule } from './firebaseNotification/firebase.module';
 import { EmailsModule } from './emails/emails.module';
 import { UsersModule } from './users/users.module';
+import { SitesModule } from './sites/sites.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -105,6 +106,7 @@ import { AppService } from './app.service';
     TabletModule,
     SupportModule,
     UsersModule,
+    SitesModule,
 
     // CloudinaryModule,
   ],

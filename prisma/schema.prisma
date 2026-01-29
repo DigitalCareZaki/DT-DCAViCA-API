@@ -216,16 +216,31 @@ model Doctor {
   pmdc_number String? @unique
   employee_id String
 
-  // // Vivalink AViCardia Monitoring fields
-  // avicardia_monitoring   VivalinkSyncStatus @default(NO)
-  // vivalink_synced        Boolean            @default(false)
-  // vivalink_sync_error    String?
-  // vivalink_synced_at     DateTime?
+  site    Site?   @relation(fields: [site_id], references: [id])
+  site_id String? 
+
+  // Avacardia Fields
+  avicardia_monitoring   VivalinkSyncStatus @default(NO)
+  vivalink_synced        Boolean            @default(false)
+  vivalink_sync_error    String?
+  vivalink_synced_at     DateTime?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   @@index([npi_number], type: Hash)
+}
+
+model Site {
+  id             String   @id @default(uuid())
+
+  vivalinkSiteId String?
+  name           String   @unique
+  description    String?
+  countryCode    String
+  address        String?
+
+  doctors        Doctor[]
 }
 
 model Nurse {

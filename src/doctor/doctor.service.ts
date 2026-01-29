@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { Injectable, HttpStatus, BadRequestException } from '@nestjs/common';
+import { Injectable, HttpStatus, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import * as argon from 'argon2';
@@ -27,6 +27,20 @@ import type {
   DoctorStats,
 } from './types';
 import type { JsonRes } from '@types';
+import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
+import { VivalinkSyncStatus } from '@prisma/client';
+import { UserRoleMeta } from 'src/common/enums/vivalink-roles.enums';
+
+export interface VivaLinkSyncDoctorDto {
+  email: string
+  firstName: string
+  lastName: string
+  phone: string
+  roles: string[]
+  site: string
+  position?: string
+}
+
 
 @Injectable()
 export class DoctorService {
@@ -34,7 +48,18 @@ export class DoctorService {
     private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
     private helperService: HelpersService,
+    private vlTokenService: VivalinkWebPortalTokenService,
   ) { }
+
+  private readonly logger = new Logger(DoctorService.name)
+
+  private get vlWebportalUrl(): string {
+    return this.vlTokenService.getBaseUrl();
+  }
+
+  private get vlWebportalToken(): string {
+    return this.vlTokenService.getToken();
+  }
 
   public async profile(id: string): Promise<ProfileRes> {
     return await this.prisma.user.findUniqueOrThrow({
@@ -725,7 +750,11 @@ export class DoctorService {
     locationId: string,
   ): Promise<boolean> {
     const password = await argon.hash(data.password);
-    await this.prisma.user.create({
+    const avicardiaMonitoring = data.avicardia_monitoring === 'YES' ? VivalinkSyncStatus.YES :
+      data.avicardia_monitoring === 'LATER' ? VivalinkSyncStatus.LATER : VivalinkSyncStatus.NO;
+    this.logger.log("Hello")
+
+    const user = await this.prisma.user.create({
       data: {
         first_name: data.first_name,
         middle_name: data.middle_name,
@@ -750,6 +779,12 @@ export class DoctorService {
             npi_number: data.npi_number,
             pmdc_number: data.pmdc_number,
             employee_id: data.employee_id,
+            avicardia_monitoring: avicardiaMonitoring,
+            site: {
+              connect: {
+                id: data.site_id,
+              },
+            },
             departments: {
               connect: {
                 id: data.department_id,
@@ -758,9 +793,95 @@ export class DoctorService {
           },
         },
       },
+      include: {
+        doctor: true,
+      },
     });
 
+
+    if (avicardiaMonitoring === VivalinkSyncStatus.YES && user.doctor) {
+      this.syncDoctorToVivalink(user.doctor.id).catch(err => {
+        console.error(`Failed to sync doctor ${user.doctor.id} to Vivalink in background:`, err);
+      });
+    }
+
     return true;
+  }
+
+  public async syncDoctor(doctorId: string) {
+    return this.syncDoctorToVivalink(doctorId);
+  }
+
+  private async syncDoctorToVivalink(doctorId: string) {
+    try {
+      const doctor = await this.prisma.doctor.findUnique({
+        where: { id: doctorId },
+        include: {
+          user: true,
+          site: true,
+        },
+      });
+
+      if (!doctor || !doctor.user) {
+        throw new NotFoundException('Doctor not found');
+      }
+
+      if (!doctor.site || !doctor.site.vivalinkSiteId) {
+        await this.prisma.doctor.update({
+          where: { id: doctorId },
+          data: {
+            vivalink_synced: false,
+            vivalink_sync_error: 'Doctor is not assigned to a Vivalink-connected Site',
+          }
+        });
+        throw new BadRequestException('Doctor site not linked to Vivalink');
+      }
+
+      const vlPayload: VivaLinkSyncDoctorDto = {
+        email: doctor.user.email,
+        firstName: doctor.user.first_name,
+        lastName: doctor.user.last_name,
+        phone: doctor.user.phone_number, // Ensure format matches VL requirements
+        roles: [UserRoleMeta.PHYSICIAN.id],
+        site: doctor.site.vivalinkSiteId,
+      };
+
+      const vlResponse = await this.addDoctorToVlWebPortal(vlPayload);
+
+      // Check for success - assuming VL returns object with id/email on success
+      // Adjust check based on actual VL response structure
+      if (vlResponse && (vlResponse.id || vlResponse._id)) {
+        await this.prisma.doctor.update({
+          where: { id: doctorId },
+          data: {
+            vivalink_synced: true,
+            vivalink_synced_at: new Date(),
+            vivalink_sync_error: null,
+            // Maybe store vl_id if needed, but schema didn't seem to have it on Doctor
+          }
+        });
+        return { success: true, message: 'Doctor synced to Vivalink', data: vlResponse };
+      } else {
+        const errorMsg = vlResponse?.message || JSON.stringify(vlResponse);
+        await this.prisma.doctor.update({
+          where: { id: doctorId },
+          data: {
+            vivalink_sync_error: errorMsg,
+          }
+        });
+        return { success: false, message: 'Vivalink API returned error', error: errorMsg };
+      }
+
+    } catch (error) {
+      console.error('Error syncing doctor to Vivalink:', error);
+      await this.prisma.doctor.update({
+        where: { id: doctorId },
+        data: {
+          vivalink_sync_error: error.message,
+        }
+      });
+      throw error;
+    }
   }
 
   public async getOrganizationMedication(
@@ -1114,4 +1235,17 @@ export class DoctorService {
     return nurseList;
   }
 
+  private async addDoctorToVlWebPortal(data: VivaLinkSyncDoctorDto) {
+    const url = `${this.vlWebportalUrl}/users`;
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.vlWebportalToken}`,
+      },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json()
+    return result;
+  }
 }

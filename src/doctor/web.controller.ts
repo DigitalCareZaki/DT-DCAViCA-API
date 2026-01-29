@@ -180,5 +180,11 @@ export class DoctorWebController extends DoctorController {
     return this.getDoctorService().getNursesBySpeciality(specialityId);
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Post('/sync-vivalink/:id')
+  public async syncDoctorToVivalink(@Param('id') id: string) {
+    return this.getDoctorService().syncDoctor(id);
+  }
+
 
 }
