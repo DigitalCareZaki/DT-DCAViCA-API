@@ -416,6 +416,7 @@ model Patient {
   measurement_ranges PatientMeasurementRange[] @relation("patientMeasurementRange")
 
   // Vivalink Cardiac Remote Monitoring fields
+  vivalinkId          String?
   cardiac_monitoring  VivalinkSyncStatus @default(NO)
   vivalink_synced     Boolean            @default(false)
   vivalink_sync_error String?

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as argon from 'argon2';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PatientMedicationAlertDTO } from './dto';
@@ -11,10 +11,40 @@ import { SendMailPayload } from '@types';
 import { SENDGRID_TEMPLATES } from 'src/constant';
 import { VivalinkSyncStatus } from '@prisma/client';
 import { AddPatientResult, VivalinkSyncResult, TriggerVivalinkSyncResult } from './types';
+import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
+
+export interface VivalinkPatientAddDTO {
+  firstName: string
+  lastName: string
+  internalId: string
+  birthDate: string
+  timeZoneName: string
+  monitoringProtocol: string
+  site: string
+  physician: string | null
+  gender: 'Male' | 'Female' | 'Other'
+  height: number
+  weight: number
+  isOpenPrescribingPhysician?: boolean
+  isRTRPMPatient: boolean
+  codes?: string[]
+  isRpm?: boolean
+}
 
 @Injectable()
 export class PatientService {
-  constructor(private prisma: PrismaService, private mail: SendgridService) { }
+  constructor(private prisma: PrismaService, private mail: SendgridService, private vlTokenService: VivalinkWebPortalTokenService
+  ) { }
+
+  private readonly logger = new Logger(PatientService.name);
+
+  private get vlWebportalUrl(): string {
+    return this.vlTokenService.getBaseUrl();
+  }
+
+  private get vlWebportalToken(): string {
+    return this.vlTokenService.getToken();
+  }
 
   public async addPatient(
     data: AddPatientDTO,
@@ -153,6 +183,7 @@ export class PatientService {
           doctors: {
             include: {
               user: true,
+              site: true,
             },
           },
         },
@@ -166,50 +197,46 @@ export class PatientService {
         };
       }
 
-      // // Check for assigned doctor
-      // const doctor = patientData.doctors[0];
-      // if (!doctor || !doctor.user) {
-      //   return {
-      //     attempted: true,
-      //     success: false,
-      //     error: 'No doctor assigned to this patient. Cannot sync to Vivalink.',
-      //   };
-      // }
-
-      // // Format patient data for Vivalink
-      // const doctorName = `${doctor.user.first_name} ${doctor.user.last_name}`;
+      const primaryDoctor = patientData.doctors && patientData.doctors.length > 0 ? patientData.doctors[0] : null;
+      const vivalinkSiteId = primaryDoctor?.site?.vivalinkSiteId ?? null;
+      const assignedPhysicianVivalinkId = primaryDoctor?.vivalinkId ?? null;
 
       const vivalinkPayload = {
         firstName: patientData.user.first_name,
         lastName: patientData.user.last_name,
-        subjectId: patientData.user.first_name, // Should ideally be unique ID or EMR
-        // Format date as YYYY-MM-DD
+        internalId: patientData.user.username,
         birthDate: patientData.user.dob ? new Date(patientData.user.dob).toISOString().split('T')[0] : null,
-        gender: patientData.user.gender,
+        timeZoneName: 'Asia/Karachi',
+        gender: this.CapitalizeFirstLetter(patientData.user.gender || 'Other') as 'Male' | 'Female' | 'Other',
         height: patientData.height,
         weight: patientData.weight,
-        site: 'Pakistan',
-        monitoringProtocol: 'Default Monitoring Protocol',
-        assignedPhysician: 'VVE-14 VVE-14',
+        site: vivalinkSiteId,
+        monitoringProtocol: "6865f38fa347336ebcc57ecb",
+        assignedPhysician: assignedPhysicianVivalinkId,
+        physician: assignedPhysicianVivalinkId,
         reportForThirdParty: false,
         isRTRPMPatient: false,
       };
 
       console.log('Syncing patient to Vivalink with payload:', vivalinkPayload);
 
-      const page = await this.vlLogin();
+      const vivalinkResponse = await this.addPatientToVlWebportal(vivalinkPayload);
 
-      const syncSuccess = await this.vlAddPatient(page, vivalinkPayload);
+      console.log('Vivalink response:', vivalinkResponse);
 
-      // Update sync status in DB
-      if (syncSuccess) {
+      const patientVl = await this.getVivalinkPatientDetails(vivalinkPayload.internalId);
+
+      const syncSuccess = vivalinkResponse && vivalinkResponse.code === 0;
+
+      if (syncSuccess && patientVl) {
         await this.prisma.patient.update({
           where: { id: patientId },
           data: {
             vivalink_synced: true,
             vivalink_synced_at: new Date(),
             vivalink_sync_error: null,
-            cardiac_monitoring: VivalinkSyncStatus.YES, // Ensure status is YES on success
+            cardiac_monitoring: VivalinkSyncStatus.YES,
+            vivalinkId: patientVl._id,
           },
         });
 
@@ -271,239 +298,6 @@ export class PatientService {
       error: syncResult.error,
       syncedAt: syncResult.syncedAt
     };
-  }
-
-
-
-  async vlLogin() {
-    try {
-      const browser = await puppeteer.launch({
-        headless: true, // Run in headless mode
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        defaultViewport: null, // Use default viewport size
-      });
-
-      const page = await browser.newPage();
-      await page.setViewport({ width: 1920, height: 1080 });
-
-      // Navigate the page to a URL.
-      await page.goto("https://webportal.vivalink.com/sign-in");
-      await page.waitForSelector('input[name="email"]');
-      await page.type('input[name="email"]', "vivalink4VVE-14@outlook.com");
-      await page.waitForSelector('input[name="password"]');
-      await page.type('input[name="password"]', "Uc7%!D0)U9");
-
-      await page.click('button[type="submit"]');
-      await page.waitForNavigation();
-
-      console.log("Logged in successfully");
-      return page;
-    } catch (err) {
-      console.log("ERROR OCCURRED!!!", err);
-    }
-  }
-
-  async vlAddPatient(page: any, patient: any) {
-
-
-    try {
-      // Navigate to patient add page
-      // await page.goto("https://webportal.vivalink.com/patient-management/add");
-      await page.goto("https://webportal.vivalink.com/patient-management/add", {
-        waitUntil: "networkidle0",
-        timeout: 120000
-      });
-      for (let i = 0; i < 6; i++) { // retry for ~30s
-        const exists = await page.$('#patient-form');
-        if (exists) {
-          console.log("Form found!");
-          break;
-        }
-        console.log(`Form not found, retrying... ${i + 1}`);
-        await page.waitForTimeout(5000);
-      }
-
-      if (!(await page.$('#patient-form'))) {
-        throw new Error("Patient form not found after waiting 30s");
-      }
-      // await page.waitForSelector('#patient-form', { hidden: true, timeout: 30000 });
-      console.log("Navigated to patient add page====>>>");
-      // Fill in patient information
-      // Required fields
-      await page.type('#firstName', patient.firstName);
-      await page.type('#lastName', patient.lastName || '');
-      await page.type('#internalId', patient.subjectId);
-
-      // Select date of birth using the date picker
-      if (patient.birthDate) {
-        await page.click('#birthDate');
-        await page.waitForSelector('.ant-picker-dropdown', { timeout: 5000 }).catch(() => {
-          console.log('Date picker dropdown not found, continuing anyway');
-        });
-        await page.type('#birthDate', patient.birthDate);
-        await page.keyboard.press('Enter');
-      }
-
-      // Select monitoring protocol (required)
-      if (patient.monitoringProtocol) {
-        await page.click('#monitoringProtocol');
-        await page.waitForSelector('.ant-select-dropdown');
-
-        // Get monitoring protocol dropdown options
-        const protocolOptions = await page.$$('.ant-select-item-option');
-
-        // Find and click the correct monitoring protocol option
-        for (const option of protocolOptions) {
-          const optionText = await page.evaluate(el => el.textContent.trim(), option);
-          if (optionText.toLowerCase() === patient.monitoringProtocol.toLowerCase()) {
-            await option.click();
-            break;
-          }
-        }
-      }
-
-      // Select site if provided
-      if (patient.site) {
-        await page.click('#site');
-        await page.waitForSelector('.ant-select-dropdown');
-
-        // Get site dropdown options
-        const siteOptions = await page.$$('.ant-select-selector');
-
-        // Find and click the correct site option
-        for (const option of siteOptions) {
-          const optionText = await page.evaluate(el => el.textContent.trim(), option);
-          if (optionText.toLowerCase() === patient.site.toLowerCase()) {
-            await option.click();
-            break;
-          }
-        }
-      }
-
-      if (patient.assignedPhysician) {
-        // Click to open dropdown
-        await page.click('#physician');
-        await page.waitForSelector('.ant-select-dropdown');
-
-        // Type the name into the dropdown input
-        await page.type('#physician', patient.assignedPhysician);
-
-        // Wait for dropdown to populate
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Select matching option from visible dropdown
-        const dropdownOptions = await page.$$('.ant-select-dropdown .ant-select-item-option');
-
-        let found = false;
-        for (const option of dropdownOptions) {
-          const text = await page.evaluate(el => el.textContent?.trim(), option);
-          console.log('Dropdown option:', text);
-          if (text?.toLowerCase() === patient.assignedPhysician.toLowerCase()) {
-            await option.click();
-            found = true;
-            break;
-          }
-        }
-
-        if (!found) {
-          console.log('Assigned physician not found in dropdown.');
-        }
-      }
-
-      // if (patient.assignedPhysician) {
-      //   // Click on the physician dropdown
-      //   await page.click('#physician');
-      //   await page.waitForSelector('.ant-select-dropdown');
-      //   await page.type('#physician', patient.assignedPhysician);
-      //   await page.keyboard.press('Enter');
-      // }
-
-      // Select gender if provided
-      if (patient.gender) {
-        await page.click('#gender');
-        await page.waitForSelector('.ant-select-dropdown');
-
-        // Get gender dropdown options
-        const genderOptions = await page.$$('.ant-select-item-option');
-
-        // Find and click the correct gender option
-        for (const option of genderOptions) {
-          const optionText = await page.evaluate(el => el.textContent.trim(), option);
-          if (optionText.toLowerCase() === patient.gender.toLowerCase()) {
-            await option.click();
-            break;
-          }
-        }
-      }
-
-      // Enter height if provided
-      if (patient.height) {
-        await page.click('#height');
-        await page.type('#height', patient.height.toString());
-      }
-
-      // Enter weight if provided
-      if (patient.weight) {
-        await page.click('#weight');
-        await page.type('#weight', patient.weight.toString());
-      }
-
-      // Select "Report for Third Party" radio button (required)
-      // Default is "No"
-      // if (patient.reportForThirdParty === true) {
-      //   await page.click('input[type="radio"][value="true"]#isOpenPrescribingPhysician');
-      // } else {
-      //   await page.click('input[type="radio"][value="false"]#isOpenPrescribingPhysician');
-      // }
-
-      // // Select "RT-RPM Patient" radio button (required)
-      // // Default is "No"
-      // if (patient.isRTRPMPatient === true) {
-      //   await page.click('input[type="radio"][value="true"]#isRTRPMPatient');
-      // } else {
-      //   await page.click('input[type="radio"][value="false"]#isRTRPMPatient');
-      // }
-
-      // Submit the form
-      // await page.click('button[type="submit"]');
-
-      // Try multiple strategies to click the submit button
-      // First attempt - direct click on button
-      await page.evaluate(() => {
-        console.log('Trying to submit the form in 1st attempt');
-        const submitButton = Array.from(document.querySelectorAll('button')).find(
-          button => button.textContent && button.textContent.includes('Save')
-        );
-        if (submitButton) (submitButton as HTMLButtonElement).click();
-      });
-      console.log('Trying to submit the form in 2nd attempt');
-      // Second attempt - click by more specific selector
-      await page.evaluate(() => {
-        console.log('Trying to submit the form in 2nd attempt');
-        const form = document.querySelector('#patient-form');
-        if (form) {
-          const submitButton = form.querySelector('button[type="submit"]');
-          if (submitButton) (submitButton as HTMLButtonElement).click();
-        }
-      });
-
-      const result = await Promise.race([
-        page.waitForNavigation({ timeout: 30000 }).then(() => 'navigation'),
-        page.waitForSelector('.success-message', { timeout: 30000 }).then(() => 'success'),
-        new Promise(resolve => setTimeout(() => resolve('timeout'), 30000))
-      ]);
-
-      if (!result || result === 'timeout' || (result !== 'success' && result !== 'navigation')) {
-        console.log('Timeout or unexpected result:', result);
-        return false;
-        // Continue anyway, as the form might have been submitted successfully despite the timeout
-      }
-
-      return true;
-    } catch (err) {
-      console.log("Error submitting the form:", err);
-      return false;
-    }
   }
 
 
@@ -814,5 +608,42 @@ export class PatientService {
       },
     });
 
+  }
+
+  public async addPatientToVlWebportal(data: VivalinkPatientAddDTO) {
+    const url = `${this.vlWebportalUrl}/patients`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.vlWebportalToken}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    return result;
+  }
+
+  public async getVivalinkPatientDetails(internalId: string) {
+    // https://webportal.vivalink.com/api/backend/patients?$skip=0&$limit=10&queryValue=hk-patient-dev-01&isManage=true
+    const url = `${this.vlWebportalUrl}/patients?$skip=0&$limit=10&queryValue=${internalId}&isManage=true`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.vlWebportalToken}`,
+      },
+    });
+
+    const result = await response.json();
+
+    const patient = result.data.find((p: any) => p.internalId === internalId);
+    return patient;
+  }
+
+  private CapitalizeFirstLetter(str: string): string {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   }
 }
