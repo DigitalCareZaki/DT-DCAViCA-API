@@ -1273,6 +1273,39 @@ export class DoctorService {
     return nurseList;
   }
 
+  async getDoctorsBySite(siteId: string) {
+    const doctorList = await this.prisma.doctor.findMany({
+      where: {
+        site_id: siteId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            middle_name: true,
+            email: true,
+            uri: true,
+            phone_number: true,
+          },
+        },
+        specialities: {
+          select: {
+            title: true,
+          },
+        },
+        departments: {
+          select: {
+            title: true,
+          },
+        },
+      },
+    });
+
+    return doctorList;
+  }
+
   private async addDoctorToVlWebPortal(data: VivaLinkSyncDoctorDto) {
     const url = `${this.vlWebportalUrl}/users`;
     const response = await fetch(url, {

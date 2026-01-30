@@ -318,8 +318,20 @@ export class OrganizationService {
                     description: true,
                   },
                 },
+                id: true,
+                vivalink_sync_error: true,
+                vivalink_synced: true,
+                vivalink_synced_at: true,
+                vivalinkId: true,
+                avicardia_monitoring: true
               },
             },
+            id: true,
+            vivalink_sync_error: true,
+            vivalink_synced: true,
+            vivalink_synced_at: true,
+            vivalinkId: true,
+            cardiac_monitoring: true
           },
         },
         doctor: {
@@ -331,6 +343,11 @@ export class OrganizationService {
                 description: true,
               },
             },
+            vivalink_sync_error: true,
+            vivalink_synced: true,
+            vivalink_synced_at: true,
+            vivalinkId: true,
+            avicardia_monitoring: true
           },
         },
         nurse: {
