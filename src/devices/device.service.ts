@@ -107,6 +107,11 @@ export class DeviceService {
 
         select: {
           id: true,
+          vivalink_sync_error: true,
+          cardiac_monitoring: true,
+          vivalink_synced: true,
+          vivalinkId: true,
+          vivalink_synced_at: true,
           title: true,
           description: true,
           serial_number: true,
