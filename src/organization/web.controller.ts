@@ -250,6 +250,12 @@ export class OrganizationWebController extends OrganizationController {
     return this.getDoctorService().syncDoctor(id);
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Get('/site-doctors')
+  public async getSiteDoctors(@Query('siteId') siteId: string) {
+    return this.getDoctorService().getDoctorsBySite(siteId);
+  }
+
   @HttpCode(HttpStatus.CREATED)
   @Post('/nurse')
   @UseGuards(RolesGuard)

@@ -197,7 +197,15 @@ export class PatientService {
         };
       }
 
-      const primaryDoctor = patientData.doctors && patientData.doctors.length > 0 ? patientData.doctors[0] : null;
+      const primaryDoctor = patientData.doctors && patientData.doctors.length > 0 ? patientData.doctors?.[0] : null;
+      if (!primaryDoctor || !primaryDoctor.vivalinkId) {
+        const errorMsg = 'Assigned Doctor does not exist on vivalink portal';
+        return {
+          attempted: true,
+          success: false,
+          error: errorMsg,
+        };
+      }
       const vivalinkSiteId = primaryDoctor?.site?.vivalinkSiteId ?? null;
       const assignedPhysicianVivalinkId = primaryDoctor?.vivalinkId ?? null;
 
