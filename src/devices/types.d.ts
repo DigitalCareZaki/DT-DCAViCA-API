@@ -83,6 +83,6 @@ export interface VivalinkAssignmentSyncResult {
  */
 export interface AssignDeviceResult {
   success: boolean;
-  patientDeviceId: string;
+  patientDeviceId: string | null;
   vivalinkSync: VivalinkAssignmentSyncResult;
 }

@@ -627,6 +627,11 @@ export class DeviceService {
             id: branchId,
           },
         },
+        site: {
+          connect: {
+            id: data.site_id,
+          }
+        }
       },
       select: {
         id: true,
@@ -642,6 +647,14 @@ export class DeviceService {
             middle_name: true,
             last_name: true,
             email: true,
+          },
+        },
+        site: {
+          select: {
+            id: true,
+            name: true,
+            vivalinkSiteId: true,
+            description: true,
           },
         },
         patient_devices: {
@@ -745,14 +758,18 @@ export class DeviceService {
       const syncSuccess = syncResponse && syncResponse.code === 0;
 
       if (syncSuccess) {
+        const vlDevices = await this.getVivalinkDevices(vlDevicePayload.identifier);
+        const vlDevice = vlDevices.data.find(p => p.identifier === vlDevicePayload.identifier);
+        console.log("vlDevice", vlDevice);
+        console.log("vldevices", vlDevices);
         await this.prisma.device.update({
           where: { id: deviceId },
           data: {
+            vivalinkId: vlDevice._id || vlDevice.id || null,
             vivalink_synced: true,
             vivalink_synced_at: new Date(),
             vivalink_sync_error: null,
             cardiac_monitoring: VivalinkSyncStatus.YES,
-            vivalinkId: syncResponse.data?._id || syncResponse.data?.id || null,
           },
         });
 
@@ -936,21 +953,7 @@ export class DeviceService {
   public async assignDevice(userId: string, data: PatientDeviceDTO): Promise<AssignDeviceResult> {
     console.log(data, 'device data ===========>>>');
 
-    // Check if the device is already issued
-    const alreadyIssued = await this.prisma.patientDevice.findFirst({
-      where: {
-        device_id: data.device_id,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (alreadyIssued) {
-      throw new BadRequestException('This device is already issued to another patient.');
-    }
-
-    // Get device and patient details for Vivalink sync
+    // Step 1: Check if device exists in Prisma
     const device = await this.prisma.device.findUnique({
       where: { id: data.device_id },
       select: {
@@ -961,6 +964,19 @@ export class DeviceService {
       },
     });
 
+    if (!device) {
+      return {
+        success: false,
+        patientDeviceId: null,
+        vivalinkSync: {
+          attempted: false,
+          success: false,
+          error: 'Device not found in system.',
+        },
+      };
+    }
+
+    // Step 2: Check if patient exists in Prisma
     const patient = await this.prisma.patient.findUnique({
       where: { user_id: data.issued_to },
       select: {
@@ -970,63 +986,119 @@ export class DeviceService {
       },
     });
 
-    if (!device) {
-      throw new BadRequestException('Device not found.');
-    }
-
     if (!patient) {
-      throw new BadRequestException('Patient not found.');
+      return {
+        success: false,
+        patientDeviceId: null,
+        vivalinkSync: {
+          attempted: false,
+          success: false,
+          error: 'Patient not found in system.',
+        },
+      };
     }
 
-    let vivalinkSyncResult: VivalinkAssignmentSyncResult = {
-      attempted: false,
-      success: false,
-    };
+    // Step 3: Check if device is already issued
+    const alreadyIssued = await this.prisma.patientDevice.findFirst({
+      where: {
+        device_id: data.device_id,
+      },
+      select: {
+        id: true,
+      },
+    });
 
-    // Step 1: Sync to Vivalink first if both device and patient are synced
-    if (device.vivalink_synced && patient.vivalink_synced && device.vivalinkId && patient.vivalinkId) {
-      try {
-        const vlAssignPayload = {
-          device: device.vivalinkId,
-          patient: patient.vivalinkId,
-        };
+    if (alreadyIssued) {
+      return {
+        success: false,
+        patientDeviceId: null,
+        vivalinkSync: {
+          attempted: false,
+          success: false,
+          error: 'This device is already issued to another patient.',
+        },
+      };
+    }
+    console.log("device.vivalinkId", device.vivalinkId);
+    console.log("patient.vivalinkId", patient.vivalinkId);
+    console.log("device.vivalink_synced", device.vivalink_synced);
+    console.log("patient.vivalink_synced", patient.vivalink_synced);
 
-        console.log('Syncing device assignment to Vivalink:', vlAssignPayload);
+    // Step 4: Check if device exists on Vivalink
+    if (!device.vivalinkId || !device.vivalink_synced) {
+      return {
+        success: false,
+        patientDeviceId: null,
+        vivalinkSync: {
+          attempted: false,
+          success: false,
+          error: 'Device is not synced to Vivalink. Please sync the device first.',
+        },
+      };
+    }
 
-        const vlResponse = await this.assignDeviceToPatient(vlAssignPayload);
-        const vlSuccess = vlResponse && vlResponse.code === 0;
+    // Step 5: Check if patient exists on Vivalink
+    if (!patient.vivalinkId || !patient.vivalink_synced) {
+      return {
+        success: false,
+        patientDeviceId: null,
+        vivalinkSync: {
+          attempted: false,
+          success: false,
+          error: 'Patient is not synced to Vivalink. Please sync the patient first.',
+        },
+      };
+    }
 
-        if (vlSuccess) {
-          vivalinkSyncResult = {
-            attempted: true,
-            success: true,
-            syncedAt: new Date(),
-          };
-        } else {
-          vivalinkSyncResult = {
+    console.log("device.vivalinkId", device.vivalinkId);
+    console.log("patient.vivalinkId", patient.vivalinkId);
+
+    // Step 6: Sync to Vivalink FIRST
+    let vivalinkSyncResult: VivalinkAssignmentSyncResult;
+    try {
+      const vlAssignPayload = {
+        device: device.vivalinkId,
+        patient: patient.vivalinkId,
+      };
+
+      console.log('Syncing device assignment to Vivalink:', vlAssignPayload);
+
+      const vlResponse = await this.assignDeviceToPatient(vlAssignPayload);
+      const vlSuccess = vlResponse && vlResponse.code === 0;
+
+      if (!vlSuccess) {
+        // Vivalink sync failed - DO NOT create in Prisma
+        return {
+          success: false,
+          patientDeviceId: null,
+          vivalinkSync: {
             attempted: true,
             success: false,
-            error: vlResponse?.message || 'Failed to assign device in Vivalink',
-          };
-          // Don't throw - proceed with local assignment even if Vivalink fails
-          console.error('Vivalink device assignment failed:', vlResponse);
-        }
-      } catch (error) {
-        console.error('Vivalink device assignment error:', error);
-        vivalinkSyncResult = {
+            error: vlResponse?.message || 'Failed to assign device in Vivalink portal.',
+          },
+        };
+      }
+
+      vivalinkSyncResult = {
+        attempted: true,
+        success: true,
+        syncedAt: new Date(),
+      };
+    } catch (error) {
+      console.error('Vivalink device assignment error:', error);
+      // Vivalink sync failed - DO NOT create in Prisma
+      return {
+        success: false,
+        patientDeviceId: null,
+        vivalinkSync: {
           attempted: true,
           success: false,
           error: error instanceof Error ? error.message : 'Unknown Vivalink sync error',
-        };
-        // Don't throw - proceed with local assignment even if Vivalink fails
-      }
-    } else {
-      // Log why Vivalink sync was skipped
-      console.log('Skipping Vivalink sync - Device synced:', device.vivalink_synced,
-        'Patient synced:', patient.vivalink_synced);
+        },
+      };
     }
 
-    // Step 2: Create new issuance in Prisma
+    // Step 7: Only after Vivalink sync succeeds, create in Prisma
     const patientDevice = await this.prisma.patientDevice.create({
       data: {
         device: { connect: { id: data.device_id } },
@@ -1450,8 +1522,10 @@ export class DeviceService {
     return result;
   }
 
-  async getVivalinkDevices() {
-    const url = `${this.vlWebportalUrl}/devices`;
+  async getVivalinkDevices(identifier: string) {
+    console.log("Fetching Vivalink devices with identifier:", identifier);
+    console.log("smhhh", identifier.replace(/\//g, "%"));
+    const url = `${this.vlWebportalUrl}/devices?type=100`;
     const response = await fetch(url, {
       method: 'GET',
       headers: {
