@@ -31,6 +31,21 @@ export class DeviceWebController extends DeviceController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @Get('/history')
+  public async deviceHistory(
+    @GetUser() user: UserRes,
+    @Query('deviceId') deviceId: string,
+    @Query('patientvlId') patientvlId: string,
+  ) {
+
+    console.log('deviceId', deviceId);
+    return this.getDeviceService().deviceHistory(
+      deviceId,
+      patientvlId
+    );
+  }
+
+  @HttpCode(HttpStatus.OK)
   @Get('/health')
   public async health(): Promise<HealthRes> {
     return {
@@ -209,4 +224,6 @@ export class DeviceWebController extends DeviceController {
       deviceId,
     );
   }
+
+
 }

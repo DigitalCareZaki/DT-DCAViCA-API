@@ -9,9 +9,17 @@ import type { UserRole } from '@types';
 import type { Device, VivalinkDeviceSyncResult, AddDeviceResult, TriggerDeviceVivalinkSyncResult } from './types';
 import puppeteer from 'puppeteer';
 import { DeviceSuperAdminDTO } from './dto/deviceSuperadmin.dto';
+import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
 @Injectable()
 export class DeviceService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService, private vlTokenService: VivalinkWebPortalTokenService) { }
+
+  private get vlWebportalUrl(): string {
+    return this.vlTokenService.getBaseUrl();
+  }
+  private get vlWebportalToken(): string {
+    return this.vlTokenService.getToken();
+  }
 
   public async getAllDevices(
     targetId: string,
@@ -1786,6 +1794,25 @@ export class DeviceService {
   //     return false;
   //   }
   // }
+
+
+  async deviceHistory(deviceId: string, patientvlId: string) {
+    const vlDevice = await this.getAllDeviceHistoryVl();
+
+    // console.log(vlDevice, '=======> vlDevice');
+    return vlDevice.data.filter(x => x.title === deviceId && x.patient.id === patientvlId);
+
+  }
+
+
+  private async getAllDeviceHistoryVl() {
+    const url = `${this.vlWebportalUrl}/operation-log?$sort[createdAt]=-1&$skip=0&$limit=10000&target=Device`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${this.vlWebportalToken}` },
+    });
+    return response.json();
+  }
 
 
 }

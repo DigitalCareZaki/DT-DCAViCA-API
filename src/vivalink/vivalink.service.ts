@@ -73,90 +73,103 @@ export class VivalinkService {
   }
 
   public async getPatients(user: UserRes): Promise<VLAllPatients> {
-    const request = new Request(
-      this.vlCredentails.baseUrl + `/tenants/${this.vlCredentails.tenantId}`,
-      {
-        headers: {
-          Authorization: this.vlCredentails.token,
-          Accept: '*/*',
-          'Content-Type': 'application/json',
-        },
-      },
-    );
-
-    const res = await fetch(request);
-
-    if (res.status !== 200) {
-      throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
-    }
-
-    const result = await res.json();
-
-    console.log('getPatients from VL -> result >>>>>>>> ', result);
-
-    // VL sends a response of 200 even on bad response
-    // Need to check inside result for code
-    if (result?.code !== 200) {
-      throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
-    }
-    // 1. Extract emails from result keys
-
-    const doctor = await this.prisma.doctor.findUnique({
-      where: {
-        user_id: user.id,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    console.log('user >>>>>>>> ', user);
-    const emailList = Object.keys(result?.data?.mappings ?? {});
-    const patients = await this.prisma.user.findMany({
-      where: {
-        role: Role.PATIENT,
-        first_name: {
-          in: emailList,
-        },
-        patient: {
-          doctors: {
-            some: {
-              id: doctor.id, // Make sure to pass loggedInDoctorId as a parameter to getPatients()
-            },
+    console.log("====================>>>>>>> checkkkkk", user);
+    console.log("====================>>>>>>> checkkkkk");
+    try {
+      const request = new Request(
+        this.vlCredentails.baseUrl + `/tenants/${this.vlCredentails.tenantId}`,
+        {
+          headers: {
+            Authorization: this.vlCredentails.token,
+            Accept: '*/*',
+            'Content-Type': 'application/json',
           },
         },
-      },
-      select: {
-        id: true,
-        first_name: true,
-        patient: {
-          select: {
-            id: true,
-            user_id: true,
+      );
+
+      const res = await fetch(request);
+      console.log('getPatients from VL -> result >>>>>>>> ', res);
+
+      if (res.status !== 200) {
+        throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
+      }
+
+      const result = await res.json();
+
+      console.log('getPatients from VL -> result >>>>>>>> ', result);
+
+      // VL sends a response of 200 even on bad response
+      // Need to check inside result for code
+      if (result?.code !== 200) {
+        throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
+      }
+      // 1. Extract emails from result keys
+
+      const doctor = await this.prisma.doctor.findUnique({
+        where: {
+          user_id: user.id,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!doctor) {
+        throw new AppError('Doctor not found for this user', HttpStatus.BAD_REQUEST);
+      }
+
+      console.log('user >>>>>>>> ', user);
+      const emailList = Object.keys(result?.data?.mappings ?? {});
+      console.log('emailList >>>>>>>> ', emailList);
+      const patients = await this.prisma.user.findMany({
+        where: {
+          role: Role.PATIENT,
+          first_name: {
+            in: emailList,
+          },
+          patient: {
             doctors: {
-              select: {
-                id: true,
+              some: {
+                id: doctor.id, // Make sure to pass loggedInDoctorId as a parameter to getPatients()
               },
             },
           },
         },
-      },
-    });
-    console.log('patients >>>>>>>> ', patients);
+        select: {
+          id: true,
+          first_name: true,
+          patient: {
+            select: {
+              id: true,
+              user_id: true,
+              doctors: {
+                select: {
+                  id: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      console.log('patients >>>>>>>> ', patients);
 
-    // 3. Attach matching result data to each patient
-    const patientsWithData = patients.map(patient => ({
-      ...patient,
-      mappings: result.data.mappings[patient.first_name] ?? [], // gets the array from result
-    }));
+      // 3. Attach matching result data to each patient
+      const patientsWithData = patients.map(patient => ({
+        ...patient,
+        mappings: result.data.mappings[patient.first_name] ?? [], // gets the array from result
+      }));
 
-    const formatted = patientsWithData.reduce((acc, patient) => {
-      acc[patient.first_name] = patient.mappings;
-      return acc;
-    }, {});
-    console.log(formatted, '=====>>patientsWithData');
+      const formatted = patientsWithData.reduce((acc, patient) => {
+        acc[patient.first_name] = patient.mappings;
+        return acc;
+      }, {});
+      console.log(formatted, '=====>>patientsWithData');
 
-    return formatted ?? {};
+      return formatted ?? {};
+    } catch (err) {
+      console.error('getPatients -> Error fetching patients', err);
+      throw err; // ⬅️ IMPORTANT
+    }
   }
   public async getAppPatients(): Promise<VLAllPatients> {
     const request = new Request(

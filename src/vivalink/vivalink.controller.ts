@@ -27,6 +27,8 @@ export class VivalinkController {
   public async getPatients(
     @GetUser() user: UserRes,
   ): Promise<VLAllPatients> {
+    console.log("====================>>>>>>> kkkk");
+    console.log("====================>>>>>>> kkkk", user);
     return this.vivalinkService.getPatients(user);
   }
   @HttpCode(HttpStatus.OK)
