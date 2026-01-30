@@ -242,6 +242,7 @@ model Site {
   address        String?
 
   doctors Doctor[]
+  devices Device[]
 }
 
 model Nurse {
@@ -281,7 +282,11 @@ model Device {
   branchId String?
   branch   Branch? @relation(fields: [branchId], references: [id])
 
+  site    Site?   @relation(fields: [site_id], references: [id])
+  site_id String?
+
   // Vivalink AViCardia Monitoring fields
+  vivalinkId          String?
   cardiac_monitoring  VivalinkSyncStatus @default(NO)
   vivalink_synced     Boolean            @default(false)
   vivalink_sync_error String?

@@ -343,6 +343,7 @@ export class OrganizationService {
                 description: true,
               },
             },
+            id: true,
             vivalink_sync_error: true,
             vivalink_synced: true,
             vivalink_synced_at: true,

@@ -67,3 +67,22 @@ export interface TriggerDeviceVivalinkSyncResult {
   error?: string;
   syncedAt?: Date;
 }
+
+/**
+ * Result of Vivalink device-patient assignment sync
+ */
+export interface VivalinkAssignmentSyncResult {
+  attempted: boolean;
+  success: boolean;
+  error?: string;
+  syncedAt?: Date;
+}
+
+/**
+ * Result of device assignment to patient with Vivalink sync
+ */
+export interface AssignDeviceResult {
+  success: boolean;
+  patientDeviceId: string;
+  vivalinkSync: VivalinkAssignmentSyncResult;
+}
