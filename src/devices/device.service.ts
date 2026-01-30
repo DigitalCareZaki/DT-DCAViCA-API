@@ -10,6 +10,7 @@ import type { Device, VivalinkDeviceSyncResult, AddDeviceResult, TriggerDeviceVi
 import puppeteer from 'puppeteer';
 import { DeviceSuperAdminDTO } from './dto/deviceSuperadmin.dto';
 import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
+import { error } from 'console';
 @Injectable()
 export class DeviceService {
   constructor(private prisma: PrismaService, private vlTokenService: VivalinkWebPortalTokenService) { }
@@ -20,6 +21,7 @@ export class DeviceService {
   private get vlWebportalToken(): string {
     return this.vlTokenService.getToken();
   }
+
 
   public async getAllDevices(
     targetId: string,
@@ -1797,11 +1799,26 @@ export class DeviceService {
 
 
   async deviceHistory(deviceId: string, patientvlId: string) {
-    const vlDevice = await this.getAllDeviceHistoryVl();
+    try {
+      const vlDevice = await this.getAllDeviceHistoryVl();
+      const dt = vlDevice.data
+        .filter(
+          (x) =>
+            x.title === deviceId &&
+            x.patient?.id === patientvlId
+        )
+        .map((x) => ({
+          title: x.title,
+          action: x.action,
+          createdAt: x.createdAt,
+          updatedAt: x.updatedAt,
+        }));
 
-    // console.log(vlDevice, '=======> vlDevice');
-    return vlDevice.data.filter(x => x.title === deviceId && x.patient.id === patientvlId);
-
+      const res = this.getDeviceUsageDuration(dt);
+      return res;
+    } catch (err) {
+      throw err;
+    }
   }
 
 
@@ -1812,6 +1829,32 @@ export class DeviceService {
       headers: { Authorization: `Bearer ${this.vlWebportalToken}` },
     });
     return response.json();
+  }
+  private getDeviceUsageDuration(history: any[]) {
+    const bind = history.find(x => x.action === 'DeviceBind');
+    const unbind = history.find(x => x.action === 'DeviceUnbind');
+
+    if (!bind || !unbind) {
+      return null; // incomplete history
+    }
+
+    const start = new Date(bind.createdAt).getTime();
+    const end = new Date(unbind.createdAt).getTime();
+
+    const diffMs = end - start;
+
+    const minutes = Math.floor(diffMs / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    const days = Math.floor(hours / 24);
+
+    return {
+      title: bind.title,
+      startTime: bind.createdAt,
+      endTime: unbind.createdAt,
+      durationMs: diffMs,
+      durationHuman: `${days}d ${hours % 24}h ${remainingMinutes}m`,
+    };
   }
 
 

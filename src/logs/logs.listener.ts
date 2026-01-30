@@ -21,6 +21,13 @@ export class LogsListener {
         user_id = decodedToken?.id as string;
       }
 
+      if (!user_id) {
+        console.warn('Log skipped: user_id missing');
+        return;
+      }
+      if (payload.platform == "VL") {
+        payload.platform = RolePlatform.WEB;
+      }
       await this.prisma.logs.create({
         data: {
           user_id: user_id,

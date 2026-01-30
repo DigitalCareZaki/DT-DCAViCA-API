@@ -73,8 +73,6 @@ export class VivalinkService {
   }
 
   public async getPatients(user: UserRes): Promise<VLAllPatients> {
-    console.log("====================>>>>>>> checkkkkk", user);
-    console.log("====================>>>>>>> checkkkkk");
     try {
       const request = new Request(
         this.vlCredentails.baseUrl + `/tenants/${this.vlCredentails.tenantId}`,
@@ -113,6 +111,7 @@ export class VivalinkService {
           id: true,
         },
       });
+      console.log('doctor >>>>>>>> ', doctor);
 
       if (!doctor) {
         throw new AppError('Doctor not found for this user', HttpStatus.BAD_REQUEST);
