@@ -7,7 +7,6 @@ import { DeviceDTO, ManageDeviceDTO, PatientDeviceDTO } from './dto';
 import { Role, VivalinkSyncStatus, type MeasurementType } from '@prisma/client';
 import type { UserRole } from '@types';
 import type { Device, VivalinkDeviceSyncResult, AddDeviceResult, TriggerDeviceVivalinkSyncResult, AssignDeviceResult, VivalinkAssignmentSyncResult } from './types';
-import puppeteer from 'puppeteer';
 import { DeviceSuperAdminDTO } from './dto/deviceSuperadmin.dto';
 import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
 
