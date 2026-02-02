@@ -1417,6 +1417,64 @@ export class DeviceService {
       (id) => !existingPatientIds.has(id),
     );
 
+    const vivalinkDevice = await this.prisma.device.findUnique({
+      where: {
+        id: data.device_id,
+      },
+      select: {
+        vivalinkId: true,
+      },
+    });
+
+    if (vivalinkDevice?.vivalinkId) {
+      const vivalinkPatientsToUnassign = await this.prisma.patient.findMany({
+        where: {
+          user_id: {
+            in: existingPatientDevices.map((pd) => pd.issued_to_user_id),
+          },
+        },
+        select: {
+          vivalinkId: true,
+        },
+      });
+
+      for (const patient of vivalinkPatientsToUnassign) {
+        if (patient.vivalinkId) {
+          await this.unassignDeviceFromPatient({
+            device: vivalinkDevice.vivalinkId,
+            patient: patient.vivalinkId,
+          });
+        }
+      }
+
+      const patientIdToAssign = data.patient_ids[0];
+      if (patientIdToAssign) {
+        const vivalinkPatientToAssign = await this.prisma.patient.findUnique({
+          where: {
+            user_id: patientIdToAssign,
+          },
+          select: {
+            vivalinkId: true,
+          },
+        });
+
+        if (vivalinkPatientToAssign?.vivalinkId) {
+          const res = await this.assignDeviceToPatient({
+            device: vivalinkDevice.vivalinkId,
+            patient: vivalinkPatientToAssign.vivalinkId,
+          });
+
+          console.log('Vivalink assign response:', res);
+
+          if (res.code !== 0) {
+            throw new Error(
+              'Failed to assign device in Vivalink portal.',
+            );
+          }
+        }
+      }
+    }
+
     // Perform the operations
     const deletePromise = this.prisma.patientDevice.deleteMany({
       where: {
