@@ -6,14 +6,21 @@ import { DeviceDTO, ManageDeviceDTO, PatientDeviceDTO } from './dto';
 
 import { Role, VivalinkSyncStatus, type MeasurementType } from '@prisma/client';
 import type { UserRole } from '@types';
-import type { Device, VivalinkDeviceSyncResult, AddDeviceResult, TriggerDeviceVivalinkSyncResult, AssignDeviceResult, VivalinkAssignmentSyncResult } from './types';
+import type {
+  Device,
+  VivalinkDeviceSyncResult,
+  AddDeviceResult,
+  TriggerDeviceVivalinkSyncResult,
+  AssignDeviceResult,
+  VivalinkAssignmentSyncResult,
+} from './types';
 import { DeviceSuperAdminDTO } from './dto/deviceSuperadmin.dto';
 import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
 
 interface VivalinkPortalDeviceDto {
   type: number;
   identifier: string;
-  site: string
+  site: string;
 }
 
 interface AssignVivalinkDeviceDto {
@@ -22,7 +29,10 @@ interface AssignVivalinkDeviceDto {
 }
 @Injectable()
 export class DeviceService {
-  constructor(private prisma: PrismaService, private vlTokenService: VivalinkWebPortalTokenService) { }
+  constructor(
+    private prisma: PrismaService,
+    private vlTokenService: VivalinkWebPortalTokenService,
+  ) {}
 
   private readonly logger = new Logger(DeviceService.name);
 
@@ -39,41 +49,40 @@ export class DeviceService {
     role: UserRole,
     search: string,
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
   ) {
-
-    console.log(search, "===>")
+    console.log(search, '===>');
     const isSuperAdmin = role === Role.SUPERADMIN;
 
     const whereCondition: any = {
       ...(isSuperAdmin ? {} : { branchId: targetId }),
       ...(search
         ? {
-          OR: [
-            {
-              title: {
-                contains: search,
-                mode: 'insensitive',
+            OR: [
+              {
+                title: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
               },
-            },
-            {
-              serial_number: {
-                contains: search,
-                mode: 'insensitive',
+              {
+                serial_number: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
               },
-            },
-            // {
-            //   category: search.toUpperCase() as MeasurementType
+              // {
+              //   category: search.toUpperCase() as MeasurementType
 
-            // },
-            {
-              description: {
-                contains: search,
-                mode: 'insensitive',
+              // },
+              {
+                description: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
               },
-            },
-          ],
-        }
+            ],
+          }
         : {}),
     };
     // const isSuperAdmin = role === Role.SUPERADMIN;
@@ -167,16 +176,15 @@ export class DeviceService {
           created_at: 'desc',
         },
       }),
-      this.prisma.device.count({
-        where: whereCondition
-      }),
+      this.prisma.device.count({ where: whereCondition }),
     ]);
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
     const enrichedTablet = devices.map((device) => {
-      const isAssigned = device.patient_devices && device.patient_devices.length > 0;
+      const isAssigned =
+        device.patient_devices && device.patient_devices.length > 0;
       return {
         ...device,
         assigned: isAssigned,
@@ -195,12 +203,6 @@ export class DeviceService {
         prevPage: hasPrevPage ? page - 1 : null,
       },
     };
-
-
-
-
-
-
   }
 
   public async getSingleDevice(
@@ -351,11 +353,7 @@ export class DeviceService {
     }
   }
 
-  public async getDeviceList(
-    category: MeasurementType,
-
-  ) {
-
+  public async getDeviceList(category: MeasurementType) {
     return await this.prisma.device.findMany({
       where: {
         category: category,
@@ -383,7 +381,6 @@ export class DeviceService {
         updated_at: true,
       },
     });
-
   }
 
   public async getAllDevicesForPatient(
@@ -585,7 +582,12 @@ export class DeviceService {
     }
   }
 
-  public async createDevice(userId: string, organizationId: string, data: DeviceDTO, branchId: string): Promise<AddDeviceResult> {
+  public async createDevice(
+    userId: string,
+    organizationId: string,
+    data: DeviceDTO,
+    branchId: string,
+  ): Promise<AddDeviceResult> {
     const deviceAlreadyExists = await this.prisma.device.findFirst({
       where: {
         AND: [
@@ -607,7 +609,9 @@ export class DeviceService {
     });
 
     if (deviceAlreadyExists) {
-      throw new BadRequestException('Device already exists in your organization.');
+      throw new BadRequestException(
+        'Device already exists in your organization.',
+      );
     }
 
     // Create device in AViCA first
@@ -634,8 +638,8 @@ export class DeviceService {
         site: {
           connect: {
             id: data.site_id,
-          }
-        }
+          },
+        },
       },
       select: {
         id: true,
@@ -716,7 +720,10 @@ export class DeviceService {
    * @param deviceId AViCA Device ID
    * @param data Device data for sync
    */
-  async syncDeviceToVivalink(deviceId: string, data?: DeviceDTO): Promise<VivalinkDeviceSyncResult> {
+  async syncDeviceToVivalink(
+    deviceId: string,
+    data?: DeviceDTO,
+  ): Promise<VivalinkDeviceSyncResult> {
     try {
       const deviceData = await this.prisma.device.findUnique({
         where: { id: deviceId },
@@ -743,11 +750,11 @@ export class DeviceService {
       // Prepare payload for Vivalink API
       // Device type mapping: ECG = 1 (based on typical Vivalink device types)
       const deviceTypeMap: Record<string, number> = {
-        'ECG': 100,
-        'SPO2': 101,
-        'BLOODPRESSURE': 3,
-        'BLOODGLUCOSE': 4,
-        'TEMPERATURE': 5,
+        ECG: 100,
+        SPO2: 101,
+        BLOODPRESSURE: 3,
+        BLOODGLUCOSE: 4,
+        TEMPERATURE: 5,
       };
 
       const vlDevicePayload = {
@@ -758,14 +765,20 @@ export class DeviceService {
 
       console.log('Syncing device to Vivalink:', vlDevicePayload);
 
-      const syncResponse = await this.addDeviceToVivalinkPortal(vlDevicePayload as any);
+      const syncResponse = await this.addDeviceToVivalinkPortal(
+        vlDevicePayload as any,
+      );
       const syncSuccess = syncResponse && syncResponse.code === 0;
 
       if (syncSuccess) {
-        const vlDevices = await this.getVivalinkDevices(vlDevicePayload.identifier);
-        const vlDevice = vlDevices.data.find(p => p.identifier === vlDevicePayload.identifier);
-        console.log("vlDevice", vlDevice);
-        console.log("vldevices", vlDevices);
+        const vlDevices = await this.getVivalinkDevices(
+          vlDevicePayload.identifier,
+        );
+        const vlDevice = vlDevices.data.find(
+          (p) => p.identifier === vlDevicePayload.identifier,
+        );
+        console.log('vlDevice', vlDevice);
+        console.log('vldevices', vlDevices);
         await this.prisma.device.update({
           where: { id: deviceId },
           data: {
@@ -783,7 +796,8 @@ export class DeviceService {
           syncedAt: new Date(),
         };
       } else {
-        const errorMsg = syncResponse?.message || 'Failed to add device in Vivalink portal';
+        const errorMsg =
+          syncResponse?.message || 'Failed to add device in Vivalink portal';
         await this.prisma.device.update({
           where: { id: deviceId },
           data: {
@@ -800,7 +814,8 @@ export class DeviceService {
       }
     } catch (error) {
       console.error('Vivalink device sync error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown sync error';
 
       await this.prisma.device.update({
         where: { id: deviceId },
@@ -821,7 +836,9 @@ export class DeviceService {
   /**
    * Manually trigger Vivalink sync for a device (e.g. Later -> Yes flow)
    */
-  async triggerDeviceVivalinkSync(deviceId: string): Promise<TriggerDeviceVivalinkSyncResult> {
+  async triggerDeviceVivalinkSync(
+    deviceId: string,
+  ): Promise<TriggerDeviceVivalinkSyncResult> {
     const device = await this.prisma.device.findUnique({
       where: { id: deviceId },
       select: { cardiac_monitoring: true, vivalink_synced: true },
@@ -840,7 +857,11 @@ export class DeviceService {
     };
   }
 
-  public async createSuperAdminDevice(userId: string, organizationId: string, data: DeviceSuperAdminDTO): Promise<AddDeviceResult> {
+  public async createSuperAdminDevice(
+    userId: string,
+    organizationId: string,
+    data: DeviceSuperAdminDTO,
+  ): Promise<AddDeviceResult> {
     const deviceAlreadyExists = await this.prisma.device.findFirst({
       where: {
         AND: [
@@ -862,7 +883,9 @@ export class DeviceService {
     });
 
     if (deviceAlreadyExists) {
-      throw new BadRequestException('Device already exists in your organization.');
+      throw new BadRequestException(
+        'Device already exists in your organization.',
+      );
     }
 
     // Create device in AViCA first
@@ -876,6 +899,11 @@ export class DeviceService {
         uri: data.uri,
         category: data.category as MeasurementType,
         cardiac_monitoring: cardiacMonitoring,
+        site: {
+          connect: {
+            id: data.site_id,
+          },
+        },
         created_by: {
           connect: {
             id: userId,
@@ -894,6 +922,7 @@ export class DeviceService {
         serial_number: true,
         uri: true,
         category: true,
+        site: true,
         created_by: {
           select: {
             id: true,
@@ -953,8 +982,10 @@ export class DeviceService {
     };
   }
 
-
-  public async assignDevice(userId: string, data: PatientDeviceDTO): Promise<AssignDeviceResult> {
+  public async assignDevice(
+    userId: string,
+    data: PatientDeviceDTO,
+  ): Promise<AssignDeviceResult> {
     console.log(data, 'device data ===========>>>');
 
     // Step 1: Check if device exists in Prisma
@@ -1023,10 +1054,6 @@ export class DeviceService {
         },
       };
     }
-    console.log("device.vivalinkId", device.vivalinkId);
-    console.log("patient.vivalinkId", patient.vivalinkId);
-    console.log("device.vivalink_synced", device.vivalink_synced);
-    console.log("patient.vivalink_synced", patient.vivalink_synced);
 
     // Step 4: Check if device exists on Vivalink
     if (!device.vivalinkId || !device.vivalink_synced) {
@@ -1036,7 +1063,8 @@ export class DeviceService {
         vivalinkSync: {
           attempted: false,
           success: false,
-          error: 'Device is not synced to Vivalink. Please sync the device first.',
+          error:
+            'Device is not synced to Vivalink. Please sync the device first.',
         },
       };
     }
@@ -1049,13 +1077,11 @@ export class DeviceService {
         vivalinkSync: {
           attempted: false,
           success: false,
-          error: 'Patient is not synced to Vivalink. Please sync the patient first.',
+          error:
+            'Patient is not synced to Vivalink. Please sync the patient first.',
         },
       };
     }
-
-    console.log("device.vivalinkId", device.vivalinkId);
-    console.log("patient.vivalinkId", patient.vivalinkId);
 
     // Step 6: Sync to Vivalink FIRST
     let vivalinkSyncResult: VivalinkAssignmentSyncResult;
@@ -1078,7 +1104,9 @@ export class DeviceService {
           vivalinkSync: {
             attempted: true,
             success: false,
-            error: vlResponse?.message || 'Failed to assign device in Vivalink portal.',
+            error:
+              vlResponse?.message ||
+              'Failed to assign device in Vivalink portal.',
           },
         };
       }
@@ -1097,7 +1125,10 @@ export class DeviceService {
         vivalinkSync: {
           attempted: true,
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown Vivalink sync error',
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Unknown Vivalink sync error',
         },
       };
     }
@@ -1386,11 +1417,79 @@ export class DeviceService {
       (id) => !existingPatientIds.has(id),
     );
 
+    const patientDeviceIdsToDeleteAfterSync: string[] = [];
+    if (patientIdsToDelete.length > 0) {
+      try {
+        const device = await this.prisma.device.findUnique({
+          where: { id: data.device_id },
+          select: {
+            vivalinkId: true,
+            vivalink_synced: true,
+          },
+        });
+
+        if (device?.vivalinkId && device.vivalink_synced) {
+          const patients = await this.prisma.patient.findMany({
+            where: {
+              user_id: {
+                in: patientIdsToDelete.map((pd) => pd.issued_to_user_id),
+              },
+            },
+            select: {
+              user_id: true,
+              vivalinkId: true,
+              vivalink_synced: true,
+            },
+          });
+
+          const patientMap = new Map(patients.map((p) => [p.user_id, p]));
+
+          await Promise.all(
+            patientIdsToDelete.map(async (pd) => {
+              const patient = patientMap.get(pd.issued_to_user_id);
+              if (!patient?.vivalinkId || !patient.vivalink_synced) {
+                this.logger.warn(
+                  `Skipping Vivalink unassign; patient not synced: ${pd.issued_to_user_id}`,
+                );
+                return;
+              }
+
+              const unassignPayload = {
+                device: device.vivalinkId,
+                patient: patient.vivalinkId,
+              };
+
+              const vlResponse =
+                await this.unassignDeviceFromPatient(unassignPayload);
+
+              const message = String(vlResponse?.message || '').toLowerCase();
+              if (vlResponse?.code === 0 && message === 'success') {
+                patientDeviceIdsToDeleteAfterSync.push(pd.id);
+                return;
+              }
+
+              this.logger.warn(
+                `Vivalink unassign failed for patient ${pd.issued_to_user_id}: ${
+                  vlResponse?.message || 'Unknown error'
+                }`,
+              );
+            }),
+          );
+        } else {
+          this.logger.warn(
+            `Skipping Vivalink unassign; device not synced: ${data.device_id}`,
+          );
+        }
+      } catch (error) {
+        this.logger.error('Vivalink unassign error:', error);
+      }
+    }
+
     // Perform the operations
     const deletePromise = this.prisma.patientDevice.deleteMany({
       where: {
         id: {
-          in: patientIdsToDelete.map((pd) => pd.id),
+          in: patientDeviceIdsToDeleteAfterSync,
         },
       },
     });
@@ -1495,14 +1594,13 @@ export class DeviceService {
     });
   }
 
-
   async addDeviceToVivalinkPortal(device: VivalinkDeviceSyncResult) {
     const url = `${this.vlWebportalUrl}/devices`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.vlWebportalToken}`,
+        Authorization: `Bearer ${this.vlWebportalToken}`,
       },
       body: JSON.stringify(device),
     });
@@ -1517,7 +1615,7 @@ export class DeviceService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.vlWebportalToken}`,
+        Authorization: `Bearer ${this.vlWebportalToken}`,
       },
       body: JSON.stringify(data),
     });
@@ -1526,15 +1624,13 @@ export class DeviceService {
     return result;
   }
 
-  async getVivalinkDevices(identifier: string) {
-    console.log("Fetching Vivalink devices with identifier:", identifier);
-    console.log("smhhh", identifier.replace(/\//g, "%"));
-    const url = `${this.vlWebportalUrl}/devices?type=100`;
+  async unassignDeviceFromPatient(data: AssignVivalinkDeviceDto) {
+    const url = `${this.vlWebportalUrl}/patientDevices?patient=${data.patient}&device=${data.device}`;
     const response = await fetch(url, {
-      method: 'GET',
+      method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.vlWebportalToken}`,
+        Authorization: `Bearer ${this.vlWebportalToken}`,
       },
     });
 
@@ -1542,4 +1638,17 @@ export class DeviceService {
     return result;
   }
 
+  async getVivalinkDevices(identifier: string) {
+    const url = `${this.vlWebportalUrl}/devices?type=100&search=${encodeURIComponent(identifier)}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.vlWebportalToken}`,
+      },
+    });
+
+    const result = await response.json();
+    return result;
+  }
 }

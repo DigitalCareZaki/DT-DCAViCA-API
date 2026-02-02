@@ -32,6 +32,10 @@ export class DeviceSuperAdminDTO {
   branch_id: string;
 
   @IsOptional()
+  @IsString()
+  site_id?: string;
+
+  @IsOptional()
   @IsEnum(VivalinkSyncStatusDTO)
   cardiac_monitoring?: VivalinkSyncStatusDTO;
 }

@@ -398,7 +398,7 @@ export class OrganizationService {
     search: string,
     role: UserRole,
   ) {
-    if (user.role === 'ADMIN') {
+    if (user.role === Role.ADMIN || user.role === Role.SUPERADMIN) {
       return await this.getBranchUsers(user, search, role);
     }
 

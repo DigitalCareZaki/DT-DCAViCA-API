@@ -1362,6 +1362,41 @@ export class DoctorService {
     return doctorList;
   }
 
+  async getSiteId(userId: string) {
+    const doctor = await this.prisma.doctor.findFirst({
+      where: {
+        user_id: userId,
+      },
+      select: {
+        site_id: true,
+      },
+    });
+
+    if (!doctor || !doctor.site_id) {
+      throw new NotFoundException('Site not found for the given doctor');
+    }
+
+    const site = await this.prisma.site.findUnique({
+      where: {
+        id: doctor.site_id,
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        address: true,
+        countryCode: true,
+        vivalinkSiteId: true,
+      },
+    });
+
+    if (!site) {
+      throw new NotFoundException('Site details not found');
+    }
+
+    return site;
+  }
+
   private async addDoctorToVlWebPortal(data: VivaLinkSyncDoctorDto) {
     const url = `${this.vlWebportalUrl}/users`;
     const response = await fetch(url, {
