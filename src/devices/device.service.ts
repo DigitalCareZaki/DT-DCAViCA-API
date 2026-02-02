@@ -32,7 +32,7 @@ export class DeviceService {
   constructor(
     private prisma: PrismaService,
     private vlTokenService: VivalinkWebPortalTokenService,
-  ) {}
+  ) { }
 
   private readonly logger = new Logger(DeviceService.name);
 
@@ -58,31 +58,31 @@ export class DeviceService {
       ...(isSuperAdmin ? {} : { branchId: targetId }),
       ...(search
         ? {
-            OR: [
-              {
-                title: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
+          OR: [
+            {
+              title: {
+                contains: search,
+                mode: 'insensitive',
               },
-              {
-                serial_number: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
+            },
+            {
+              serial_number: {
+                contains: search,
+                mode: 'insensitive',
               },
-              // {
-              //   category: search.toUpperCase() as MeasurementType
+            },
+            // {
+            //   category: search.toUpperCase() as MeasurementType
 
-              // },
-              {
-                description: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
+            // },
+            {
+              description: {
+                contains: search,
+                mode: 'insensitive',
               },
-            ],
-          }
+            },
+          ],
+        }
         : {}),
     };
     // const isSuperAdmin = role === Role.SUPERADMIN;
@@ -1417,79 +1417,11 @@ export class DeviceService {
       (id) => !existingPatientIds.has(id),
     );
 
-    const patientDeviceIdsToDeleteAfterSync: string[] = [];
-    if (patientIdsToDelete.length > 0) {
-      try {
-        const device = await this.prisma.device.findUnique({
-          where: { id: data.device_id },
-          select: {
-            vivalinkId: true,
-            vivalink_synced: true,
-          },
-        });
-
-        if (device?.vivalinkId && device.vivalink_synced) {
-          const patients = await this.prisma.patient.findMany({
-            where: {
-              user_id: {
-                in: patientIdsToDelete.map((pd) => pd.issued_to_user_id),
-              },
-            },
-            select: {
-              user_id: true,
-              vivalinkId: true,
-              vivalink_synced: true,
-            },
-          });
-
-          const patientMap = new Map(patients.map((p) => [p.user_id, p]));
-
-          await Promise.all(
-            patientIdsToDelete.map(async (pd) => {
-              const patient = patientMap.get(pd.issued_to_user_id);
-              if (!patient?.vivalinkId || !patient.vivalink_synced) {
-                this.logger.warn(
-                  `Skipping Vivalink unassign; patient not synced: ${pd.issued_to_user_id}`,
-                );
-                return;
-              }
-
-              const unassignPayload = {
-                device: device.vivalinkId,
-                patient: patient.vivalinkId,
-              };
-
-              const vlResponse =
-                await this.unassignDeviceFromPatient(unassignPayload);
-
-              const message = String(vlResponse?.message || '').toLowerCase();
-              if (vlResponse?.code === 0 && message === 'success') {
-                patientDeviceIdsToDeleteAfterSync.push(pd.id);
-                return;
-              }
-
-              this.logger.warn(
-                `Vivalink unassign failed for patient ${pd.issued_to_user_id}: ${
-                  vlResponse?.message || 'Unknown error'
-                }`,
-              );
-            }),
-          );
-        } else {
-          this.logger.warn(
-            `Skipping Vivalink unassign; device not synced: ${data.device_id}`,
-          );
-        }
-      } catch (error) {
-        this.logger.error('Vivalink unassign error:', error);
-      }
-    }
-
     // Perform the operations
     const deletePromise = this.prisma.patientDevice.deleteMany({
       where: {
         id: {
-          in: patientDeviceIdsToDeleteAfterSync,
+          in: patientIdsToDelete.map((pd) => pd.id),
         },
       },
     });
