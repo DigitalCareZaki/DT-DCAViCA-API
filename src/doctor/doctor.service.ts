@@ -38,6 +38,7 @@ import type { JsonRes } from '@types';
 import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
 import { VivalinkSyncStatus } from '@prisma/client';
 import { UserRoleMeta } from 'src/common/enums/vivalink-roles.enums';
+import { Role } from 'src/auth/enums/role.enum';
 
 export interface VivaLinkSyncDoctorDto {
   email: string;
@@ -1190,6 +1191,61 @@ export class DoctorService {
         },
       },
     });
+  }
+
+  public async getAssignedPatientsVl(userId: string, userRole: string, page: number, limit) {
+    const skip = (page - 1) * limit;
+
+    const patients = await this.prisma.patient.findMany({
+      where: {
+        [userRole === Role.DOCTOR ? 'doctors' : 'nurses']: {
+          some: { user_id: userId },
+        },
+      },
+      select: {
+        id: true,
+        emr: true, // Include the EMR string
+        user_id: true,
+        vivalink_sync_error: true,
+        vivalink_synced: true,
+        vivalink_synced_at: true,
+        cardiac_monitoring: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            first_name: true,
+            middle_name: true,
+            last_name: true,
+          },
+        },
+      },
+      skip,
+      take: limit,
+    });
+
+    const totalPatients = patients.length;
+
+    const totalPages = Math.ceil(totalPatients / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+    const nextPage = hasNextPage ? page + 1 : null;
+    const prevPage = hasPrevPage ? page - 1 : null;
+
+    return {
+      data: patients,
+      pagination: {
+        totalItems: totalPatients,
+        perPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage,
+        prevPage,
+      },
+    };
+
   }
 
   public async getSpecialityList() {

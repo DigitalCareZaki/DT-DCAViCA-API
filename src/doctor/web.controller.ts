@@ -186,5 +186,10 @@ export class DoctorWebController extends DoctorController {
     return this.getDoctorService().syncDoctor(id);
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Get('/assigned-patients-vl')
+  public async getAssignedPatientsVl(@GetUser() user: UserRes, @Query('page') page?: number, @Query('limit') limit?: number) {
+    return this.getDoctorService().getAssignedPatientsVl(user.id, user.role, page || 1, limit || 10)
+  }
 
 }
