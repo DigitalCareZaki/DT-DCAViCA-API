@@ -3,7 +3,6 @@ import { DeviceService } from './device.service';
 import { DeviceWebController } from './device.web';
 import { DeviceAppController } from './device.app';
 import { AdminService } from 'src/admin/admin.service';
-import { VivalinkService } from 'src/vivalink/vivalink.service';
 import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
 
 @Module({

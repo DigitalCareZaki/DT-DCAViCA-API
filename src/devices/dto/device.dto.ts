@@ -28,6 +28,10 @@ export class DeviceDTO {
   category: string;
 
   @IsOptional()
+  @IsString()
+  site_id?: string;
+
+  @IsOptional()
   @IsEnum(VivalinkSyncStatusDTO)
   cardiac_monitoring?: VivalinkSyncStatusDTO;
 }
