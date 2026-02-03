@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role, Site } from '@prisma/client';
 
 import * as argon from 'argon2';
 import { promises as fs } from 'fs';
@@ -6,8 +6,171 @@ import { promises as fs } from 'fs';
 import path from 'path';
 const prisma = new PrismaClient();
 
+type SeedSiteData = {
+  name: string;
+  description?: string;
+  countryCode: string;
+  address?: string;
+};
+
+const seedSites: SeedSiteData[] = [
+  {
+    name: 'Avica Karachi',
+    description: 'Primary Karachi site',
+    countryCode: 'PK',
+    address: 'Dalmia, Karachi, Pakistan',
+  },
+  {
+    name: 'Avica Lahore',
+    description: 'Lahore site',
+    countryCode: 'PK',
+    address: 'Gulberg, Lahore, Pakistan',
+  },
+];
+
+const vivalinkConfig = {
+  baseUrl: process.env.VL_WEBPORTAL_URL,
+  adminEmail: process.env.VL_ADMIN_EMAIL,
+  adminPassword: process.env.VL_ADMIN_PASSWORD,
+};
+
+function hasVivalinkConfig(): boolean {
+  return Boolean(
+    vivalinkConfig.baseUrl &&
+      vivalinkConfig.adminEmail &&
+      vivalinkConfig.adminPassword,
+  );
+}
+
+async function getVivalinkToken(): Promise<string | null> {
+  if (!hasVivalinkConfig()) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${vivalinkConfig.baseUrl}/authentication`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        strategy: 'local',
+        email: vivalinkConfig.adminEmail,
+        password: vivalinkConfig.adminPassword,
+      }),
+    });
+
+    const result = await response.json();
+    return result?.accessToken ?? null;
+  } catch (error) {
+    console.error('Failed to fetch Vivalink WebPortal token:', error);
+    return null;
+  }
+}
+
+async function getVivalinkSites(token: string): Promise<any[]> {
+  const response = await fetch(`${vivalinkConfig.baseUrl}/sites`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const result = await response.json();
+  if (Array.isArray(result?.data)) {
+    return result.data;
+  }
+  if (Array.isArray(result)) {
+    return result;
+  }
+  return [];
+}
+
+async function createVivalinkSite(site: SeedSiteData, token: string) {
+  const response = await fetch(`${vivalinkConfig.baseUrl}/sites`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(site),
+  });
+
+  return response.json();
+}
+
+async function createSites() {
+  let vivalinkToken: string | null = null;
+  let vivalinkSites: any[] = [];
+
+  if (hasVivalinkConfig()) {
+    vivalinkToken = await getVivalinkToken();
+    if (vivalinkToken) {
+      vivalinkSites = await getVivalinkSites(vivalinkToken);
+    } else {
+      console.log('Vivalink token unavailable; skipping site sync.');
+    }
+  } else {
+    console.log('Vivalink config missing; skipping site sync.');
+  }
+
+  const createdSites: Site[] = [];
+
+  for (const siteData of seedSites) {
+    const site = await prisma.site.upsert({
+      where: { name: siteData.name },
+      update: {
+        description: siteData.description,
+        countryCode: siteData.countryCode,
+        address: siteData.address,
+      },
+      create: {
+        name: siteData.name,
+        description: siteData.description,
+        countryCode: siteData.countryCode,
+        address: siteData.address,
+      },
+    });
+
+    if (vivalinkToken) {
+      const existingSite = vivalinkSites.find(
+        (vlSite) => vlSite?.name === siteData.name,
+      );
+      let vivalinkSiteId: string | null =
+        existingSite?._id || existingSite?.id || null;
+
+      if (!vivalinkSiteId) {
+        const createdVivalinkSite = await createVivalinkSite(
+          siteData,
+          vivalinkToken,
+        );
+        vivalinkSiteId =
+          createdVivalinkSite?._id || createdVivalinkSite?.id || null;
+
+        if (!vivalinkSiteId) {
+          vivalinkSites = await getVivalinkSites(vivalinkToken);
+          const matchedSite = vivalinkSites.find(
+            (vlSite) => vlSite?.name === siteData.name,
+          );
+          vivalinkSiteId = matchedSite?._id || matchedSite?.id || null;
+        } else {
+          vivalinkSites = [...vivalinkSites, createdVivalinkSite];
+        }
+      }
+
+      if (vivalinkSiteId && site.vivalinkSiteId !== vivalinkSiteId) {
+        await prisma.site.update({
+          where: { id: site.id },
+          data: { vivalinkSiteId },
+        });
+      }
+    }
+
+    createdSites.push(site);
+  }
+
+  console.log('Sites created');
+  return createdSites;
+}
+
 async function createCountry() {
-  const filePath = './countries.json';// adjust if your file path is different
+  const filePath = './countries.json'; // adjust if your file path is different
   const jsonData = await fs.readFile(filePath, 'utf-8');
   const countries = JSON.parse(jsonData);
 
@@ -81,7 +244,7 @@ async function createOrganization() {
   const location = await prisma.location.create({
     data: {
       address: 'Dalmia National Stadium Road, Karachi, Pakistan',
-      city_id: city.id
+      city_id: city.id,
     },
   });
 
@@ -136,6 +299,77 @@ async function addDepartment() {
   });
 }
 
+async function createAdmin() {
+  const encPassword = await argon.hash('Admin@123');
+
+  const city = await prisma.city.findFirstOrThrow({
+    orderBy: { created_at: 'desc' },
+  });
+
+  const location = await prisma.location.create({
+    data: {
+      lat: 24.8607,
+      long: 67.0011,
+      address: 'Avica Admin Office, Karachi, Pakistan',
+      zipcode: '74000',
+      city_id: city.id,
+    },
+  });
+
+  const organization = await prisma.organization.findFirstOrThrow({
+    orderBy: { created_at: 'desc' },
+  });
+
+  const branch = await prisma.branch.findFirstOrThrow({
+    orderBy: { created_at: 'desc' },
+  });
+
+  await prisma.user.upsert({
+    where: {
+      email: 'drhooria.dc@gmail.com',
+    },
+    update: {
+      password: encPassword,
+      first_name: 'Hooria',
+      last_name: 'Admin',
+      dob: new Date(),
+      role: 'ADMIN',
+      gender: 'FEMALE',
+      title: 'MS',
+      phone_number: '+923200000000',
+      username: 'drhooria',
+      location_id: location.id,
+      organization_id: organization.id,
+      associated_branches: {
+        set: [{ id: branch.id }],
+      },
+      uri: 'http://res.cloudinary.com/dnymwfrn3/image/upload/v1747411638/avica/dnfbgtkkv4kxuz6qeloh.jpg',
+    },
+    create: {
+      password: encPassword,
+      email: 'drhooria.dc@gmail.com',
+      first_name: 'Hooria',
+      last_name: 'Admin',
+      dob: new Date(),
+      role: 'ADMIN',
+      gender: 'FEMALE',
+      title: 'MS',
+      phone_number: '+923200000000',
+      username: 'drhooria',
+      location_id: location.id,
+      organization_id: organization.id,
+      associated_branches: {
+        connect: {
+          id: branch.id,
+        },
+      },
+      uri: 'http://res.cloudinary.com/dnymwfrn3/image/upload/v1747411638/avica/dnfbgtkkv4kxuz6qeloh.jpg',
+    },
+  });
+
+  console.log('Admin created');
+}
+
 async function createMaster() {
   const encPassword = await argon.hash('Avica@123');
 
@@ -173,6 +407,43 @@ async function createMaster() {
   console.log('Master created');
 }
 
+async function createDefaultSiteAssignments() {
+  const [site, branch, organization] = await Promise.all([
+    prisma.site.findFirst({ where: { name: seedSites[0]?.name } }),
+    prisma.branch.findFirst({ orderBy: { created_at: 'desc' } }),
+    prisma.organization.findFirst({ orderBy: { created_at: 'desc' } }),
+  ]);
+
+  if (!site) {
+    return;
+  }
+
+  if (branch) {
+    await prisma.device.updateMany({
+      where: {
+        site_id: null,
+        branchId: branch.id,
+      },
+      data: {
+        site_id: site.id,
+      },
+    });
+  }
+
+  if (organization) {
+    await prisma.doctor.updateMany({
+      where: {
+        site_id: null,
+        user: {
+          organization_id: organization.id,
+        },
+      },
+      data: {
+        site_id: site.id,
+      },
+    });
+  }
+}
 async function createSuperAdmin() {
   const encPassword = await argon.hash('Superadmin@123');
 
@@ -215,7 +486,7 @@ async function createSuperAdmin() {
   console.log('Superadmin created');
 }
 
-async function createDoctor() {
+async function createDoctor(siteId?: string) {
   const encPassword = await argon.hash('Doctor@123');
 
   const location = await prisma.location.findFirstOrThrow({
@@ -240,17 +511,48 @@ async function createDoctor() {
       institute_name: 'Dow Medical University',
       graduation_date: new Date(2020, 3, 1),
       working_from: new Date(2021, 1, 1),
+      uri: [],
     },
   });
 
   const speciality2 = await prisma.specialization.create({
-    data:
-    {
+    data: {
       title: 'Gynecologist',
       institute_name: 'Dow Medical University',
       graduation_date: new Date(2020, 3, 1),
       working_from: new Date(2021, 1, 1),
+      uri: [],
     },
+  });
+
+  const createDoctorData = (
+    specialityId: string,
+    npiNumber: string,
+    pmdcNumber: string,
+    employeeId: string,
+  ) => ({
+    npi_number: npiNumber,
+    pmdc_number: pmdcNumber,
+    employee_id: employeeId,
+    departments: {
+      connect: {
+        id: department.id,
+      },
+    },
+    specialities: {
+      connect: {
+        id: specialityId,
+      },
+    },
+    ...(siteId
+      ? {
+          site: {
+            connect: {
+              id: siteId,
+            },
+          },
+        }
+      : {}),
   });
 
   await prisma.user.create({
@@ -268,21 +570,7 @@ async function createDoctor() {
       location_id: location.id,
       uri: 'http://res.cloudinary.com/dnymwfrn3/image/upload/v1747411638/avica/dnfbgtkkv4kxuz6qeloh.jpg',
       doctor: {
-        create: {
-          npi_number: '152396213',
-          pmdc_number: '14648-C',
-          employee_id: 'LQ-2',
-          departments: {
-            connect: {
-              id: department.id,
-            },
-          },
-          specialities: {
-            connect: {
-              id: speciality.id,
-            },
-          },
-        },
+        create: createDoctorData(speciality.id, '152396213', '14648-C', 'LQ-2'),
       },
       associated_branches: {
         connect: {
@@ -308,21 +596,12 @@ async function createDoctor() {
       location_id: location.id,
       uri: 'http://res.cloudinary.com/dnymwfrn3/image/upload/v1747411638/avica/dnfbgtkkv4kxuz6qeloh.jpg',
       doctor: {
-        create: {
-          npi_number: '152396214',
-          pmdc_number: '14647-A',
-          employee_id: 'LQ-3',
-          departments: {
-            connect: {
-              id: department.id,
-            },
-          },
-          specialities: {
-            connect: {
-              id: speciality2.id,
-            },
-          },
-        },
+        create: createDoctorData(
+          speciality2.id,
+          '152396214',
+          '14647-A',
+          'LQ-3',
+        ),
       },
       associated_branches: {
         connect: {
@@ -401,9 +680,9 @@ async function createPatient() {
 
   console.log('Patient created');
 
-
-  const doctor = await prisma.user.findFirstOrThrow({ where: { role: 'DOCTOR' } });
-
+  const doctor = await prisma.user.findFirstOrThrow({
+    where: { role: 'DOCTOR' },
+  });
 
   await prisma.patient.update({
     where: {
@@ -419,7 +698,6 @@ async function createPatient() {
   });
 
   console.log('Patient connected to doctor');
-
 }
 
 async function connectPatientToDoctors() {
@@ -580,7 +858,7 @@ async function patientMeasurements() {
         status: 'HIGH',
         title: 'Temperature Reading 2',
         unit: 'FAHRENHEIT',
-        reading_source: 'MANUAL'
+        reading_source: 'MANUAL',
       },
       {
         patient_id: patient.id,
@@ -591,7 +869,7 @@ async function patientMeasurements() {
         status: 'NORMAL',
         title: 'Temperature Reading 1',
         unit: 'FAHRENHEIT',
-        reading_source: 'MANUAL'
+        reading_source: 'MANUAL',
       },
 
       // blood pressure readings
@@ -604,7 +882,7 @@ async function patientMeasurements() {
         status: 'NORMAL',
         title: 'Blood Pressure Reading 1',
         unit: 'MMHG',
-        reading_source: 'MANUAL'
+        reading_source: 'MANUAL',
       },
       {
         patient_id: patient.id,
@@ -615,7 +893,7 @@ async function patientMeasurements() {
         status: 'HIGH',
         title: 'Blood Pressure Reading 2',
         unit: 'MMHG',
-        reading_source: 'MANUAL'
+        reading_source: 'MANUAL',
       },
 
       // glucose readings
@@ -628,7 +906,7 @@ async function patientMeasurements() {
         status: 'NORMAL',
         title: 'Blood Glucose Reading 1',
         unit: 'MGDL',
-        reading_source: 'MANUAL'
+        reading_source: 'MANUAL',
       },
       {
         patient_id: patient.id,
@@ -639,7 +917,7 @@ async function patientMeasurements() {
         status: 'HIGH',
         title: 'Blood Glucose Reading 2',
         unit: 'MGDL',
-        reading_source: 'MANUAL'
+        reading_source: 'MANUAL',
       },
 
       // oxygen saturation readings SPO2
@@ -652,7 +930,7 @@ async function patientMeasurements() {
         status: 'HIGH',
         title: 'Oxygen Saturation Reading 1',
         unit: 'PERCENTAGE',
-        reading_source: 'MANUAL'
+        reading_source: 'MANUAL',
       },
       {
         patient_id: patient.id,
@@ -663,7 +941,7 @@ async function patientMeasurements() {
         status: 'LOW',
         title: 'Oxygen Saturation Reading 2',
         unit: 'PERCENTAGE',
-        reading_source: 'MANUAL'
+        reading_source: 'MANUAL',
       },
 
       // ECG readings
@@ -676,7 +954,7 @@ async function patientMeasurements() {
         status: 'HIGH',
         title: 'ECG Reading',
         unit: 'VOLTAGE',
-        reading_source: 'MANUAL'
+        reading_source: 'MANUAL',
       },
       {
         patient_id: patient.id,
@@ -687,20 +965,25 @@ async function patientMeasurements() {
         status: 'LOW',
         title: 'ECG Reading 2',
         unit: 'VOLTAGE',
-        reading_source: 'MANUAL'
-      }
-
+        reading_source: 'MANUAL',
+      },
     ],
   });
 }
 
 async function createOrganizationMedications() {
   const organization = await prisma.organization.findFirstOrThrow();
+  const branch = await prisma.branch.findFirstOrThrow();
+  const admin = await prisma.user.findFirstOrThrow({
+    where: { email: 'drhooria.dc@gmail.com' },
+  });
 
   await prisma.organizationMedication.create({
     data: {
       name: 'Panadol',
       organization_id: organization.id,
+      branchId: branch.id,
+      added_by: admin.id,
       created_at: new Date(),
       updated_at: new Date(),
     },
@@ -710,6 +993,8 @@ async function createOrganizationMedications() {
     data: {
       name: 'Paracetamol',
       organization_id: organization.id,
+      branchId: branch.id,
+      added_by: admin.id,
       created_at: new Date(),
       updated_at: new Date(),
     },
@@ -719,6 +1004,8 @@ async function createOrganizationMedications() {
     data: {
       name: 'Ibuprofen',
       organization_id: organization.id,
+      branchId: branch.id,
+      added_by: admin.id,
       created_at: new Date(),
       updated_at: new Date(),
     },
@@ -797,7 +1084,6 @@ async function createOrganizationMedications() {
 // }
 
 async function createNotifications() {
-
   const patient = await prisma.patient.findFirstOrThrow({
     orderBy: { created_at: 'desc' },
   });
@@ -825,7 +1111,7 @@ async function createNotifications() {
         description: 'This is a test notification 3',
         sender_id: doctor.user_id,
         reciever_id: patient.user_id,
-      }
+      },
     ],
   });
 
@@ -866,8 +1152,8 @@ async function sendSMS() {
         body: 'This is a test SMS 3',
         sender_id: doctor.id,
         receiver_id: patient.id,
-      }
-    ]
+      },
+    ],
   });
 
   console.log('SMS created');
@@ -889,16 +1175,18 @@ async function createPosts() {
   await prisma.post.createMany({
     data: [
       {
-        title: 'Understanding Heart Health: Tips for a Healthy Cardiovascular System',
-        content: 'Maintaining good heart health is crucial for overall well-being. Regular exercise, a balanced diet rich in fruits and vegetables, avoiding smoking, and managing stress are key factors. It\'s important to monitor your blood pressure regularly and maintain a healthy weight. Remember, small lifestyle changes can make a big difference in your heart health.',
+        title:
+          'Understanding Heart Health: Tips for a Healthy Cardiovascular System',
+        content:
+          "Maintaining good heart health is crucial for overall well-being. Regular exercise, a balanced diet rich in fruits and vegetables, avoiding smoking, and managing stress are key factors. It's important to monitor your blood pressure regularly and maintain a healthy weight. Remember, small lifestyle changes can make a big difference in your heart health.",
         uri: 'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
         additional_uri: [
           'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
-          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png'
+          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
         ],
         refrence: [
           'American Heart Association',
-          'Mayo Clinic - Heart Health Guidelines'
+          'Mayo Clinic - Heart Health Guidelines',
         ],
         author_id: doctor.id,
         likes_count: 15,
@@ -907,15 +1195,13 @@ async function createPosts() {
       },
       {
         title: 'Managing Diabetes: A Comprehensive Guide for Patients',
-        content: 'Diabetes management involves monitoring blood sugar levels, taking medications as prescribed, maintaining a healthy diet, and staying physically active. Regular check-ups with your healthcare provider are essential. Understanding carbohydrate counting and recognizing symptoms of high or low blood sugar can help you better manage your condition.',
+        content:
+          'Diabetes management involves monitoring blood sugar levels, taking medications as prescribed, maintaining a healthy diet, and staying physically active. Regular check-ups with your healthcare provider are essential. Understanding carbohydrate counting and recognizing symptoms of high or low blood sugar can help you better manage your condition.',
         uri: 'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
         additional_uri: [
-          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png'
+          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
         ],
-        refrence: [
-          'American Diabetes Association',
-          'CDC Diabetes Guidelines'
-        ],
+        refrence: ['American Diabetes Association', 'CDC Diabetes Guidelines'],
         author_id: doctor.id,
         likes_count: 23,
         comments_count: 12,
@@ -923,12 +1209,13 @@ async function createPosts() {
       },
       {
         title: 'The Importance of Regular Health Screenings',
-        content: 'Regular health screenings can help detect potential health issues early when they are most treatable. Depending on your age and risk factors, screenings may include blood pressure checks, cholesterol tests, cancer screenings, and bone density tests. Talk to your healthcare provider about which screenings are right for you.',
+        content:
+          'Regular health screenings can help detect potential health issues early when they are most treatable. Depending on your age and risk factors, screenings may include blood pressure checks, cholesterol tests, cancer screenings, and bone density tests. Talk to your healthcare provider about which screenings are right for you.',
         uri: 'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
         additional_uri: [],
         refrence: [
           'U.S. Preventive Services Task Force',
-          'World Health Organization'
+          'World Health Organization',
         ],
         author_id: superadmin.id,
         likes_count: 31,
@@ -937,15 +1224,16 @@ async function createPosts() {
       },
       {
         title: 'Mental Health Awareness: Breaking the Stigma',
-        content: 'Mental health is just as important as physical health. It\'s okay to seek help when you\'re struggling with anxiety, depression, or other mental health concerns. Professional support, therapy, medication when appropriate, and self-care practices can all contribute to better mental health. Remember, seeking help is a sign of strength, not weakness.',
+        content:
+          "Mental health is just as important as physical health. It's okay to seek help when you're struggling with anxiety, depression, or other mental health concerns. Professional support, therapy, medication when appropriate, and self-care practices can all contribute to better mental health. Remember, seeking help is a sign of strength, not weakness.",
         uri: 'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
         additional_uri: [
           'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
-          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png'
+          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
         ],
         refrence: [
           'National Institute of Mental Health',
-          'Mental Health America'
+          'Mental Health America',
         ],
         author_id: superadmin.id,
         likes_count: 45,
@@ -954,14 +1242,15 @@ async function createPosts() {
       },
       {
         title: 'Nutrition Tips for Healthy Aging',
-        content: 'As we age, our nutritional needs change. Focus on nutrient-dense foods like leafy greens, lean proteins, whole grains, and colorful fruits and vegetables. Stay hydrated, limit processed foods, and consider supplements if recommended by your healthcare provider. Good nutrition supports immune function, bone health, and cognitive function as we age.',
+        content:
+          'As we age, our nutritional needs change. Focus on nutrient-dense foods like leafy greens, lean proteins, whole grains, and colorful fruits and vegetables. Stay hydrated, limit processed foods, and consider supplements if recommended by your healthcare provider. Good nutrition supports immune function, bone health, and cognitive function as we age.',
         uri: 'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
         additional_uri: [
-          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png'
+          'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
         ],
         refrence: [
           'National Institute on Aging',
-          'Academy of Nutrition and Dietetics'
+          'Academy of Nutrition and Dietetics',
         ],
         author_id: doctor.id,
         likes_count: 19,
@@ -970,19 +1259,20 @@ async function createPosts() {
       },
       {
         title: 'Understanding Your Medication: Tips for Safe Use',
-        content: 'Taking medications safely is crucial for effective treatment. Always follow your doctor\'s instructions, take medications at the prescribed times, and never skip doses. Keep an updated list of all your medications, including over-the-counter drugs and supplements. If you experience side effects, contact your healthcare provider immediately.',
+        content:
+          "Taking medications safely is crucial for effective treatment. Always follow your doctor's instructions, take medications at the prescribed times, and never skip doses. Keep an updated list of all your medications, including over-the-counter drugs and supplements. If you experience side effects, contact your healthcare provider immediately.",
         uri: 'https://res.cloudinary.com/dnymwfrn3/image/upload/v1747468621/avica/aqlmdtvcjqdmecrea6d8.png',
         additional_uri: [],
         refrence: [
           'FDA Medication Safety Guidelines',
-          'Institute for Safe Medication Practices'
+          'Institute for Safe Medication Practices',
         ],
         author_id: superadmin.id,
         likes_count: 12,
         comments_count: 4,
         views_count: 134,
         active: true,
-      }
+      },
     ],
   });
 
@@ -997,7 +1287,10 @@ async function main() {
   await createBranch();
   await addDepartment();
   await createSuperAdmin();
-  await createDoctor();
+  await createAdmin();
+  const sites = await createSites();
+  const primarySiteId = sites[0]?.id;
+  await createDoctor(primarySiteId);
   await createPatient();
   await connectPatientToDoctors();
   await createPatientContacts();
@@ -1010,6 +1303,7 @@ async function main() {
   await createNotifications();
   await sendSMS();
   await createPosts(); // Add this line
+  await createDefaultSiteAssignments();
 
   // const res = await prisma.post.update({
   //   where: {
