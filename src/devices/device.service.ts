@@ -1641,4 +1641,106 @@ export class DeviceService {
     const result = await response.json();
     return result;
   }
+
+
+  async deviceHistory(deviceId: string, userName: string) {
+    try {
+      const patient = await this.prisma.user.findFirst({
+        where: {
+          username: userName,
+        },
+        select: {
+          patient: {
+            select: {
+              vivalinkId: true,
+            }
+          }
+
+        },
+      });
+      if (!patient) {
+        throw new Error('Patient not found');
+      }
+      console.log(patient.patient, '=======>>Patient')
+      const patientvlId = patient.patient.vivalinkId;
+      if (!patientvlId) {
+        throw new Error('Patient does not have a Vivalink ID');
+      }
+      const vlDevice = await this.getAllDeviceHistoryVl();
+      // console.log(vlDevice, '=======>>vlDevice')
+      const dt = vlDevice.data
+        .filter(
+          (x) =>
+            x.title === deviceId &&
+            x.patient?.id === patientvlId
+        )
+        .map((x) => ({
+          title: x.title,
+          action: x.action,
+          createdAt: x.createdAt,
+          updatedAt: x.updatedAt,
+        }));
+      console.log(dt, '=======>>dt')
+      const res = this.getDeviceUsageDuration(dt);
+      return res;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+
+  private async getAllDeviceHistoryVl() {
+    const url = `${this.vlWebportalUrl}/operation-log?$sort[createdAt]=-1&$skip=0&$limit=10000&target=Device`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${this.vlWebportalToken}` },
+    });
+    return response.json();
+  }
+
+  private getDeviceUsageDuration(history: any[]) {
+    if (!history || history.length === 0) return null;
+
+    // Sort latest first (important!)
+    const sorted = history.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+    );
+
+    // Latest bind
+    const bind = sorted.find(x => x.action === 'DeviceBind');
+    if (!bind) return null;
+
+    // First unbind AFTER bind (if exists)
+    const unbind = sorted.find(
+      x =>
+        x.action === 'DeviceUnbind' &&
+        new Date(x.createdAt) > new Date(bind.createdAt)
+    );
+
+    const startTime = new Date(bind.createdAt);
+    const endTime = unbind
+      ? new Date(unbind.createdAt)
+      : new Date(); // 🔥 still active → now
+
+    const diffMs = endTime.getTime() - startTime.getTime();
+
+    const totalMinutes = Math.floor(diffMs / (1000 * 60));
+    const totalHours = Math.floor(totalMinutes / 60);
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+    const minutes = totalMinutes % 60;
+
+    return {
+      title: bind.title,
+      startTime: startTime.toISOString(),
+      endTime: unbind ? endTime.toISOString() : null,
+      active: !unbind,
+      durationMs: diffMs,
+      durationHuman: `${days}d ${hours}h ${minutes}m`,
+    };
+  }
+
+
 }
