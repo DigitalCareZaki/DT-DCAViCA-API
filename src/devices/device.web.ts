@@ -30,6 +30,21 @@ export class DeviceWebController extends DeviceController {
     super(deviceService);
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Get('/history')
+  public async deviceHistory(
+    @GetUser() user: UserRes,
+    @Query('deviceId') deviceId: string,
+    @Query('userName') userName: string,
+  ) {
+
+    console.log('deviceId', deviceId);
+    return this.getDeviceService().deviceHistory(
+      deviceId,
+      userName
+    );
+  }
+
 
 
   @HttpCode(HttpStatus.OK)
