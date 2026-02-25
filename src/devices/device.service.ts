@@ -13,6 +13,7 @@ import type {
   TriggerDeviceVivalinkSyncResult,
   AssignDeviceResult,
   VivalinkAssignmentSyncResult,
+  ManageDeviceResult,
 } from './types';
 import { DeviceSuperAdminDTO } from './dto/deviceSuperadmin.dto';
 import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
@@ -1261,250 +1262,303 @@ export class DeviceService {
     organizationId: string,
     role: UserRole,
     data: ManageDeviceDTO,
-  ) {
-    if (role === 'SUPERADMIN') {
-      const validPatients = await this.prisma.patient.findMany({
-        where: {
-          AND: [
-            {
-              user: {
-                id: {
-                  in: data.patient_ids,
-                },
-              },
-            },
-            {
-              user: {
-                organization: {
-                  id: organizationId,
-                },
-              },
-            },
-          ],
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (!validPatients) {
-        throw new Error(
-          'Either some or all patient(s) do not exist in your organization',
-        );
-      }
-
-      const validDevice = await this.prisma.device.findFirst({
-        where: {
-          id: data.device_id,
-          created_by: {
-            organization_id: organizationId,
-          },
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (!validDevice) {
-        throw new Error(
-          'Either device does not exist or is not in your organization',
-        );
-      }
-    } else {
-      // For ADMIN, DOCTOR and NURSE
-      const res = await this.prisma.user.findUniqueOrThrow({
-        where: { id: userId },
-        select: {
-          associated_branches: {
-            select: {
-              id: true,
-            },
-          },
-        },
-      });
-
-      const validPatients = await this.prisma.patient.findMany({
-        where: {
-          AND: [
-            {
-              user: {
-                id: {
-                  in: data.patient_ids,
-                },
-              },
-            },
-            {
-              user: {
-                organization: {
-                  id: organizationId,
-                },
-              },
-            },
-            {
-              user: {
-                associated_branches: {
-                  some: {
-                    id: res.associated_branches[0]?.id,
+  ): Promise<ManageDeviceResult> {
+    try {
+      if (role === 'SUPERADMIN') {
+        const validPatients = await this.prisma.patient.findMany({
+          where: {
+            AND: [
+              {
+                user: {
+                  id: {
+                    in: data.patient_ids,
                   },
                 },
               },
-            },
-          ],
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (!validPatients) {
-        throw new Error(
-          'Either some or all patient(s) do not exist in your organization/branch',
-        );
-      }
-
-      const validDevice = await this.prisma.device.findFirst({
-        where: {
-          id: data.device_id,
-          created_by: {
-            AND: [
               {
-                organization_id: organizationId,
-              },
-              {
-                associated_branches: {
-                  some: {
-                    id: res.associated_branches[0]?.id,
+                user: {
+                  organization: {
+                    id: organizationId,
                   },
                 },
               },
             ],
           },
+          select: {
+            id: true,
+          },
+        });
+
+        if (!validPatients || validPatients.length === 0 && data.patient_ids.length > 0) {
+          return {
+            success: false,
+            error: 'Either some or all patient(s) do not exist in your organization',
+            vivalinkSync: { attempted: false, success: false },
+          };
+        }
+
+        const validDevice = await this.prisma.device.findFirst({
+          where: {
+            id: data.device_id,
+            created_by: {
+              organization_id: organizationId,
+            },
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        if (!validDevice) {
+          return {
+            success: false,
+            error: 'Either device does not exist or is not in your organization',
+            vivalinkSync: { attempted: false, success: false },
+          };
+        }
+      } else {
+        // For ADMIN, DOCTOR and NURSE
+        const res = await this.prisma.user.findUniqueOrThrow({
+          where: { id: userId },
+          select: {
+            associated_branches: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        });
+
+        const validPatients = await this.prisma.patient.findMany({
+          where: {
+            AND: [
+              {
+                user: {
+                  id: {
+                    in: data.patient_ids,
+                  },
+                },
+              },
+              {
+                user: {
+                  organization: {
+                    id: organizationId,
+                  },
+                },
+              },
+              {
+                user: {
+                  associated_branches: {
+                    some: {
+                      id: res.associated_branches[0]?.id,
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        if (!validPatients || validPatients.length === 0 && data.patient_ids.length > 0) {
+          return {
+            success: false,
+            error: 'Either some or all patient(s) do not exist in your organization/branch',
+            vivalinkSync: { attempted: false, success: false },
+          };
+        }
+
+        const validDevice = await this.prisma.device.findFirst({
+          where: {
+            id: data.device_id,
+            created_by: {
+              AND: [
+                {
+                  organization_id: organizationId,
+                },
+                {
+                  associated_branches: {
+                    some: {
+                      id: res.associated_branches[0]?.id,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        if (!validDevice) {
+          return {
+            success: false,
+            error: 'Either device does not exist or is not in your organization/branch',
+            vivalinkSync: { attempted: false, success: false },
+          };
+        }
+      }
+
+      // Get all existing patient devices for the given device
+      const existingPatientDevices = await this.prisma.patientDevice.findMany({
+        where: {
+          device_id: data.device_id,
         },
         select: {
           id: true,
+          issued_to_user_id: true,
         },
       });
 
-      if (!validDevice) {
-        throw new Error(
-          'Either device does not exist or is not in your organization/branch',
-        );
-      }
-    }
+      // Create sets for efficient lookup
+      const existingPatientIds = new Set(
+        existingPatientDevices.map((pd) => pd.issued_to_user_id),
+      );
+      const newPatientIds = new Set(data.patient_ids);
 
-    // Get all existing patient devices for the given device
-    const existingPatientDevices = await this.prisma.patientDevice.findMany({
-      where: {
-        device_id: data.device_id,
-      },
-      select: {
-        id: true,
-        issued_to_user_id: true,
-      },
-    });
+      // Identify patient IDs to delete, keep, and add
+      const patientIdsToDelete = existingPatientDevices.filter(
+        (pd) => !newPatientIds.has(pd.issued_to_user_id),
+      );
+      const patientIdsToAdd = data.patient_ids.filter(
+        (id) => !existingPatientIds.has(id),
+      );
 
-    // Create sets for efficient lookup
-    const existingPatientIds = new Set(
-      existingPatientDevices.map((pd) => pd.issued_to_user_id),
-    );
-    const newPatientIds = new Set(data.patient_ids);
-
-    // Identify patient IDs to delete, keep, and add
-    const patientIdsToDelete = existingPatientDevices.filter(
-      (pd) => !newPatientIds.has(pd.issued_to_user_id),
-    );
-    const patientIdsToAdd = data.patient_ids.filter(
-      (id) => !existingPatientIds.has(id),
-    );
-
-    const vivalinkDevice = await this.prisma.device.findUnique({
-      where: {
-        id: data.device_id,
-      },
-      select: {
-        vivalinkId: true,
-      },
-    });
-
-    if (vivalinkDevice?.vivalinkId) {
-      const vivalinkPatientsToUnassign = await this.prisma.patient.findMany({
+      const vivalinkDevice = await this.prisma.device.findUnique({
         where: {
-          user_id: {
-            in: existingPatientDevices.map((pd) => pd.issued_to_user_id),
-          },
+          id: data.device_id,
         },
         select: {
           vivalinkId: true,
         },
       });
+      console.log("device", vivalinkDevice);
+      let vivalinkSyncResult: VivalinkAssignmentSyncResult = {
+        attempted: false,
+        success: false,
+      };
 
-      for (const patient of vivalinkPatientsToUnassign) {
-        if (patient.vivalinkId) {
-          await this.unassignDeviceFromPatient({
-            device: vivalinkDevice.vivalinkId,
-            patient: patient.vivalinkId,
-          });
-        }
-      }
-
-      const patientIdToAssign = data.patient_ids[0];
-      if (patientIdToAssign) {
-        const vivalinkPatientToAssign = await this.prisma.patient.findUnique({
-          where: {
-            user_id: patientIdToAssign,
-          },
-          select: {
-            vivalinkId: true,
-          },
-        });
-
-        if (vivalinkPatientToAssign?.vivalinkId) {
-          const res = await this.assignDeviceToPatient({
-            device: vivalinkDevice.vivalinkId,
-            patient: vivalinkPatientToAssign.vivalinkId,
+      if (vivalinkDevice?.vivalinkId) {
+        vivalinkSyncResult.attempted = true;
+        try {
+          const vivalinkPatientsToUnassign = await this.prisma.patient.findMany({
+            where: {
+              user_id: {
+                in: existingPatientDevices.map((pd) => pd.issued_to_user_id),
+              },
+            },
+            select: {
+              vivalinkId: true,
+            },
           });
 
-          console.log('Vivalink assign response:', res);
-
-          if (res.code !== 0) {
-            throw new Error(
-              'Failed to assign device in Vivalink portal.',
-            );
+          for (const patient of vivalinkPatientsToUnassign) {
+            if (patient.vivalinkId) {
+              console.log(`data sent to unassign:`, patient.vivalinkId, vivalinkDevice.vivalinkId);
+              const res = await this.unassignDeviceFromPatient({
+                device: vivalinkDevice.vivalinkId,
+                patient: patient.vivalinkId,
+              });
+              console.log("res from unassign", res);
+            }
           }
+
+          const patientIdToAssign = data.patient_ids[0];
+          if (patientIdToAssign) {
+            const vivalinkPatientToAssign = await this.prisma.patient.findUnique({
+              where: {
+                user_id: patientIdToAssign,
+              },
+              select: {
+                vivalinkId: true,
+              },
+            });
+
+            if (vivalinkPatientToAssign?.vivalinkId) {
+              const res = await this.assignDeviceToPatient({
+                device: vivalinkDevice.vivalinkId,
+                patient: vivalinkPatientToAssign.vivalinkId,
+              });
+
+              console.log('Vivalink assign response:', res);
+
+              if (res.code !== 0) {
+                return {
+                  success: false,
+                  error: 'Failed to assign device in Vivalink portal.',
+                  vivalinkSync: {
+                    attempted: true,
+                    success: false,
+                    error: 'Failed to assign device in Vivalink portal.',
+                  },
+                };
+              }
+            }
+          }
+
+          vivalinkSyncResult.success = true;
+          vivalinkSyncResult.syncedAt = new Date();
+        } catch (error) {
+          console.error('Vivalink manage device sync error:', error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown Vivalink sync error',
+            vivalinkSync: {
+              attempted: true,
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown Vivalink sync error',
+            },
+          };
         }
       }
-    }
 
-    // Perform the operations
-    const deletePromise = this.prisma.patientDevice.deleteMany({
-      where: {
-        id: {
-          in: patientIdsToDelete.map((pd) => pd.id),
+      // Perform the operations
+      const deletePromise = this.prisma.patientDevice.deleteMany({
+        where: {
+          id: {
+            in: patientIdsToDelete.map((pd) => pd.id),
+          },
         },
-      },
-    });
+      });
 
-    const addPromise = this.prisma.patientDevice.createMany({
-      data: patientIdsToAdd.map((patientId) => ({
-        device_id: data.device_id,
-        issued_to_user_id: patientId,
-        issued_by_user_id: userId,
-      })),
-    });
+      const addPromise = this.prisma.patientDevice.createMany({
+        data: patientIdsToAdd.map((patientId) => ({
+          device_id: data.device_id,
+          issued_to_user_id: patientId,
+          issued_by_user_id: userId,
+        })),
+      });
 
-    // Execute both operations concurrently
-    await this.prisma.$transaction([deletePromise, addPromise]);
+      // Execute both operations concurrently
+      await this.prisma.$transaction([deletePromise, addPromise]);
 
-    // Return the updated list of patient devices
-    return await this.prisma.patientDevice.findMany({
-      where: {
-        device_id: data.device_id,
-      },
-      select: {
-        id: true,
-        issued_to_user_id: true,
-      },
-    });
+      // Return the updated list of patient devices
+      const updatedPatientDevices = await this.prisma.patientDevice.findMany({
+        where: {
+          device_id: data.device_id,
+        },
+        select: {
+          id: true,
+          issued_to_user_id: true,
+        },
+      });
+
+      return {
+        success: true,
+        patientDevices: updatedPatientDevices,
+        vivalinkSync: vivalinkSyncResult,
+      };
+    } catch (error) {
+      console.error('Error in manageDevice:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred while managing device',
+        vivalinkSync: { attempted: false, success: false },
+      };
+    }
   }
 
   public async deleteDevice(
@@ -1619,7 +1673,6 @@ export class DeviceService {
     const response = await fetch(url, {
       method: 'DELETE',
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${this.vlWebportalToken}`,
       },
     });
