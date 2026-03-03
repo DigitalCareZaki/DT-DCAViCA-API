@@ -86,3 +86,12 @@ export interface AssignDeviceResult {
   patientDeviceId: string | null;
   vivalinkSync: VivalinkAssignmentSyncResult;
 }
+/**
+ * Result of managing device assignments with Vivalink sync
+ */
+export interface ManageDeviceResult {
+  success: boolean;
+  patientDevices?: { id: string; issued_to_user_id: string }[];
+  error?: string;
+  vivalinkSync: VivalinkAssignmentSyncResult;
+}
