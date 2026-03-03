@@ -17,6 +17,7 @@ import type {
 } from './types';
 import { DeviceSuperAdminDTO } from './dto/deviceSuperadmin.dto';
 import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
+import { AppError } from 'src/errors';
 
 interface VivalinkPortalDeviceDto {
   type: number;
@@ -1700,7 +1701,7 @@ export class DeviceService {
     try {
       const patient = await this.prisma.user.findFirst({
         where: {
-          username: userName,
+          first_name: userName,
         },
         select: {
           patient: {
@@ -1733,11 +1734,11 @@ export class DeviceService {
           createdAt: x.createdAt,
           updatedAt: x.updatedAt,
         }));
-      console.log(dt, '=======>>dt')
+
       const res = this.getDeviceUsageDuration(dt);
       return res;
     } catch (err) {
-      throw err;
+      throw new AppError('Failed to fetch device history', 500);
     }
   }
 
