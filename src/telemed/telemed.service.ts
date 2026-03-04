@@ -25,6 +25,7 @@ import { SENDGRID_TEMPLATES } from 'src/constant';
 import { TwilioService } from 'src/twilio/twilio.service';
 import { Role } from '@prisma/client';
 import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
+import { userInfo } from 'os';
 
 @Injectable()
 export class TelemedService {
@@ -331,8 +332,35 @@ export class TelemedService {
 
   public async searchTelemed(
     search: string,
-    currentUser: string,
+    currentUser: UserRes,
+    branchId: string
   ): Promise<SearchResProps[]> {
+    console.log(currentUser, 'currentUser=================>>>')
+    if (currentUser.role === Role.NURSE) {
+      return await this.prisma.user.findMany({
+        where: {
+          AND: [
+            {
+              associated_branches: {
+                some: {
+                  id: branchId,
+                },
+              },
+            },
+            {
+              role: 'DOCTOR',
+            },
+          ],
+        },
+        select: {
+          id: true,
+          email: true,
+          first_name: true,
+          last_name: true,
+          middle_name: true,
+        }
+      });
+    }
 
     return await this.prisma.user.findMany({
       where: {
@@ -347,7 +375,7 @@ export class TelemedService {
             doctor: {
               patients: {
                 some: {
-                  user_id: currentUser,
+                  user_id: currentUser.id,
                 },
               },
             },
@@ -365,7 +393,7 @@ export class TelemedService {
 
           //  Exclude self (extra safety)
           {
-            NOT: { id: currentUser },
+            NOT: { id: currentUser.id },
           },
         ],
       },

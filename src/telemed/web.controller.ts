@@ -90,7 +90,8 @@ export class TelemedWebController {
     @Query('q') search: string,
     @GetUser() user: UserRes,
   ): Promise<SearchResProps[]> {
-    return this.telemedService.searchTelemed(search, user.id);
+    const branch = await this.adminService.getBranchId(user.id);
+    return this.telemedService.searchTelemed(search, user, branch.id);
   }
 
 
