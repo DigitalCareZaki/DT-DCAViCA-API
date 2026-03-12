@@ -166,8 +166,8 @@ export class TelemedService {
 
     const doctors = await this.prisma.user.findMany({
       where: {
-        id: { in: dto.users },
-        role: 'DOCTOR',
+        id: { in: dto.users }
+        // role: 'DOCTOR',
       },
       select: { id: true, email: true, username: true, phone_number: true },
     });
