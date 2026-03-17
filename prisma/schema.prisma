@@ -714,7 +714,7 @@ model AppointmentParticipants {
 
   appointment_id String
   appointment    Appointment @relation(name: "appointmentParticipantsBridge", fields: [appointment_id], references: [id])
-
+  notification_sent Boolean @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
