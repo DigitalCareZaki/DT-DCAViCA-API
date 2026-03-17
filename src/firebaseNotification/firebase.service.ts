@@ -35,6 +35,7 @@ export class FirebaseService implements OnModuleInit {
     handleCron() {
         (async () => {
             await this.sendMedicationReminders();
+            await this.patientAppointmentAlert();
         })();
     }
     async sendMedicationReminders() {
@@ -113,6 +114,8 @@ export class FirebaseService implements OnModuleInit {
 
     }
 
+
+
     public async sendNotification(sender: string, receiver: string, title: string, body: string) {
         console.log('Sending notification:', { sender, receiver, title, body });
         try {
@@ -134,6 +137,7 @@ export class FirebaseService implements OnModuleInit {
                     device_token: true,
                 },
             });
+            console.log(user, 'Fetched user for notification');
             if (!user || !user.device_token) {
                 console.log('User not found or device token not found');
                 return;
@@ -158,4 +162,82 @@ export class FirebaseService implements OnModuleInit {
             throw error;
         }
     }
+
+
+
+    async patientAppointmentAlert() {
+        console.log('Appointment Alert Cron Job Running...>>>>>>');
+
+        const now = new Date();
+        const next30Minutes = new Date(now.getTime() + 30 * 60 * 1000);
+
+        const appointments = await this.prisma.appointment.findMany({
+            where: {
+                status: 'ACTIVE',
+                start_date: {
+                    gte: now,
+                    lte: next30Minutes,
+                },
+                participants: {
+                    some: {
+                        user: {
+                            role: 'PATIENT',
+                        },
+                    },
+                },
+            },
+            select: {
+                id: true,
+                start_date: true,
+                end_date: true,
+                participants: {
+                    where: {
+                        notification_sent: false,
+                        user: {
+                            role: 'PATIENT',
+                        },
+                    },
+                    select: {
+                        id: true,
+                        status: true,
+                        user: {
+                            select: {
+                                id: true,
+                                first_name: true,
+                                last_name: true,
+                                email: true,
+                                role: true,
+                                device_token: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        console.log('Upcoming Appointments: ', appointments);
+
+        for (const appointment of appointments) {
+            for (const participant of appointment.participants) {
+
+                const patientUser = participant.user;
+                const name = patientUser?.first_name || 'Patient';
+
+                // update notification flag
+                await this.prisma.appointmentParticipants.update({
+                    where: { id: participant.id }, // use participant id
+                    data: { notification_sent: true },
+                });
+
+                // send notification
+                await this.sendNotification(
+                    patientUser.id,
+                    patientUser.id,
+                    'Appointment Reminder',
+                    `Hello ${name}, your appointment will start in 30 minutes.`,
+                );
+            }
+        }
+    }
+
 }

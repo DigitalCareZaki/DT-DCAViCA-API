@@ -10,6 +10,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+
 import { TelemedService } from './telemed.service';
 import { TelemedCreateDTO } from './dto';
 import { GetUser } from 'src/auth/decorators';

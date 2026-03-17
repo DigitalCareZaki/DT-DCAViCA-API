@@ -4,6 +4,7 @@ import { TelemedCreateDTO } from './dto';
 import { TelemedActionDTO } from './dto/action.dto';
 import { SendMailPayload } from '@types';
 import type { UserRes } from '@types';
+import { Cron } from '@nestjs/schedule';
 
 import type {
   Appointment,
@@ -30,6 +31,11 @@ import { userInfo } from 'os';
 @Injectable()
 export class TelemedService {
   constructor(private prisma: PrismaService, private mail: SendgridService, private sms: TwilioService) { }
+
+
+
+
+
 
   private generateTenMinuteSlots(start: Date, end: Date) {
     const slots = [];
