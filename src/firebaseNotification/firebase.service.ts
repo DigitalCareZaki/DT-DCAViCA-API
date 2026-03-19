@@ -178,13 +178,13 @@ export class FirebaseService implements OnModuleInit {
                     gte: now,
                     lte: next30Minutes,
                 },
-                participants: {
-                    some: {
-                        user: {
-                            role: 'PATIENT',
-                        },
-                    },
-                },
+                // participants: {
+                //     some: {
+                //         user: {
+                //             role: 'PATIENT',
+                //         },
+                //     },
+                // },
             },
             select: {
                 id: true,
@@ -193,9 +193,9 @@ export class FirebaseService implements OnModuleInit {
                 participants: {
                     where: {
                         notification_sent: false,
-                        user: {
-                            role: 'PATIENT',
-                        },
+                        // user: {
+                        //     role: 'PATIENT',
+                        // },
                     },
                     select: {
                         id: true,
@@ -221,7 +221,7 @@ export class FirebaseService implements OnModuleInit {
             for (const participant of appointment.participants) {
 
                 const patientUser = participant.user;
-                const name = patientUser?.first_name || 'Patient';
+                const name = patientUser?.first_name || 'Participant';
 
                 // update notification flag
                 await this.prisma.appointmentParticipants.update({
