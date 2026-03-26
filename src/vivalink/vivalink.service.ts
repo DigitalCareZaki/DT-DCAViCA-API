@@ -123,7 +123,7 @@ export class VivalinkService {
       const patients = await this.prisma.user.findMany({
         where: {
           role: Role.PATIENT,
-          first_name: {
+          username: {
             in: emailList,
           },
           patient: {
@@ -137,6 +137,7 @@ export class VivalinkService {
         select: {
           id: true,
           first_name: true,
+          username: true,
           patient: {
             select: {
               id: true,
@@ -155,11 +156,11 @@ export class VivalinkService {
       // 3. Attach matching result data to each patient
       const patientsWithData = patients.map(patient => ({
         ...patient,
-        mappings: result.data.mappings[patient.first_name] ?? [], // gets the array from result
+        mappings: result.data.mappings[patient.username] ?? [], // gets the array from result
       }));
 
       const formatted = patientsWithData.reduce((acc, patient) => {
-        acc[patient.first_name] = patient.mappings;
+        acc[patient.username] = patient.mappings;
         return acc;
       }, {});
       console.log(formatted, '=====>>patientsWithData');

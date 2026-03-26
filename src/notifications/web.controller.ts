@@ -16,7 +16,7 @@ export class NotificationsWebController {
   public async getNotifications(@Query('page') page = 1, @Query('limit') limit = 10, @GetUser() user: UserRes) {
     console.log('user ====>>', user);
     let branchId: any;
-    if (user.role === Role.ADMIN || user.role === Role.DOCTOR) {
+    if (user.role === Role.ADMIN || user.role === Role.DOCTOR || user.role === Role.NURSE || user.role === Role.PATIENT) {
       branchId = await this.adminService.getBranchId(user.id);
     }
     const targetId =
