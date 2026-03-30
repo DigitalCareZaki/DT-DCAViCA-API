@@ -19,22 +19,40 @@ export class AppController {
 
     @UseGuards(JwtGuard)
     @Post('/agora/token')
-    public async createAgoraToken(@Body() data: any, @GetUser() user: UserRes, @Req() req: Request) {
-
-        const { channelName } = data;
-
-        console.log('req.agent >>>>>>>>>>>> ', req.headers['user-agent']);
-
-        // Extract platform info from user agent
-        const userAgent = req.headers['user-agent'];
-        const platform = userAgent
-            ? /Android|webOS|iPhone|iOS|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
-                ? 'mobile'
-                : 'desktop'
-            : 'unknown';
-
-        console.log('Requested platform:', platform);
-
-        return this.appService.createAgoraToken(channelName, user.id, platform);
+    public async createAgoraToken(
+        @Body() data: any,
+        @GetUser() user: UserRes,
+        @Req() req: Request
+    ) {
+        const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const channelName = String(data?.channelName || "").trim();
+        const userAgent = String(req.headers["user-agent"] || "");
+        const isMobileHeader = String(req.headers["ismobile"] || "");
+        const platformByUA = /Android|webOS|iPhone|iOS|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
+            ? "mobile"
+            : "desktop";
+        console.log("[AGORA][TOKEN][REQ]", {
+            requestId,
+            userId: user?.id,
+            channelName,
+            userAgent,
+            isMobileHeader,
+            platformByUA,
+            body: data,
+        });
+        if (!channelName) {
+            console.error("[AGORA][TOKEN][BAD_REQUEST]", { requestId, userId: user?.id, channelName });
+            throw new Error("channelName is required");
+        }
+        const result = await this.appService.createAgoraToken(channelName, user.id);
+        console.log("[AGORA][TOKEN][RES]", {
+            requestId,
+            userId: user?.id,
+            channelName,
+            numericUid: result?.numericUid,
+            tokenPrefix: result?.agoraToken?.slice(0, 18), // never log full token
+            tokenLen: result?.agoraToken?.length,
+        });
+        return result;
     }
 }

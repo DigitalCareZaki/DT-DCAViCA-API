@@ -10,68 +10,62 @@ export class AppService {
 
     }
 
-    public async createAgoraToken(channelName: string, userId: string, platform: string) {
-        const appId = this.config.get<string>('AGORA_APP_ID');
-        const appCertificate = this.config.get<string>('AGORA_APP_CERTIFICATE');
-
-        console.log('appId:', appId);
-        console.log('appCertificate:', appCertificate);
-
+    public async createAgoraToken(channelName: string, userId: string) {
+        const appId = this.config.get<string>("b03a1cbf5d3e43ff973a26d84a726f85");
+        const appCertificate = this.config.get<string>("3996161afc7c4d848285bde5143dd313");
+        console.log("[AGORA][SERVICE][INPUT]", {
+            channelName,
+            userId,
+            hasAppId: !!appId,
+            hasAppCertificate: !!appCertificate,
+        });
         if (!appId || !appCertificate) {
-            throw new AppError('AGORA_APP_ID and AGORA_APP_CERTIFICATE must be set in the environment variables.', 500);
+            console.error("[AGORA][SERVICE][CONFIG_MISSING]");
+            throw new AppError(
+                "AGORA_APP_ID and AGORA_APP_CERTIFICATE must be set in the environment variables.",
+                500
+            );
         }
-
         const expirationTimeInSeconds = 3600;
         const currentTimestamp = Math.floor(Date.now() / 1000);
         const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
-        let agoraToken, numericUid;
-
-        if (platform != 'desktop') {
-            // Use numeric UID for iOS
-            numericUid = this.generateNumericUid(userId);
-            agoraToken = RtcTokenBuilder.buildTokenWithUid(
-                appId,
-                appCertificate,
-                channelName,
-                numericUid,
-                RtcRole.PUBLISHER,
-                expirationTimeInSeconds,
-                privilegeExpiredTs
-            );
-        } else {
-
-            // Use buildTokenWithUserAccount for string user IDs
-            agoraToken = RtcTokenBuilder.buildTokenWithUserAccount(
-                appId,
-                appCertificate,
+        // Always numeric UID for cross-platform consistency
+        const numericUid = this.generateNumericUid(userId);
+        const agoraToken = RtcTokenBuilder.buildTokenWithUid(
+            appId,
+            appCertificate,
+            channelName,
+            numericUid,
+            RtcRole.PUBLISHER,
+            expirationTimeInSeconds,
+            privilegeExpiredTs
+        );
+        console.log("[AGORA][SERVICE][TOKEN_BUILT]", {
+            channelName,
+            userId,
+            numericUid,
+            role: "PUBLISHER",
+            expireAt: privilegeExpiredTs,
+            tokenPrefix: agoraToken?.slice(0, 18),
+            tokenLen: agoraToken?.length,
+        });
+        if (!agoraToken) {
+            console.error("[AGORA][SERVICE][TOKEN_BUILD_FAILED]", {
                 channelName,
                 userId,
-                RtcRole.PUBLISHER,
-                expirationTimeInSeconds,
-                privilegeExpiredTs
-            );
+                numericUid,
+            });
+            throw new AppError("Failed to generate Agora token", 500);
         }
-
-        console.log(" channelName>>>>>>>>>>>>>>>>>>>> ", channelName);
-        console.log(" userId>>>>>>>>>>>>>>>>>>>> ", userId);
-        console.log(" RtcRole.PUBLISHER>>>>>>>>>>>>>>>>>>>> ", RtcRole.PUBLISHER);
-        console.log(" expirationTimeInSeconds>>>>>>>>>>>>>>>>>>>> ", expirationTimeInSeconds);
-        console.log(" privilegeExpiredTs>>>>>>>>>>>>>>>>>>>> ", privilegeExpiredTs);
-
-        if (!agoraToken) {
-            throw new AppError('Failed to generate Agora token', 500);
-        }
-
         return { agoraToken, numericUid };
     }
-
     private generateNumericUid(userId: string): number {
         let hash = 0;
         for (let i = 0; i < userId.length; i++) {
             const char = userId.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
+            hash = (hash << 5) - hash + char;
+            hash |= 0; // 32-bit int
         }
-        return Math.abs(hash);
+        return Math.abs(hash) || 1; // avoid uid=0
     }
 }
