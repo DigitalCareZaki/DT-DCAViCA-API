@@ -11,8 +11,8 @@ export class AppService {
     }
 
     public async createAgoraToken(channelName: string, userId: string) {
-        const appId = this.config.get<string>('AGORA_APP_ID');
-        const appCertificate = this.config.get<string>('AGORA_APP_CERTIFICATE');
+        const appId = this.config.get<string>("b03a1cbf5d3e43ff973a26d84a726f85");
+        const appCertificate = this.config.get<string>("3996161afc7c4d848285bde5143dd313");
         console.log("[AGORA][SERVICE][INPUT]", {
             channelName,
             userId,
