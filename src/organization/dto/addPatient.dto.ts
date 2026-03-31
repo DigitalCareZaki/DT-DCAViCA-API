@@ -23,4 +23,8 @@ export class AddPatientDTO extends AddUserBaseDTO {
   @IsOptional()
   @IsEnum(VivalinkSyncStatusDTO)
   cardiac_monitoring?: VivalinkSyncStatusDTO;
+
+  @IsOptional()
+  @IsString()
+  site_id?: string;
 }

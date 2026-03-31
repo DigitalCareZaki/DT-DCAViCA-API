@@ -487,6 +487,7 @@ export class NurseService {
           create: {
             npi_number: data.npi_number,
             employee_id: data.employee_id,
+            site_id: data.site_id,
             departments: {
               connect: {
                 id: data.department_id,

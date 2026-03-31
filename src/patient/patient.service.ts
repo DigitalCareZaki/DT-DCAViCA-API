@@ -85,6 +85,7 @@ export class PatientService {
           height: data.height,
           weight: data.weight,
           user_id: res.id,
+          site_id: data.site_id,
         },
         select: {
           id: true,
@@ -180,6 +181,7 @@ export class PatientService {
         where: { id: patientId },
         include: {
           user: true,
+          site: true,
           doctors: {
             include: {
               user: true,
@@ -206,7 +208,7 @@ export class PatientService {
           error: errorMsg,
         };
       }
-      const vivalinkSiteId = primaryDoctor?.site?.vivalinkSiteId ?? null;
+      const vivalinkSiteId = patientData?.site?.vivalinkSiteId ?? null;
       const assignedPhysicianVivalinkId = primaryDoctor?.vivalinkId ?? null;
 
       const vivalinkPayload = {
