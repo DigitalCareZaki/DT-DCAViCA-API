@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 
 import { AddUserBaseDTO } from './addUser.dto';
 
@@ -14,4 +14,8 @@ export class AddNurseDTO extends AddUserBaseDTO {
   @IsNotEmpty()
   @IsString()
   department_id: string;
+
+  @IsOptional()
+  @IsString()
+  site_id?: string;
 }

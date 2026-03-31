@@ -243,6 +243,8 @@ model Site {
 
   doctors Doctor[]
   devices Device[]
+  patients Patient[]
+  nurses   Nurse[]
 }
 
 model Nurse {
@@ -257,6 +259,9 @@ model Nurse {
 
   patients     Patient[]     @relation("patientNurses")
   measurements Measurement[] @relation("nurseMeasurements")
+
+  site    Site?   @relation(fields: [site_id], references: [id])
+  site_id String?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -426,6 +431,9 @@ model Patient {
   vivalink_synced     Boolean            @default(false)
   vivalink_sync_error String?
   vivalink_synced_at  DateTime?
+
+  site    Site?   @relation(fields: [site_id], references: [id])
+  site_id String?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
