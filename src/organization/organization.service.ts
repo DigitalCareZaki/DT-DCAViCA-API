@@ -302,15 +302,39 @@ export class OrganizationService {
         uri: true,
         role: true,
         gender: true,
+
         associated_branches: {
           select: {
             name: true,
           },
         },
+
         patient: {
           select: {
+            id: true,
+
+            // ✅ SITE ADDED
+            site_id: true,
+            site: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+
             doctors: {
               select: {
+                id: true,
+
+                // ✅ Doctor site (if needed)
+                site_id: true,
+                site: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+
                 departments: {
                   select: {
                     id: true,
@@ -318,24 +342,36 @@ export class OrganizationService {
                     description: true,
                   },
                 },
-                id: true,
+
                 vivalink_sync_error: true,
                 vivalink_synced: true,
                 vivalink_synced_at: true,
                 vivalinkId: true,
-                avicardia_monitoring: true
+                avicardia_monitoring: true,
               },
             },
-            id: true,
+
             vivalink_sync_error: true,
             vivalink_synced: true,
             vivalink_synced_at: true,
             vivalinkId: true,
-            cardiac_monitoring: true
+            cardiac_monitoring: true,
           },
         },
+
         doctor: {
           select: {
+            id: true,
+
+            // ✅ SITE ADDED
+            site_id: true,
+            site: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+
             departments: {
               select: {
                 id: true,
@@ -343,16 +379,28 @@ export class OrganizationService {
                 description: true,
               },
             },
-            id: true,
+
             vivalink_sync_error: true,
             vivalink_synced: true,
             vivalink_synced_at: true,
             vivalinkId: true,
-            avicardia_monitoring: true
+            avicardia_monitoring: true,
           },
         },
+
         nurse: {
           select: {
+            id: true,
+
+            // ✅ SITE ADDED
+            site_id: true,
+            site: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+
             departments: {
               select: {
                 id: true,
@@ -362,6 +410,7 @@ export class OrganizationService {
             },
           },
         },
+
         active: true,
       },
     });
@@ -457,9 +506,9 @@ export class OrganizationService {
     }
 
     return await this.prisma.user.findMany({
-      where: {
-        AND: filter,
-      },
+      // where: {
+      //   AND: filter,
+      // },
       select: {
         id: true,
         first_name: true,
@@ -471,6 +520,7 @@ export class OrganizationService {
         uri: true,
         role: true,
         gender: true,
+
         associated_branches: {
           select: {
             name: true,
@@ -483,6 +533,43 @@ export class OrganizationService {
             },
           },
         },
+
+        // Doctor relation
+        doctor: {
+          select: {
+            site: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+
+        // Patient relation
+        patient: {
+          select: {
+            site: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+
+        // Nurse relation
+        nurse: {
+          select: {
+            site: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+
         active: true,
       },
     });
