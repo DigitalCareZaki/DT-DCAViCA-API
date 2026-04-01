@@ -302,6 +302,7 @@ export class OrganizationService {
         uri: true,
         role: true,
         gender: true,
+
         title: true,
         dob: true,
         location: {
