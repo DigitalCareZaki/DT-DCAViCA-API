@@ -1000,6 +1000,8 @@ export class OrganizationService {
             select: {
               id: true,
               first_name: true,
+              last_name: true,
+              middle_name: true,
               email: true,
             },
           },
