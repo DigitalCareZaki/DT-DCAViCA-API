@@ -29,8 +29,18 @@ export type OrganizationUsers = {
   username: string;
   role: UserRole;
   gender: Gender;
+  dob: Date;
+  address?: string;
   associated_branches: {
     name: string;
+    departments?: {
+      id: string;
+      title: string;
+      description: string | null;
+    }[];
   }[];
+  patient?: any;
+  doctor?: any;
+  nurse?: any;
   active?: boolean;
 };
