@@ -287,7 +287,7 @@ export class OrganizationService {
       });
     }
 
-    return this.prisma.user.findMany({
+    return await this.prisma.user.findMany({
       where: {
         AND: filter,
       },
@@ -302,6 +302,12 @@ export class OrganizationService {
         uri: true,
         role: true,
         gender: true,
+        dob: true,
+        location: {
+          select: {
+            address: true,
+          },
+        },
 
         associated_branches: {
           select: {
@@ -325,6 +331,20 @@ export class OrganizationService {
             doctors: {
               select: {
                 id: true,
+                user: {
+                  select: {
+                    first_name: true,
+                    last_name: true,
+                    middle_name: true,
+                    gender: true,
+                    dob: true,
+                    location: {
+                      select: {
+                        address: true,
+                      },
+                    },
+                  },
+                },
 
                 // ✅ Doctor site (if needed)
                 site_id: true,
@@ -340,6 +360,12 @@ export class OrganizationService {
                     id: true,
                     title: true,
                     description: true,
+                  },
+                },
+
+                specialities: {
+                  select: {
+                    title: true,
                   },
                 },
 
@@ -380,6 +406,12 @@ export class OrganizationService {
               },
             },
 
+            specialities: {
+              select: {
+                title: true,
+              },
+            },
+
             vivalink_sync_error: true,
             vivalink_synced: true,
             vivalink_synced_at: true,
@@ -414,6 +446,8 @@ export class OrganizationService {
         active: true,
       },
     });
+
+
   }
 
   // public async getOrganizationUsers(user: UserRes,
@@ -505,10 +539,10 @@ export class OrganizationService {
       });
     }
 
-    return await this.prisma.user.findMany({
-      // where: {
-      //   AND: filter,
-      // },
+    const users = await this.prisma.user.findMany({
+      where: {
+        AND: filter,
+      },
       select: {
         id: true,
         first_name: true,
@@ -520,6 +554,13 @@ export class OrganizationService {
         uri: true,
         role: true,
         gender: true,
+        dob: true,
+        location: {
+          select: {
+            address: true,
+          },
+        },
+
 
         associated_branches: {
           select: {
@@ -537,34 +578,109 @@ export class OrganizationService {
         // Doctor relation
         doctor: {
           select: {
+            id: true,
             site: {
               select: {
                 id: true,
                 name: true,
               },
             },
+            departments: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+              },
+            },
+            specialities: {
+              select: {
+                title: true,
+              },
+            },
+            vivalink_sync_error: true,
+            vivalink_synced: true,
+            vivalink_synced_at: true,
+            vivalinkId: true,
+            avicardia_monitoring: true,
           },
         },
 
         // Patient relation
         patient: {
           select: {
+            id: true,
             site: {
               select: {
                 id: true,
                 name: true,
               },
             },
+            doctors: {
+              select: {
+                id: true,
+                user: {
+                  select: {
+                    first_name: true,
+                    last_name: true,
+                    middle_name: true,
+                    gender: true,
+                    dob: true,
+                    location: {
+                      select: {
+                        address: true,
+                      },
+                    },
+                  },
+                },
+                site_id: true,
+                site: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+                departments: {
+                  select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                  },
+                },
+                specialities: {
+                  select: {
+                    title: true,
+                  },
+                },
+                vivalink_sync_error: true,
+                vivalink_synced: true,
+                vivalink_synced_at: true,
+                vivalinkId: true,
+                avicardia_monitoring: true,
+              },
+            },
+            vivalink_sync_error: true,
+            vivalink_synced: true,
+            vivalink_synced_at: true,
+            vivalinkId: true,
+            cardiac_monitoring: true,
           },
         },
 
         // Nurse relation
         nurse: {
           select: {
+            id: true,
             site: {
               select: {
                 id: true,
                 name: true,
+              },
+            },
+            departments: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
               },
             },
           },
@@ -573,6 +689,24 @@ export class OrganizationService {
         active: true,
       },
     });
+
+    return users.map((user) => ({
+      ...user,
+      address: user.location?.address,
+      location: undefined,
+      patient: user.patient
+        ? {
+          ...user.patient,
+          doctors: (user.patient.doctors as any[])?.map((doctor) => ({
+            ...doctor,
+            ...(doctor.user || {}),
+            address: doctor.user?.location?.address,
+            user: undefined,
+            location: undefined,
+          })),
+        }
+        : null,
+    })) as unknown as OrganizationUsers[];
   }
   public async getOrganizationBranches(
     user: UserRes,
@@ -634,6 +768,11 @@ export class OrganizationService {
         doctor: {
           select: {
             employee_id: true,
+            specialities: {
+              select: {
+                title: true,
+              },
+            },
           },
         },
         id: true,
