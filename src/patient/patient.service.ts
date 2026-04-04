@@ -356,7 +356,16 @@ export class PatientService {
             emr: true,
             weight: true,
             height: true,
-          }
+            site: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                address: true,
+                countryCode: true,
+              },
+            },
+          },
         },
         location: {
           include: {

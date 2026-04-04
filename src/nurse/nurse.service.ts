@@ -70,6 +70,15 @@ export class NurseService {
         nurse: {
           include: {
             departments: true,
+            site: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                address: true,
+                countryCode: true,
+              },
+            },
           },
         },
         created_at: true,

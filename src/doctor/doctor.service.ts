@@ -107,6 +107,15 @@ export class DoctorService {
           include: {
             specialities: true,
             departments: true,
+            site: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                address: true,
+                countryCode: true,
+              },
+            },
           },
         },
         created_at: true,
