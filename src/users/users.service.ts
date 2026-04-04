@@ -222,4 +222,27 @@ export class UsersService {
             },
         });
     }
+
+    async checkUsername(username: string) {
+        const user = await this.prisma.user.findFirst({
+            where: {
+                username: {
+                    equals: username,
+                    mode: 'insensitive',
+                }
+            }
+        });
+
+        if (user) {
+            return {
+                exists: true,
+                message: "Username already exists, choose other username.",
+            };
+        }
+
+        return {
+            exists: false,
+            message: "Username is available.",
+        };
+    }
 }

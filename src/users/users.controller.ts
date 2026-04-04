@@ -41,6 +41,12 @@ export class UsersController {
     return this.usersService.getProfile(id);
   }
 
+  @Get('check-username/:username')
+  public async checkUsername(@Param('username') username: string) {
+    if (!username) throw new AppError('Username is required', 400);
+    return this.usersService.checkUsername(username);
+  }
+
   @Post('reset-password')
   public async resetPassword(@Body() dto: { otp: string; email: string; password: string }) {
     if (!dto.otp || !dto.email || !dto.password) throw new AppError('OTP, email, and password are required', 400);
