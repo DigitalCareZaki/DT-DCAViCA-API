@@ -154,8 +154,10 @@ export class DoctorWebController extends DoctorController {
 
   @HttpCode(HttpStatus.OK)
   @Get('/doctors/speciality')
-  public async getDoctorsBySpeciality(@Query('specialityId') specialityId: string) {
-    return this.getDoctorService().getDoctorsBySpeciality(specialityId);
+  public async getDoctorsBySpeciality(@Query('specialityId') specialityId: string,
+    @GetUser() user: UserRes,) {
+    const branch = await this.adminService.getBranchId(user.id);
+    return this.getDoctorService().getDoctorsBySpeciality(specialityId, branch.id);
   }
   @HttpCode(HttpStatus.OK)
   @Get('/patientsbydoctor')
@@ -164,8 +166,12 @@ export class DoctorWebController extends DoctorController {
   }
   @HttpCode(HttpStatus.OK)
   @Get('/speciality')
-  public async getSpecialityList() {
-    return this.getDoctorService().getSpecialityList();
+  public async getSpecialityList(
+    @GetUser() user: UserRes,
+  ) {
+    const branch = await this.adminService.getBranchId(user.id);
+    console.log('Branch ID:', branch.id); // Debug log to check branch ID
+    return this.getDoctorService().getSpecialityList(branch.id);
   }
 
   @HttpCode(HttpStatus.OK)

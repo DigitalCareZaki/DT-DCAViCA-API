@@ -1257,8 +1257,12 @@ export class DoctorService {
 
   }
 
-  public async getSpecialityList() {
+  public async getSpecialityList(branchId: string) {
+    console.log(branchId, 'branchId in getSpecialityList')
     const departmentList = await this.prisma.department.findMany({
+      where: {
+        barnch_id: branchId,
+      },
       select: {
         id: true,
         title: true,
@@ -1268,14 +1272,68 @@ export class DoctorService {
     return departmentList;
   }
 
-  public async getDoctorsBySpeciality(specialityId: string) {
+  // public async getDoctorsBySpeciality(specialityId: string, branchId: string) {
+  //   const doctorList = await this.prisma.doctor.findMany({
+  //     where: {
+  //       departments: {
+  //         some: {
+  //           id: specialityId, // assuming `id` is the field name in `Speciality` model
+  //         },
+  //       },
+  //     },
+  //     include: {
+  //       user: {
+  //         select: {
+  //           id: true,
+  //           first_name: true,
+  //           last_name: true,
+  //           middle_name: true,
+  //           email: true,
+  //           uri: true,
+  //           phone_number: true,
+  //         },
+  //       },
+  //       specialities: {
+  //         select: {
+  //           id: true,
+  //           title: true,
+  //         },
+  //       },
+  //       departments: {
+  //         select: {
+  //           title: true,
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   return doctorList;
+  // }
+  public async getDoctorsBySpeciality(
+    specialityId: string,
+    branchId: string,
+  ) {
     const doctorList = await this.prisma.doctor.findMany({
       where: {
-        departments: {
-          some: {
-            id: specialityId, // assuming `id` is the field name in `Speciality` model
+        AND: [
+          {
+            departments: {
+              some: {
+                id: specialityId,
+                barnch_id: branchId, // ensures department belongs to branch
+              },
+            },
           },
-        },
+          {
+            user: {
+              associated_branches: {
+                some: {
+                  id: branchId, // ensures doctor belongs to branch
+                },
+              },
+            },
+          },
+        ],
       },
       include: {
         user: {
@@ -1287,6 +1345,12 @@ export class DoctorService {
             email: true,
             uri: true,
             phone_number: true,
+            associated_branches: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         specialities: {
@@ -1297,7 +1361,9 @@ export class DoctorService {
         },
         departments: {
           select: {
+            id: true,
             title: true,
+            barnch_id: true,
           },
         },
       },
