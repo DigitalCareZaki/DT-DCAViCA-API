@@ -19,9 +19,9 @@ import { DoctorProfileUpdateDto } from './dto';
 
 @Controller()
 @UseGuards(JwtGuard, RolesGuard)
-@RequirePermission(Role.DOCTOR)
+// @RequirePermission(Role.DOCTOR)
 export class DoctorController {
-  constructor(private doctorService: DoctorService) {}
+  constructor(private doctorService: DoctorService) { }
 
   @HttpCode(HttpStatus.OK)
   @Get('profile')
