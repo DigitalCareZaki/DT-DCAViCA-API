@@ -302,10 +302,12 @@ export class OrganizationService {
         uri: true,
         role: true,
         gender: true,
+        title: true,
         dob: true,
         location: {
           select: {
             address: true,
+            city: true,
           },
         },
 
@@ -318,6 +320,8 @@ export class OrganizationService {
         patient: {
           select: {
             id: true,
+            height: true,
+            weight: true,
 
             // ✅ SITE ADDED
             site_id: true,
@@ -331,6 +335,8 @@ export class OrganizationService {
             doctors: {
               select: {
                 id: true,
+                employee_id: true,
+                npi_number: true,
                 user: {
                   select: {
                     first_name: true,
@@ -388,7 +394,9 @@ export class OrganizationService {
         doctor: {
           select: {
             id: true,
-
+            npi_number: true,
+            pmdc_number: true,
+            employee_id: true,
             // ✅ SITE ADDED
             site_id: true,
             site: {
@@ -423,7 +431,8 @@ export class OrganizationService {
         nurse: {
           select: {
             id: true,
-
+            npi_number: true,
+            employee_id: true,
             // ✅ SITE ADDED
             site_id: true,
             site: {
@@ -554,10 +563,12 @@ export class OrganizationService {
         uri: true,
         role: true,
         gender: true,
+        title: true,
         dob: true,
         location: {
           select: {
             address: true,
+            city: true,
           },
         },
 
@@ -579,6 +590,9 @@ export class OrganizationService {
         doctor: {
           select: {
             id: true,
+            npi_number: true,
+            pmdc_number: true,
+            employee_id: true,
             site: {
               select: {
                 id: true,
@@ -609,6 +623,8 @@ export class OrganizationService {
         patient: {
           select: {
             id: true,
+            height: true,
+            weight: true,
             site: {
               select: {
                 id: true,
@@ -670,6 +686,8 @@ export class OrganizationService {
         nurse: {
           select: {
             id: true,
+            npi_number: true,
+            employee_id: true,
             site: {
               select: {
                 id: true,
