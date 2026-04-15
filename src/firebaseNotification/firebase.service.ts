@@ -2,9 +2,14 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Cron } from '@nestjs/schedule';
+import { SendgridService } from 'src/sendGrid/sendgrid.service';
+import { TwilioService } from 'src/twilio/twilio.service';
+import { SENDGRID_TEMPLATES } from 'src/constant';
+import { SendMailPayload } from '@types';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
+
     private firebaseApp: admin.app.App;
 
     onModuleInit() {
@@ -26,7 +31,7 @@ export class FirebaseService implements OnModuleInit {
         }
     }
 
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(private readonly prisma: PrismaService, private mail: SendgridService, private sms: TwilioService) { }
 
     @Cron('* * * * *', {
         name: 'MedicationReminders',
@@ -208,6 +213,7 @@ export class FirebaseService implements OnModuleInit {
                                 email: true,
                                 role: true,
                                 device_token: true,
+                                phone_number: true,
                             },
                         },
                     },
@@ -219,7 +225,7 @@ export class FirebaseService implements OnModuleInit {
 
         for (const appointment of appointments) {
             for (const participant of appointment.participants) {
-
+                console.log(participant, 'Participant in appointment');
                 const patientUser = participant.user;
                 const name = patientUser?.first_name || 'Participant';
 
@@ -236,6 +242,33 @@ export class FirebaseService implements OnModuleInit {
                     'Appointment Reminder',
                     `Hello ${name}, your appointment will start in 30 minutes.`,
                 );
+
+                await this.sms.sendSMS(
+                    patientUser.phone_number,
+                    `Hello ${name}, your appointment will start in 30 minutes.`
+                );
+
+                await this.prisma.sms.create({
+                    data: {
+                        receiver_id: patientUser.id,
+                        sender_id: patientUser.id,
+                        to: patientUser.phone_number,
+                        body: "your appointment will start in 30 minutes",
+                    },
+                });
+
+                const mailPayload = {
+                    to: [patientUser.email],
+                    data: {
+                        subject: 'Appointment Reminder',
+                        message: `your appointment will start in 30 minutes.`,
+                    },
+                    templateId: SENDGRID_TEMPLATES.APPOINTMENT_REMINDER,
+                } satisfies SendMailPayload;
+
+                await this.mail.sendSgMail(mailPayload);
+
+
             }
         }
     }
