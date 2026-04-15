@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TelemedCreateDTO } from './dto';
-import { TelemedActionDTO } from './dto/action.dto';
+import { TelemedActionDTO, TelemedRatingDTO } from './dto/action.dto';
 import { SendMailPayload } from '@types';
 import type { UserRes } from '@types';
 import { Cron } from '@nestjs/schedule';
@@ -545,6 +545,7 @@ export class TelemedService {
               participants: {
                 select: {
                   id: true,
+                  user: true,
                 },
               },
               appointmentObservation: {
@@ -1856,15 +1857,73 @@ export class TelemedService {
       },
       select: {
         id: true,
+        start_date: true,
+        participants: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                phone_number: true,
+                role: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    if (appointment.id) {
+    if (appointment?.id) {
 
+      // update appointment status
       await this.prisma.appointment.update({
         where: { id: appointment.id },
         data: { status: data.status },
       });
+
+      // format date (only date)
+      const formattedDate = new Date(appointment.start_date).toLocaleDateString("en-PK", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+
+      // send sms to patient
+      for (const participant of appointment.participants) {
+        if (participant.user.role === "PATIENT") {
+
+          const message = `Your appointment scheduled on ${formattedDate} has been ${data.status.toLowerCase()}.`;
+
+          await this.sms.sendSMS(
+            participant.user.phone_number,
+            message
+          );
+
+          // send email to doctor via Sendgrid
+          const mailPayload = {
+            to: [participant.user.email],
+            data: {
+              subject: 'Appointment status update',
+              message: `Your appointment scheduled on ${formattedDate} has been ${data.status.toLowerCase()}.`,
+            },
+            templateId: SENDGRID_TEMPLATES.APPOINTMENT_STATUS_UPDATE,
+          } satisfies SendMailPayload;
+
+          await this.mail.sendSgMail(mailPayload);
+        }
+        const doctor = appointment.participants.find(p => p.user.role === 'DOCTOR')?.user;
+        const patient = appointment.participants.find(p => p.user.role === 'PATIENT')?.user;
+        await this.prisma.sms.create({
+          data: {
+            receiver_id: patient.id,
+            sender_id: doctor.id,
+            to: doctor.phone_number,
+            body: "Appointment status update",
+          },
+        });
+      }
 
     }
 
@@ -2290,6 +2349,23 @@ export class TelemedService {
     }
 
     return null;
+  }
+
+  async appointmentRating(data: TelemedRatingDTO) {
+
+    // validation
+    if (data.rating < 1 || data.rating > 5) {
+      throw new BadRequestException("Rating must be between 1 and 5");
+    }
+
+    return this.prisma.appointment.update({
+      where: {
+        id: data.id,
+      },
+      data: {
+        rating: data.rating,
+      },
+    });
   }
 
 

@@ -35,7 +35,7 @@ import type {
   AppointmentReport,
 } from './types';
 import type { UserRes } from '@types';
-import { TelemedActionDTO } from './dto/action.dto';
+import { TelemedActionDTO, TelemedRatingDTO } from './dto/action.dto';
 import { JwtGuard } from 'src/auth/guards';
 import { AdminService } from 'src/admin/admin.service';
 
@@ -287,5 +287,15 @@ export class TelemedWebController {
       await this.telemedService.getTelemedPatient(telemed_id);
 
     return this.telemedService.gePatientRecentMeasurement(patient);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('/feedback')
+  public async appointmentRating(
+    @GetUser() user: UserRes,
+    @Body() data: TelemedRatingDTO,
+  ) {
+
+    return this.telemedService.appointmentRating(data);
   }
 }

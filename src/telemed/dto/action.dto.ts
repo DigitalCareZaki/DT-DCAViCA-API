@@ -1,5 +1,5 @@
 import { AppointmentStatus } from '@prisma/client';
-import { IsNotEmpty, IsUUID, Validate } from 'class-validator';
+import { isNotEmpty, IsNotEmpty, IsUUID, Validate } from 'class-validator';
 import { ValidateTelemedStatus } from 'src/validators';
 
 export class TelemedActionDTO {
@@ -9,4 +9,12 @@ export class TelemedActionDTO {
 
   @Validate(ValidateTelemedStatus)
   status: AppointmentStatus;
+}
+export class TelemedRatingDTO {
+  @IsNotEmpty()
+  @IsUUID()
+  id: string;
+
+  @IsNotEmpty()
+  rating: number;
 }

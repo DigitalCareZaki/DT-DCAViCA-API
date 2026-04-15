@@ -774,7 +774,7 @@ model Appointment {
   end_date   DateTime
 
   notes String[]
-
+  rating   Int    @default(0)
   organizer    User   @relation(name: "appointmentOrganizer", fields: [organizer_id], references: [id])
   organizer_id String
 
