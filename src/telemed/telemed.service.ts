@@ -1078,6 +1078,7 @@ export class TelemedService {
               title: true,
               description: true,
               about: true,
+              rating: true,
               type: true,
               status: true,
               start_date: true,
