@@ -490,7 +490,7 @@ export class OrganizationService {
     search: string,
     role: UserRole,
   ) {
-    if (user.role === Role.ADMIN || user.role === Role.SUPERADMIN) {
+    if (user.role === Role.ADMIN || user.role === Role.DOCTOR || user.role === Role.NURSE) {
       return await this.getBranchUsers(user, search, role);
     }
 
