@@ -63,7 +63,7 @@ export class DeviceWebController extends DeviceController {
 
     console.log('user ====>>', user);
     let branchId: any;
-    if (user.role === Role.ADMIN || user.role === Role.DOCTOR) {
+    if (user.role === Role.ADMIN || user.role === Role.DOCTOR || user.role === Role.NURSE) {
       branchId = await this.adminService.getBranchId(user.id);
     }
     const targetId =
