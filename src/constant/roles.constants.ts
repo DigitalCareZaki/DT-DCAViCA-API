@@ -14,4 +14,5 @@ export const allowedQueryRoles: Role[] = [
   'DOCTOR',
   'NURSE',
   'PATIENT',
+  'SUPERADMIN'
 ];

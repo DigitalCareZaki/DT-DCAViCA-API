@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Appointment" ALTER COLUMN "rating" DROP NOT NULL,
+ALTER COLUMN "rating" DROP DEFAULT;
