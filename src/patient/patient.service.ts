@@ -629,6 +629,37 @@ export class PatientService {
 
   }
 
+  public async fetchAllAssignedDoctors(id: string) {
+    const patient = await this.prisma.patient.findUniqueOrThrow({
+      where: { user_id: id },
+      select: {
+        id: true,
+        doctors: {
+          select: {
+            id: true,
+            user_id: true,
+            vivalinkId: true,
+            user: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                email: true,
+                uri: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!patient || !patient.doctors || patient.doctors.length === 0) {
+      throw new Error('No assigned doctors found for this patient');
+    }
+
+    return patient.doctors;
+  }
+
   public async addPatientToVlWebportal(data: VivalinkPatientAddDTO) {
     const url = `${this.vlWebportalUrl}/patients`;
     const response = await fetch(url, {

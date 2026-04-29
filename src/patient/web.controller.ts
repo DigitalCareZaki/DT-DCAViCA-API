@@ -66,5 +66,11 @@ export class PatientWebController extends PatientController {
   //   return this.getPatientService().vlLogin(user.id);
   // }
 
+  @HttpCode(HttpStatus.OK)
+  @Get('/assign-doctors/all/:id')
+  public async fetchAllAssignedDoctors(@GetUser() user: any, @Param('id') id: string) {
+    return this.getPatientService().fetchAllAssignedDoctors(id);
+  }
+
 
 }
