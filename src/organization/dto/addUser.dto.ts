@@ -7,7 +7,6 @@ import {
   IsString,
   IsStrongPassword,
   MaxLength,
-  MinLength,
   Validate,
 } from 'class-validator';
 import {
@@ -45,19 +44,14 @@ export class AddUserBaseDTO {
   @IsStrongPassword()
   password: string;
 
-  @MaxLength(15)
-  @MinLength(3)
   @IsString()
   @IsNotEmpty()
   first_name: string;
 
   @IsString()
   @IsOptional()
-  @MaxLength(15)
   middle_name: string;
 
-  @MaxLength(15)
-  @MinLength(3)
   @IsString()
   @IsNotEmpty()
   last_name: string;
