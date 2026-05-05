@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as argon from 'argon2';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { PatientMedicationAlertDTO } from './dto';
+import { PatientMedicationAlertDTO, UpdateProfileDTO } from './dto';
 import { AddPatientDTO } from 'src/organization/dto/addPatient.dto';
 import puppeteer from 'puppeteer';
 import type { MedicationTaken } from '@prisma/client';
@@ -383,7 +383,7 @@ export class PatientService {
     });
   }
 
-  public async updateProfle(userId: string, data: any) {
+  public async updateProfle(userId: string, data: UpdateProfileDTO) {
     return await this.prisma.user.update({
       where: {
         id: userId,

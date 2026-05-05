@@ -14,6 +14,7 @@ import { UserRes } from '@types';
 import { JwtGuard, RolesGuard } from 'src/auth/guards';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 import { Role } from 'src/auth/enums/role.enum';
+import { UpdateProfileDTO } from './dto';
 
 import type { ProfileProps } from './types';
 
@@ -33,7 +34,7 @@ export class PatientController {
   @Patch('profile')
   public async updateProfile(
     @GetUser() user: UserRes,
-    @Body() data: any,
+    @Body() data: UpdateProfileDTO,
   ): Promise<any> {
     return await this.patientService.updateProfle(user.id, data);
   }
