@@ -1701,7 +1701,7 @@ export class DeviceService {
     try {
       const patient = await this.prisma.user.findFirst({
         where: {
-          first_name: userName,
+          username: userName,
         },
         select: {
           patient: {
