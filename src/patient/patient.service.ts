@@ -153,6 +153,30 @@ export class PatientService {
 
       if (cardiacMonitoring === VivalinkSyncStatus.YES) {
         vivalinkResult = await this.syncPatientToVivalink(patient.id);
+
+        if (!vivalinkResult.success) {
+          const syncError =
+            vivalinkResult.error || 'Failed to sync patient to Vivalink';
+
+          await this.prisma.patient.update({
+            where: { id: patient.id },
+            data: {
+              cardiac_monitoring: VivalinkSyncStatus.NO,
+              vivalink_synced: false,
+              vivalink_sync_error: syncError,
+            },
+          });
+
+          return {
+            success: false,
+            patientId: patient.id,
+            cardiacMonitoring: VivalinkSyncStatus.NO,
+            vivalinkSync: {
+              ...vivalinkResult,
+              error: syncError,
+            },
+          };
+        }
       }
 
       // Return detailed result
@@ -202,6 +226,15 @@ export class PatientService {
       const primaryDoctor = patientData.doctors && patientData.doctors.length > 0 ? patientData.doctors?.[0] : null;
       if (!primaryDoctor || !primaryDoctor.vivalinkId) {
         const errorMsg = 'Assigned Doctor does not exist on vivalink portal';
+        await this.prisma.patient.update({
+          where: { id: patientId },
+          data: {
+            cardiac_monitoring: VivalinkSyncStatus.NO,
+            vivalink_synced: false,
+            vivalink_sync_error: errorMsg,
+          },
+        });
+
         return {
           attempted: true,
           success: false,
@@ -260,6 +293,7 @@ export class PatientService {
         await this.prisma.patient.update({
           where: { id: patientId },
           data: {
+            cardiac_monitoring: VivalinkSyncStatus.NO,
             vivalink_synced: false,
             vivalink_sync_error: errorMsg,
           },
@@ -278,6 +312,7 @@ export class PatientService {
       await this.prisma.patient.update({
         where: { id: patientId },
         data: {
+          cardiac_monitoring: VivalinkSyncStatus.NO,
           vivalink_synced: false,
           vivalink_sync_error: errorMessage,
         },
