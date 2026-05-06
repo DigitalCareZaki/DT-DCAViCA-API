@@ -304,7 +304,6 @@ export class OrganizationService {
         gender: true,
         title: true,
         dob: true,
-        title: true,
         location: {
           select: {
             address: true,
