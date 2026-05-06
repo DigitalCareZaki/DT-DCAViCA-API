@@ -8,9 +8,9 @@ import { DeviceService } from './device.service';
 
 @Controller()
 @UseGuards(JwtGuard, RolesGuard)
-@RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.DOCTOR, Role.NURSE)
+@RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.DOCTOR, Role.NURSE, Role.PATIENT)
 export class DeviceController {
-  constructor(private deviceService: DeviceService) {}
+  constructor(private deviceService: DeviceService) { }
 
   public getDeviceService(): DeviceService {
     return this.deviceService;
