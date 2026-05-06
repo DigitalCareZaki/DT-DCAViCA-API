@@ -391,197 +391,204 @@ export class DeviceService {
     organizationId: string,
     role: UserRole,
   ) {
-    const patient = await this.prisma.patient.findFirst({
-      where: {
-        AND: [
-          {
-            user: {
-              id: patientId,
-            },
-          },
-          {
-            user: {
-              organization: {
-                id: organizationId,
-              },
-            },
-          },
-        ],
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!patient) {
-      throw new Error(
-        'Either patient does not exist or is not in your organization',
-      );
-    }
-
-    if (role === 'SUPERADMIN') {
-      return await this.prisma.device.findMany({
+    try {
+      const patient = await this.prisma.patient.findFirst({
         where: {
-          patient_devices: {
-            some: {
-              issued_to: {
-                user_id: patientId,
+          AND: [
+            {
+              user: {
+                id: patientId,
               },
             },
-          },
+            {
+              user: {
+                organization: {
+                  id: organizationId,
+                },
+              },
+            },
+          ],
         },
         select: {
           id: true,
-          title: true,
-          description: true,
-          serial_number: true,
-          uri: true,
-          category: true,
-          created_by: {
-            select: {
-              id: true,
-              first_name: true,
-              middle_name: true,
-              last_name: true,
-              email: true,
-            },
-          },
-          patient_devices: {
-            select: {
-              issued_to: {
-                select: {
-                  user: {
-                    select: {
-                      id: true,
-                      first_name: true,
-                      middle_name: true,
-                      last_name: true,
-                      email: true,
-                    },
-                  },
-                },
-              },
-              issued_by: {
-                select: {
-                  id: true,
-                  first_name: true,
-                  middle_name: true,
-                  last_name: true,
-                  email: true,
-                },
-              },
-              issued_at: true,
-            },
-          },
-          created_at: true,
-          updated_at: true,
-        },
-        orderBy: {
-          created_at: 'desc',
-        },
-      });
-    } else {
-      // For ADMIN, DOCTOR and NURSE
-      const res = await this.prisma.user.findUniqueOrThrow({
-        where: { id: userId },
-        select: {
-          associated_branches: {
-            select: {
-              id: true,
-            },
-          },
         },
       });
 
-      return await this.prisma.device.findMany({
-        where: {
-          patient_devices: {
-            some: {
-              AND: [
-                {
-                  issued_to: {
-                    user_id: patientId,
+      if (!patient) {
+        throw new Error(
+          'Either patient does not exist or is not in your organization',
+        );
+      }
+
+      if (role === 'SUPERADMIN') {
+        return await this.prisma.device.findMany({
+          where: {
+            patient_devices: {
+              some: {
+                issued_to: {
+                  user_id: patientId,
+                },
+              },
+            },
+          },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            serial_number: true,
+            uri: true,
+            category: true,
+            created_by: {
+              select: {
+                id: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+                email: true,
+              },
+            },
+            patient_devices: {
+              select: {
+                issued_to: {
+                  select: {
+                    user: {
+                      select: {
+                        id: true,
+                        first_name: true,
+                        middle_name: true,
+                        last_name: true,
+                        email: true,
+                      },
+                    },
                   },
                 },
-                {
-                  OR: [
-                    {
-                      issued_to: {
-                        user: {
-                          associated_branches: {
-                            some: {
-                              id: res.associated_branches[0]?.id,
+                issued_by: {
+                  select: {
+                    id: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                    email: true,
+                  },
+                },
+                issued_at: true,
+              },
+            },
+            created_at: true,
+            updated_at: true,
+          },
+          orderBy: {
+            created_at: 'desc',
+          },
+        });
+      } else {
+        // For ADMIN, DOCTOR and NURSE
+        const res = await this.prisma.user.findUniqueOrThrow({
+          where: { id: userId },
+          select: {
+            associated_branches: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        });
+
+        return await this.prisma.device.findMany({
+          where: {
+            patient_devices: {
+              some: {
+                AND: [
+                  {
+                    issued_to: {
+                      user_id: patientId,
+                    },
+                  },
+                  {
+                    OR: [
+                      {
+                        issued_to: {
+                          user: {
+                            associated_branches: {
+                              some: {
+                                id: res.associated_branches[0]?.id,
+                              },
                             },
                           },
                         },
                       },
-                    },
-                    {
-                      issued_to: {
-                        user: {
-                          organization: {
-                            id: organizationId,
+                      {
+                        issued_to: {
+                          user: {
+                            organization: {
+                              id: organizationId,
+                            },
                           },
                         },
                       },
-                    },
-                  ],
-                },
-              ],
+                    ],
+                  },
+                ],
+              },
             },
           },
-        },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          serial_number: true,
-          uri: true,
-          category: true,
-          created_by: {
-            select: {
-              id: true,
-              first_name: true,
-              middle_name: true,
-              last_name: true,
-              email: true,
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            serial_number: true,
+            uri: true,
+            category: true,
+            created_by: {
+              select: {
+                id: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+                email: true,
+              },
             },
-          },
-          patient_devices: {
-            select: {
-              issued_to: {
-                select: {
-                  user: {
-                    select: {
-                      id: true,
-                      first_name: true,
-                      middle_name: true,
-                      last_name: true,
-                      email: true,
+            patient_devices: {
+              select: {
+                issued_to: {
+                  select: {
+                    user: {
+                      select: {
+                        id: true,
+                        first_name: true,
+                        middle_name: true,
+                        last_name: true,
+                        email: true,
+                      },
                     },
                   },
                 },
-              },
-              issued_by: {
-                select: {
-                  id: true,
-                  first_name: true,
-                  middle_name: true,
-                  last_name: true,
-                  email: true,
+                issued_by: {
+                  select: {
+                    id: true,
+                    first_name: true,
+                    middle_name: true,
+                    last_name: true,
+                    email: true,
+                  },
                 },
+                issued_at: true,
               },
-              issued_at: true,
             },
+            created_at: true,
+            updated_at: true,
           },
-          created_at: true,
-          updated_at: true,
-        },
-        orderBy: {
-          created_at: 'desc',
-        },
-      });
+          orderBy: {
+            created_at: 'desc',
+          },
+        });
+      }
+
+    } catch (error) {
+      console.error('Error occurred while fetching devices for patient:', error);
+      throw new Error('Failed to fetch devices for patient');
     }
+
   }
 
   public async createDevice(
