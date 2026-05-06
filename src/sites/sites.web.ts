@@ -9,11 +9,14 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { SitesService } from './sites.service';
-import { CreateSiteDto, UpdateSiteDto } from './dto';
-import { JwtGuard, RolesGuard } from 'src/auth/guards';
-import { Role } from 'src/auth/enums/role.enum';
+import type { UserRes } from '@types';
+import { GetUser } from 'src/auth/decorators';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
+import { Role } from 'src/auth/enums/role.enum';
+import { JwtGuard, RolesGuard } from 'src/auth/guards';
+
+import { CreateSiteDto, UpdateSiteDto } from './dto';
+import { SitesService } from './sites.service';
 
 @Controller('web/sites')
 @UseGuards(JwtGuard, RolesGuard)
@@ -22,8 +25,16 @@ export class SitesWebController {
   constructor(private siteService: SitesService) { }
 
   @Get()
-  getAllSites(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.siteService.getAllSites(Number(page) || 1, Number(limit) || 10);
+  getAllSites(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('branchId') branchId?: string,
+  ) {
+    return this.siteService.getAllSites(
+      Number(page) || 1,
+      Number(limit) || 10,
+      branchId,
+    );
   }
 
   @Get(':id')
@@ -32,8 +43,8 @@ export class SitesWebController {
   }
 
   @Post()
-  createSite(@Body() dto: CreateSiteDto) {
-    return this.siteService.createSite(dto);
+  createSite(@Body() dto: CreateSiteDto, @GetUser() user: UserRes) {
+    return this.siteService.createSite(dto, user.id);
   }
 
   @Patch(':id')

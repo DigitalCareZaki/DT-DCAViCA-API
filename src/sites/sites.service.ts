@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma, Site } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateSiteDto, UpdateSiteDto } from './dto';
-import { Site } from '@prisma/client';
 import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
+
+import { CreateSiteDto, UpdateSiteDto } from './dto';
 
 export interface PaginationMeta {
     totalItems: number;
@@ -39,11 +40,16 @@ export class SitesService {
     async getAllSites(
         page: number = 1,
         limit: number = 10,
+        branchId?: string,
     ): Promise<PaginatedResponse<Site>> {
         const skip = (page - 1) * limit;
+        const where: Prisma.SiteWhereInput = branchId?.trim()
+            ? { branchId: branchId.trim() }
+            : {};
+
         const [data, totalItems] = await Promise.all([
-            this.prisma.site.findMany({ skip, take: limit }),
-            this.prisma.site.count(),
+            this.prisma.site.findMany({ skip, take: limit, where }),
+            this.prisma.site.count({ where }),
         ]);
         const totalPages = Math.ceil(totalItems / limit);
         const hasNextPage = page < totalPages;
@@ -70,13 +76,27 @@ export class SitesService {
         return site;
     }
 
-    async createSite(data: CreateSiteDto): Promise<Site> {
+    async createSite(data: CreateSiteDto, userId: string): Promise<Site> {
+        const branch = await this.prisma.branch.findFirst({
+            where: {
+                users: {
+                    some: {
+                        id: userId,
+                    },
+                },
+            },
+            select: {
+                id: true,
+            },
+        });
+
         const site = await this.prisma.site.create({
             data: {
                 name: data.name,
                 description: data.description,
                 countryCode: data.countryCode,
                 address: data.address,
+                branchId: branch?.id ?? null,
             },
         });
 
