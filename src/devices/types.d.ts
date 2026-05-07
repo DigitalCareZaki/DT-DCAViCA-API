@@ -54,7 +54,7 @@ export interface VivalinkDeviceSyncResult {
  */
 export interface AddDeviceResult {
   success: boolean;
-  deviceId: string;
+  deviceId: string | null;
   cardiacMonitoring: import('@prisma/client').VivalinkSyncStatus;
   vivalinkSync: VivalinkDeviceSyncResult;
 }
