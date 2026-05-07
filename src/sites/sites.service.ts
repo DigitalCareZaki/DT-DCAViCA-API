@@ -48,7 +48,12 @@ export class SitesService {
             : {};
 
         const [data, totalItems] = await Promise.all([
-            this.prisma.site.findMany({ skip, take: limit, where }),
+            this.prisma.site.findMany({
+                skip,
+                take: limit,
+                where,
+                include: { branch: true },
+            }),
             this.prisma.site.count({ where }),
         ]);
         const totalPages = Math.ceil(totalItems / limit);
