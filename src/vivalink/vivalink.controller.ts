@@ -18,7 +18,7 @@ import { UserRes } from '@types';
 
 @Controller('vl')
 @UseGuards(JwtGuard, RolesGuard)
-@RequirePermission(Role.DOCTOR)
+@RequirePermission(Role.DOCTOR, Role.PATIENT)
 export class VivalinkController {
   constructor(private readonly vivalinkService: VivalinkService) { }
 
