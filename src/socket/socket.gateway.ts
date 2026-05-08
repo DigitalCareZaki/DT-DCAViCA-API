@@ -163,7 +163,7 @@ export class SocketGateway
 
     try {
       const notification = await this.notificationService.createNotification(payload);
-      this.server.emit(`${notification.reciever_id}:recieve_notification`, notification);
+      this.emitRealtimeNotification(notification.reciever_id, notification);
 
       // Also nudge inbox to refresh for realtime email/messages
       this.server.emit(`${notification.reciever_id}:inbox_update`, {
@@ -173,6 +173,10 @@ export class SocketGateway
     } catch (error) {
       console.error('Error sending notification: ', error);
     }
+  }
+
+  public emitRealtimeNotification(recieverId: string, notification: any): void {
+    this.server.emit(`${recieverId}:recieve_notification`, notification);
   }
 
   private emitTotalParticipants(participants: any, appointment_id: string) {

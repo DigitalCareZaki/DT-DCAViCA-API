@@ -6,6 +6,7 @@ import { SendgridService } from 'src/sendGrid/sendgrid.service';
 import { TwilioService } from 'src/twilio/twilio.service';
 import { SENDGRID_TEMPLATES } from 'src/constant';
 import { SendMailPayload } from '@types';
+import { SocketGateway } from 'src/socket/socket.gateway';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
@@ -31,7 +32,12 @@ export class FirebaseService implements OnModuleInit {
         }
     }
 
-    constructor(private readonly prisma: PrismaService, private mail: SendgridService, private sms: TwilioService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private mail: SendgridService,
+        private sms: TwilioService,
+        private socketGateway: SocketGateway,
+    ) { }
 
     @Cron('* * * * *', {
         name: 'MedicationReminders',
@@ -124,15 +130,34 @@ export class FirebaseService implements OnModuleInit {
     public async sendNotification(sender: string, receiver: string, title: string, body: string) {
         console.log('Sending notification:', { sender, receiver, title, body });
         try {
-            await this.prisma.notification.create({
+            const notification = await this.prisma.notification.create({
                 data: {
                     sender_id: sender,
                     reciever_id: receiver,
                     title,
                     description: body,
                 },
+                select: {
+                    id: true,
+                    sender: {
+                        select: {
+                            first_name: true,
+                            last_name: true,
+                            middle_name: true,
+                            uri: true,
+                            email: true,
+                            role: true,
+                        },
+                    },
+                    title: true,
+                    description: true,
+                    sender_id: true,
+                    reciever_id: true,
+                    created_at: true,
+                },
             });
             console.log('Notification saved to database');
+            this.socketGateway.emitRealtimeNotification(receiver, notification);
 
             const user = await this.prisma.user.findUnique({
                 where: {
@@ -145,7 +170,7 @@ export class FirebaseService implements OnModuleInit {
             console.log(user, 'Fetched user for notification');
             if (!user || !user.device_token) {
                 console.log('User not found or device token not found');
-                return;
+                return notification;
             }
             console.log(user, 'User found!');
             const token = user.device_token;
@@ -161,7 +186,7 @@ export class FirebaseService implements OnModuleInit {
             console.log(message, '=============>message')
             const response = await this.firebaseApp.messaging().send(message);
             console.log('Notification sent:', response);
-            return response;
+            return notification;
         } catch (error) {
             console.error('Error sending notification:', error);
             throw error;
