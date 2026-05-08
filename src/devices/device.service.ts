@@ -1748,16 +1748,17 @@ export class DeviceService {
 
                 },
             });
+            console.log(patient, '=======>>Patient')
             if (!patient) {
                 throw new Error('Patient not found');
             }
-            console.log(patient.patient, '=======>>Patient')
+            console.log(patient.patient, '=======>>2nd Patient')
             const patientvlId = patient.patient.vivalinkId;
             if (!patientvlId) {
                 throw new Error('Patient does not have a Vivalink ID');
             }
             const vlDevice = await this.getAllDeviceHistoryVl();
-            // console.log(vlDevice, '=======>>vlDevice')
+
             const dt = vlDevice.data
                 .filter(
                     (x) =>
@@ -1770,10 +1771,17 @@ export class DeviceService {
                     createdAt: x.createdAt,
                     updatedAt: x.updatedAt,
                 }));
-
+            console.log(dt, '========>>Device history after filtering')
+            if (!dt || dt.length === 0) {
+                throw new Error('Device history not found for the given device.');
+            }
             const res = this.getDeviceUsageDuration(dt);
             return res;
         } catch (err) {
+            if (err instanceof Error) {
+                throw new AppError(err.message, 500);
+            }
+
             throw new AppError('Failed to fetch device history', 500);
         }
     }
