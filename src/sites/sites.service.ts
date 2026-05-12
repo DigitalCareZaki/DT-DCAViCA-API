@@ -81,19 +81,34 @@ export class SitesService {
         return site;
     }
 
-    async createSite(data: CreateSiteDto, userId: string): Promise<Site> {
-        const branch = await this.prisma.branch.findFirst({
-            where: {
-                users: {
-                    some: {
-                        id: userId,
+    async createSite(
+        data: CreateSiteDto,
+        userId: string,
+        role: string,
+    ): Promise<Site> {
+
+        let branchId: string | null = null;
+
+        // Super admin can pass any branchId
+        if (role === 'SUPERADMIN' && data.branchId) {
+            branchId = data.branchId;
+        } else {
+            // Other users will use their own branch
+            const branch = await this.prisma.branch.findFirst({
+                where: {
+                    users: {
+                        some: {
+                            id: userId,
+                        },
                     },
                 },
-            },
-            select: {
-                id: true,
-            },
-        });
+                select: {
+                    id: true,
+                },
+            });
+
+            branchId = branch?.id ?? null;
+        }
 
         const site = await this.prisma.site.create({
             data: {
@@ -101,15 +116,18 @@ export class SitesService {
                 description: data.description,
                 countryCode: data.countryCode,
                 address: data.address,
-                branchId: branch?.id ?? null,
+                branchId,
             },
         });
 
         const siteVlRes = await this.createSiteVl(data);
-        console.log("Response from sitevlcreate", siteVlRes)
+        console.log('Response from sitevlcreate', siteVlRes);
 
         const vlSites = await this.getAllSitesVl();
-        const vlSite = vlSites?.data?.find((s: any) => s.name === data.name);
+
+        const vlSite = vlSites?.data?.find(
+            (s: any) => s.name === data.name,
+        );
 
         if (vlSite?._id) {
             return this.prisma.site.update({

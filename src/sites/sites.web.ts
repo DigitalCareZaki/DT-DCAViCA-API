@@ -44,7 +44,7 @@ export class SitesWebController {
 
   @Post()
   createSite(@Body() dto: CreateSiteDto, @GetUser() user: UserRes) {
-    return this.siteService.createSite(dto, user.id);
+    return this.siteService.createSite(dto, user.id, user.role);
   }
 
   @Patch(':id')
