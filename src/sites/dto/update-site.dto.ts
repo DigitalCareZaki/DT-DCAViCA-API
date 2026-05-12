@@ -16,4 +16,8 @@ export class UpdateSiteDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @IsOptional()
+  @IsString()
+  branchId?: string;
 }
