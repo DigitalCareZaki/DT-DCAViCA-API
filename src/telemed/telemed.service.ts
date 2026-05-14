@@ -1875,7 +1875,7 @@ export class TelemedService {
         },
       },
     });
-
+    console.log('appointment: >>>>>>>>', appointment);
     if (appointment?.id) {
 
       // update appointment status
@@ -1893,7 +1893,8 @@ export class TelemedService {
 
       // send sms to patient
       for (const participant of appointment.participants) {
-        if (participant.user.role === "PATIENT") {
+        console.log('participant: >>>>>>>>', participant);
+        if (participant.user.role === "PATIENT" || participant.user.role === "NURSE") {
 
           const message = `Your appointment scheduled on ${formattedDate} has been ${data.status.toLowerCase()}.`;
 
@@ -1916,9 +1917,10 @@ export class TelemedService {
         }
         const doctor = appointment.participants.find(p => p.user.role === 'DOCTOR')?.user;
         const patient = appointment.participants.find(p => p.user.role === 'PATIENT')?.user;
+        const nurse = appointment.participants.find(p => p.user.role === 'NURSE')?.user;
         await this.prisma.sms.create({
           data: {
-            receiver_id: patient.id,
+            receiver_id: participant.user.role === 'PATIENT' ? patient.id : nurse?.id,
             sender_id: doctor.id,
             to: doctor.phone_number,
             body: "Appointment status update",

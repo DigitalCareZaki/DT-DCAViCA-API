@@ -352,13 +352,13 @@ export class ChatService {
     user: UserRes,
     branchId?: string,
   ): Promise<SearchUsersProps[]> {
-
+    console.log('searchRooms called with search:', search, 'user:', user, 'branchId:', branchId);
     if (!search?.trim()) return [];
 
     search = search.trim();
 
     const allowedUserIds = await this.getAllowedChatUserIds(user, branchId);
-
+    console.log('allowedUserIds>>>>', allowedUserIds);
     const branchCondition =
       user.role === Role.SUPERADMIN
         ? {}
@@ -509,7 +509,7 @@ export class ChatService {
           },
           select: { user_id: true },
         });
-
+        console.log(doctors, "doctors assigned to patient")
         // Branch nurses
         const nurses = await this.prisma.nurse.findMany({
           where: {
