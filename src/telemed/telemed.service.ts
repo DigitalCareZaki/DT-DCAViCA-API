@@ -1918,9 +1918,11 @@ export class TelemedService {
         const doctor = appointment.participants.find(p => p.user.role === 'DOCTOR')?.user;
         const patient = appointment.participants.find(p => p.user.role === 'PATIENT')?.user;
         const nurse = appointment.participants.find(p => p.user.role === 'NURSE')?.user;
+
+        console.log('participants: >>>>>>>>', participant, participant.user.role);
         await this.prisma.sms.create({
           data: {
-            receiver_id: participant.user.role === 'PATIENT' ? patient.id : nurse?.id,
+            receiver_id: appointment.participants.find(p => p.user.role === 'PATIENT')?.user.id || nurse?.id,
             sender_id: doctor.id,
             to: doctor.phone_number,
             body: "Appointment status update",
