@@ -44,3 +44,20 @@ export type OrganizationUsers = {
   nurse?: any;
   active?: boolean;
 };
+
+export type OrganizationUniqueCheckField = {
+  checked: boolean;
+  exists: boolean;
+  message: string | null;
+};
+
+export type OrganizationUniqueCheckResult = {
+  available: boolean;
+  fields: {
+    email: OrganizationUniqueCheckField;
+    phone_number: OrganizationUniqueCheckField;
+    username: OrganizationUniqueCheckField;
+    npi_number: OrganizationUniqueCheckField;
+    pmdc_number: OrganizationUniqueCheckField;
+  };
+};

@@ -161,19 +161,3 @@ export type AddDoctorResult = {
   avicardiaMonitoring: string;
   vivalinkSync: VivalinkSyncResult;
 };
-
-export type DoctorUniqueCheckField = {
-  checked: boolean;
-  exists: boolean;
-  message: string | null;
-};
-
-export type DoctorUniqueCheckResult = {
-  available: boolean;
-  fields: {
-    email: DoctorUniqueCheckField;
-    phone_number: DoctorUniqueCheckField;
-    npi_number: DoctorUniqueCheckField;
-    pmdc_number: DoctorUniqueCheckField;
-  };
-};

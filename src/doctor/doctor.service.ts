@@ -16,7 +16,7 @@ import { HelpersService } from 'src/helpers/helpers.service';
 import { AppError } from 'src/errors';
 
 import { DoctorProfileUpdateDto } from './dto';
-import { AddDoctoreDTO, CheckDoctorUniqueDTO } from 'src/organization/dto';
+import { AddDoctoreDTO } from 'src/organization/dto';
 import { ContactDTO } from 'src/common/dto';
 
 import type {
@@ -33,8 +33,6 @@ import type {
   DoctorStats,
   AddDoctorResult,
   VivalinkSyncResult,
-  DoctorUniqueCheckResult,
-  DoctorUniqueCheckField,
 } from './types';
 import type { JsonRes } from '@types';
 import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
@@ -826,93 +824,6 @@ export class DoctorService {
       doctorId: user.doctor?.id ?? user.id,
       avicardiaMonitoring: avicardiaMonitoring,
       vivalinkSync: vivalinkResult,
-    };
-  }
-
-  public async checkDoctorUniqueFields(
-    data: CheckDoctorUniqueDTO,
-  ): Promise<DoctorUniqueCheckResult> {
-    const email = this.normalizeUniqueCheckValue(data.email);
-    const phoneNumber = this.normalizeUniqueCheckValue(data.phone_number);
-    const npiNumber = this.normalizeUniqueCheckValue(data.npi_number);
-    const pmdcNumber = this.normalizeUniqueCheckValue(data.pmdc_number);
-
-    if (!email && !phoneNumber && !npiNumber && !pmdcNumber) {
-      throw new BadRequestException(
-        'At least one field is required to check uniqueness',
-      );
-    }
-
-    const [emailUser, phoneUser, npiDoctor, pmdcDoctor] = await Promise.all([
-      email
-        ? this.prisma.user.findUnique({
-            where: { email },
-            select: { id: true },
-          })
-        : null,
-      phoneNumber
-        ? this.prisma.user.findUnique({
-            where: { phone_number: phoneNumber },
-            select: { id: true },
-          })
-        : null,
-      npiNumber
-        ? this.prisma.doctor.findUnique({
-            where: { npi_number: npiNumber },
-            select: { id: true },
-          })
-        : null,
-      pmdcNumber
-        ? this.prisma.doctor.findUnique({
-            where: { pmdc_number: pmdcNumber },
-            select: { id: true },
-          })
-        : null,
-    ]);
-
-    const fields = {
-      email: this.getUniqueCheckField(
-        Boolean(email),
-        Boolean(emailUser),
-        'Email',
-      ),
-      phone_number: this.getUniqueCheckField(
-        Boolean(phoneNumber),
-        Boolean(phoneUser),
-        'Phone number',
-      ),
-      npi_number: this.getUniqueCheckField(
-        Boolean(npiNumber),
-        Boolean(npiDoctor),
-        'NPI number',
-      ),
-      pmdc_number: this.getUniqueCheckField(
-        Boolean(pmdcNumber),
-        Boolean(pmdcDoctor),
-        'PMDC number',
-      ),
-    };
-
-    return {
-      available: !Object.values(fields).some((field) => field.exists),
-      fields,
-    };
-  }
-
-  private normalizeUniqueCheckValue(value?: string): string | undefined {
-    const trimmedValue = value?.trim();
-    return trimmedValue ? trimmedValue : undefined;
-  }
-
-  private getUniqueCheckField(
-    checked: boolean,
-    exists: boolean,
-    label: string,
-  ): DoctorUniqueCheckField {
-    return {
-      checked,
-      exists,
-      message: exists ? `${label} already exists` : null,
     };
   }
 

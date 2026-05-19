@@ -1,12 +1,15 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 import type {
   CurrentOrganization,
   OrganizationUsers,
+  OrganizationUniqueCheckField,
+  OrganizationUniqueCheckResult,
   SelectOrganizationBranchesProps,
   SelectOrganizationDepartmentProps,
 } from './types';
+import { CheckOrganizationUserUniqueDTO } from './dto/checkOrganizationUserUnique.dto';
 import AppError from '../errors/AppError';
 import { SendMailPayload, UserRes, UserRole } from '@types';
 import { allowedQueryRoles, SENDGRID_TEMPLATES } from 'src/constant';
@@ -39,6 +42,126 @@ export class OrganizationService {
         active: true,
       },
     });
+  }
+
+  public async checkUniqueFields(
+    data: CheckOrganizationUserUniqueDTO,
+  ): Promise<OrganizationUniqueCheckResult> {
+    const email = this.normalizeUniqueCheckValue(data.email);
+    const phoneNumber = this.normalizeUniqueCheckValue(data.phone_number);
+    const username = this.normalizeUniqueCheckValue(data.username);
+    const npiNumber = this.normalizeUniqueCheckValue(data.npi_number);
+    const pmdcNumber = this.normalizeUniqueCheckValue(data.pmdc_number);
+    const role = data.role;
+
+    if (!email && !phoneNumber && !username && !npiNumber && !pmdcNumber) {
+      throw new BadRequestException(
+        'At least one field is required to check uniqueness',
+      );
+    }
+
+    const shouldCheckDoctorNpi =
+      Boolean(npiNumber) && (!role || role === Role.DOCTOR);
+    const shouldCheckNurseNpi =
+      Boolean(npiNumber) && (!role || role === Role.NURSE);
+    const shouldCheckPmdcNumber =
+      Boolean(pmdcNumber) && (!role || role === Role.DOCTOR);
+
+    const [
+      emailUser,
+      phoneUser,
+      usernameUser,
+      doctorNpi,
+      nurseNpi,
+      doctorPmdc,
+    ] = await Promise.all([
+      email
+        ? this.prisma.user.findUnique({
+            where: { email },
+            select: { id: true },
+          })
+        : null,
+      phoneNumber
+        ? this.prisma.user.findUnique({
+            where: { phone_number: phoneNumber },
+            select: { id: true },
+          })
+        : null,
+      username
+        ? this.prisma.user.findUnique({
+            where: { username },
+            select: { id: true },
+          })
+        : null,
+      shouldCheckDoctorNpi
+        ? this.prisma.doctor.findUnique({
+            where: { npi_number: npiNumber },
+            select: { id: true },
+          })
+        : null,
+      shouldCheckNurseNpi
+        ? this.prisma.nurse.findUnique({
+            where: { npi_number: npiNumber },
+            select: { id: true },
+          })
+        : null,
+      shouldCheckPmdcNumber
+        ? this.prisma.doctor.findUnique({
+            where: { pmdc_number: pmdcNumber },
+            select: { id: true },
+          })
+        : null,
+    ]);
+
+    const fields = {
+      email: this.getUniqueCheckField(
+        Boolean(email),
+        Boolean(emailUser),
+        'Email',
+      ),
+      phone_number: this.getUniqueCheckField(
+        Boolean(phoneNumber),
+        Boolean(phoneUser),
+        'Phone number',
+      ),
+      username: this.getUniqueCheckField(
+        Boolean(username),
+        Boolean(usernameUser),
+        'Username',
+      ),
+      npi_number: this.getUniqueCheckField(
+        shouldCheckDoctorNpi || shouldCheckNurseNpi,
+        Boolean(doctorNpi || nurseNpi),
+        'NPI number',
+      ),
+      pmdc_number: this.getUniqueCheckField(
+        shouldCheckPmdcNumber,
+        Boolean(doctorPmdc),
+        'PMDC number',
+      ),
+    };
+
+    return {
+      available: !Object.values(fields).some((field) => field.exists),
+      fields,
+    };
+  }
+
+  private normalizeUniqueCheckValue(value?: string): string | undefined {
+    const trimmedValue = value?.trim();
+    return trimmedValue ? trimmedValue : undefined;
+  }
+
+  private getUniqueCheckField(
+    checked: boolean,
+    exists: boolean,
+    label: string,
+  ): OrganizationUniqueCheckField {
+    return {
+      checked,
+      exists,
+      message: exists ? `${label} already exists` : null,
+    };
   }
 
   public async getOrganizationPatients(userId: string) {
@@ -455,8 +578,6 @@ export class OrganizationService {
         active: true,
       },
     });
-
-
   }
 
   // public async getOrganizationUsers(user: UserRes,
@@ -483,7 +604,6 @@ export class OrganizationService {
   //   });
 
   // }
-
 
   public async getOrganizationUsers(
     user: UserRes,
@@ -571,7 +691,6 @@ export class OrganizationService {
             city: true,
           },
         },
-
 
         associated_branches: {
           select: {
@@ -764,7 +883,6 @@ export class OrganizationService {
 
     const whereCondition: any = isSuperAdmin
       ? {
-
         role: 'DOCTOR',
 
       }
@@ -824,12 +942,10 @@ export class OrganizationService {
 
   public async getOrganizationNurses(targetId: string, role: string) {
     try {
-
       const isSuperAdmin = role === Role.SUPERADMIN;
 
       const whereCondition: any = isSuperAdmin
         ? {
-
           role: 'NURSE',
 
         }
@@ -861,8 +977,6 @@ export class OrganizationService {
       throw error;
     }
   }
-
-
 
   public async getOrganizationDepartments(
     branchId: string,
@@ -1001,8 +1115,6 @@ export class OrganizationService {
       ? { organization_id: targetId }
       : { branchId: targetId };
 
-
-
     const [medicines, totalItems] = await this.prisma.$transaction([
       this.prisma.organizationMedication.findMany({
         skip,
@@ -1037,14 +1149,11 @@ export class OrganizationService {
             },
           },
           created_at: true,
-
         },
 
         orderBy: {
           created_at: 'desc',
         },
-
-
       }),
       this.prisma.organizationMedication.count({
         where: whereCondition,

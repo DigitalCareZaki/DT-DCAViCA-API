@@ -11,6 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Role as PrismaRole } from '@prisma/client';
 import { OrganizationController } from './organization.controller';
 import { OrganizationService } from './organization.service';
 import { GetUser } from 'src/auth/decorators';
@@ -30,12 +31,10 @@ import {
   AddPatientDTO,
   AddNurseDTO,
   AddDoctoreDTO,
-  CheckDoctorUniqueDTO,
+  CheckOrganizationUserUniqueDTO,
 } from './dto';
-import type {
-  AddDoctorResult,
-  DoctorUniqueCheckResult,
-} from 'src/doctor/types';
+import type { AddDoctorResult } from 'src/doctor/types';
+import type { OrganizationUniqueCheckResult } from './types';
 import { UserRes, UserRole } from '../types/user';
 import { NurseService } from 'src/nurse/nurse.service';
 import { DoctorService } from 'src/doctor/doctor.service';
@@ -255,9 +254,22 @@ export class OrganizationWebController extends OrganizationController {
   @UseGuards(RolesGuard)
   @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER)
   public async checkDoctorUniqueFields(
-    @Query() data: CheckDoctorUniqueDTO,
-  ): Promise<DoctorUniqueCheckResult> {
-    return this.getDoctorService().checkDoctorUniqueFields(data);
+    @Query() data: CheckOrganizationUserUniqueDTO,
+  ): Promise<OrganizationUniqueCheckResult> {
+    return this.getOrganizationService().checkUniqueFields({
+      ...data,
+      role: PrismaRole.DOCTOR,
+    });
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/user/check-unique')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER)
+  public async checkUserUniqueFields(
+    @Query() data: CheckOrganizationUserUniqueDTO,
+  ): Promise<OrganizationUniqueCheckResult> {
+    return this.getOrganizationService().checkUniqueFields(data);
   }
 
   @HttpCode(HttpStatus.OK)
