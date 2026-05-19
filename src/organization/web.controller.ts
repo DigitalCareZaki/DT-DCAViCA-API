@@ -26,8 +26,16 @@ import type {
 import { LocationService } from 'src/location/location.service';
 import { CitiesProps, CountriesProps } from 'src/location/types';
 import { PatientService } from 'src/patient/patient.service';
-import { AddPatientDTO, AddNurseDTO, AddDoctoreDTO } from './dto';
-import type { AddDoctorResult } from 'src/doctor/types';
+import {
+  AddPatientDTO,
+  AddNurseDTO,
+  AddDoctoreDTO,
+  CheckDoctorUniqueDTO,
+} from './dto';
+import type {
+  AddDoctorResult,
+  DoctorUniqueCheckResult,
+} from 'src/doctor/types';
 import { UserRes, UserRole } from '../types/user';
 import { NurseService } from 'src/nurse/nurse.service';
 import { DoctorService } from 'src/doctor/doctor.service';
@@ -240,6 +248,16 @@ export class OrganizationWebController extends OrganizationController {
     });
 
     return res;
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/doctor/check-unique')
+  @UseGuards(RolesGuard)
+  @RequirePermission(Role.SUPERADMIN, Role.ADMIN, Role.MASTER)
+  public async checkDoctorUniqueFields(
+    @Query() data: CheckDoctorUniqueDTO,
+  ): Promise<DoctorUniqueCheckResult> {
+    return this.getDoctorService().checkDoctorUniqueFields(data);
   }
 
   @HttpCode(HttpStatus.OK)
