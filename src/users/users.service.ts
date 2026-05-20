@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Role, User } from '@prisma/client';
 import { AdminService } from 'src/admin/admin.service';
+import AppError from 'src/errors/AppError';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -245,4 +246,78 @@ export class UsersService {
             message: "Username is available.",
         };
     }
+    // async getUsersWithMatchedDevices(username: string) {
+    //     try {
+
+    //         const vl = {
+    //             "Patientdigitalcare2": [
+    //                 "ECGRec_202503/E115065",
+    //                 "ECGRec_202503/E114896"
+    //             ],
+    //             "Patientdigitalcare": [
+    //                 "ECGRec_202503/E115065",
+    //                 "ECGRec_202430/E115618",
+    //                 "ECGRec_202430/E115608"
+    //             ],
+    //             "Ammadali": [
+    //                 "ECGRec_202430/E115576"
+    //             ]
+    //         };
+
+    //         const usernames = Object.keys(vl);
+
+    //         const users = await this.prisma.user.findMany({
+    //             where: {
+    //                 role: Role.PATIENT,
+    //                 username: {
+    //                     in: usernames,
+    //                 },
+    //             },
+    //             select: {
+    //                 username: true,
+    //                 patient: {
+    //                     select: {
+    //                         devices: {
+    //                             select: {
+    //                                 device: {
+    //                                     select: {
+    //                                         serial_number: true,
+    //                                     },
+    //                                 },
+    //                             },
+    //                         },
+    //                     },
+    //                 },
+    //             },
+    //         });
+
+    //         const result = {};
+
+    //         users.forEach((user) => {
+
+    //             // Assigned device serial numbers from DB
+    //             const assignedDevices =
+    //                 user.patient?.devices.map(
+    //                     (d) => d.device.serial_number
+    //                 ) || [];
+
+    //             // Devices from vl object
+    //             const vlDevices = vl[user.username] || [];
+
+    //             // Match devices
+    //             const matchedDevices = vlDevices.filter(
+    //                 (device) => assignedDevices.includes(device)
+    //             );
+
+    //             // Dynamic object key
+    //             result[user.username] = matchedDevices;
+    //         });
+
+    //         return result;
+
+    //     } catch (err) {
+    //         console.log(err, 'error =========>>>');
+    //         throw new AppError('Error fetching users', 500);
+    //     }
+    // }
 }

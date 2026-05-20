@@ -20,13 +20,18 @@ import { UserRes } from '@types';
 @UseGuards(JwtGuard, RolesGuard)
 @RequirePermission(Role.DOCTOR, Role.PATIENT)
 export class VivalinkController {
-  constructor(private readonly vivalinkService: VivalinkService) { }
+  constructor(private readonly vivalinkService: VivalinkService) {
+    console.log(
+      'VivalinkService initialized',
+    );
+  }
 
   @HttpCode(HttpStatus.OK)
   @Get('patients')
   public async getPatients(
     @GetUser() user: UserRes,
   ): Promise<VLAllPatients> {
+
     return await this.vivalinkService.getPatients(user);
   }
   @HttpCode(HttpStatus.OK)

@@ -4,11 +4,17 @@ import { AppError } from '../errors';
 
 @Controller('web/users')
 export class UsersWebController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get('check-username/:username')
   public async checkUsername(@Param('username') username: string) {
     if (!username) throw new AppError('Username is required', 400);
     return this.usersService.checkUsername(username);
   }
+  // @Get('user/:username')
+  // public async getUserByUsername(
+  //   @Param('username') username: string) {
+  //   if (!username) throw new AppError('Username is required', 400);
+  //   return this.usersService.getUsersWithMatchedDevices(username);
+  // }
 }
