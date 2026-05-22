@@ -27,6 +27,15 @@ export class VivalinkController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @Get('vlpatients/:doctorId')   // doctorID mean doctor's user id, this method is userd for patient app avicardia
+  public async getVlPatients(
+
+    @Param('doctorId') doctorId: string,
+  ): Promise<VLAllPatients> {
+
+    return await this.vivalinkService.getVlPatients(doctorId);
+  }
+  @HttpCode(HttpStatus.OK)
   @Get('patients')
   public async getPatients(
     @GetUser() user: UserRes,
