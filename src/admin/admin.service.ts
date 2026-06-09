@@ -394,19 +394,31 @@ export class AdminService {
       },
     });
 
-    const appointments = this.prisma.appointment.count({
+    const appointments = await this.prisma.appointment.count({
       where: {
         organizer: {
-          organization: {
-            branches: {
-              some: {
-                id: branchId,
-              },
+          associated_branches: {
+            some: {
+              id: branchId,
             },
           },
         },
       },
     });
+
+    // const appointments = this.prisma.appointment.count({
+    //   where: {
+    //     organizer: {
+    //       organization: {
+    //         branches: {
+    //           some: {
+    //             id: branchId,
+    //           },
+    //         },
+    //       },
+    //     },
+    //   },
+    // });
 
     const medications = this.prisma.medication.count({
       where: {
