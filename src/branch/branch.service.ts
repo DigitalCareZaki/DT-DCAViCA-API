@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 
-import type { GetBranchesProsp } from './types';
+import type { GetBranchDetailsProps, GetBranchesProsp } from './types';
 import { AddBranchDTO } from './dto/addBranch.dto';
 
 @Injectable()
@@ -100,5 +100,51 @@ export class BranchService {
     });
 
     return true;
+  }
+
+  public async getBranchDetails(
+    organizationId: string,
+    branchId: string,
+  ): Promise<GetBranchDetailsProps> {
+    const branch = await this.prisma.branch.findFirst({
+      where: {
+        id: branchId,
+        organization_id: organizationId,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone_number: true,
+        organization_id: true,
+        location: {
+          select: {
+            id: true,
+            address: true,
+            city: {
+              select: {
+                id: true,
+                name: true,
+                country: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        created_by: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    if (!branch) {
+      throw new NotFoundException('Branch not found');
+    }
+
+    return branch;
   }
 }

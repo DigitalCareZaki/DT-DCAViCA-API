@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Patch,
   Post,
   Query,
@@ -15,7 +16,7 @@ import { GetUser } from 'src/auth/decorators';
 import type { StatsProps } from './types';
 import type { UserRes } from '@types';
 import { BranchService } from 'src/branch/branch.service';
-import { GetBranchesProsp } from 'src/branch/types';
+import { GetBranchDetailsProps, GetBranchesProsp } from 'src/branch/types';
 import { AddBranchDTO } from 'src/branch/dto/addBranch.dto';
 import { LocationService } from 'src/location/location.service';
 import { DoctorProfileUpdateDto } from 'src/doctor/dto';
@@ -51,6 +52,19 @@ export class SuperAdminWebController extends SuperadminController {
     );
 
     return this.getBranchService().getBranches(organizationId, search);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/branches/:branchId')
+  public async getBranchDetails(
+    @GetUser() user: UserRes,
+    @Param('branchId') branchId: string,
+  ): Promise<GetBranchDetailsProps> {
+    const organizationId = await this.getSuperAdminService().getOrganizationId(
+      user.id,
+    );
+
+    return this.getBranchService().getBranchDetails(organizationId, branchId);
   }
 
   @HttpCode(HttpStatus.CREATED)
