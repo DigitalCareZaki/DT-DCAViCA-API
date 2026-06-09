@@ -394,7 +394,7 @@ export class AdminService {
       },
     });
 
-    const appointments = await this.prisma.appointment.count({
+    const appointments = this.prisma.appointment.count({
       where: {
         organizer: {
           associated_branches: {
