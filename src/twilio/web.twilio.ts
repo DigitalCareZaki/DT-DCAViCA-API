@@ -25,9 +25,9 @@ export class TwilioWebController extends TwilioController {
   @UseGuards(JwtGuard)
   @Get('/')
   public async getAllSms(@GetUser() user: UserRes, @Query('page') page = 1, @Query('limit') limit = 10) {
-
+    console.log(user, '========>>> user in getAllSms')
     const branch = await this.adminService.getBranchId(user.id);
-
+    console.log(branch, '========>>> branch in getAllSms')
     return this.getTwilioService().getAllSms(branch.id, +page, +limit);
   }
 
