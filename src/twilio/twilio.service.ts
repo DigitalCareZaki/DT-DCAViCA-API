@@ -69,11 +69,35 @@ export class TwilioService {
     }
   }
 
-  public async getAllSms(page: number, limit: number): Promise<any> {
+  public async getAllSms(branchId: string, page: number, limit: number): Promise<any> {
     // for admin only
+    console.log('Fetching SMS for branchId:', branchId, 'page:', page, 'limit:', limit);
     const skip = (page - 1) * limit;
+    const where = {
+      OR: [
+        {
+          sender: {
+            associated_branches: {
+              some: {
+                id: branchId,
+              },
+            },
+          },
+        },
+        {
+          receiver: {
+            associated_branches: {
+              some: {
+                id: branchId,
+              },
+            },
+          },
+        },
+      ],
+    };
     const [messages, totalItems] = await this.prisma.$transaction([
       this.prisma.sms.findMany({
+        where,
         skip,
         take: limit,
         orderBy: {

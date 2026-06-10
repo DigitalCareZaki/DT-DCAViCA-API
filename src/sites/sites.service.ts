@@ -75,10 +75,24 @@ export class SitesService {
         };
     }
 
-    async getSiteById(id: string): Promise<Site> {
-        const site = await this.prisma.site.findUnique({ where: { id } });
-        if (!site) throw new NotFoundException('Site not found');
-        return site;
+    // async getSiteById(id: string): Promise<Site> {
+    //     const site = await this.prisma.site.findUnique({ where: { id } });
+    //     if (!site) throw new NotFoundException('Site not found');
+    //     return site;
+    // }
+
+    async getSiteById(branchId: string): Promise<Site[]> {
+        const sites = await this.prisma.site.findMany({
+            where: {
+                branchId,
+            },
+        });
+
+        if (!sites.length) {
+            throw new NotFoundException('No sites found for this branch');
+        }
+
+        return sites;
     }
 
     async createSite(
