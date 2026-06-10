@@ -20,7 +20,7 @@ import {
 export class MeasurementDTO {
   @IsNotEmpty()
   @IsString()
-  @MaxLength(20)
+
   title: string;
 
   @IsNotEmpty()
