@@ -1438,22 +1438,22 @@ export class DoctorService {
   }
 
   async getSiteId(userId: string) {
-    const doctor = await this.prisma.doctor.findFirst({
+    const doctor = await this.prisma.user.findFirst({
       where: {
-        user_id: userId,
+        id: userId,
       },
       select: {
-        site_id: true,
+        associated_branches: true,
       },
     });
 
-    if (!doctor || !doctor.site_id) {
+    if (!doctor || !doctor.associated_branches || doctor.associated_branches.length === 0) {
       throw new NotFoundException('Site not found for the given doctor');
     }
-
-    const site = await this.prisma.site.findUnique({
+    console.log(doctor.associated_branches, 'associated_branches in getSiteId');
+    const site = await this.prisma.site.findMany({
       where: {
-        id: doctor.site_id,
+        branchId: doctor.associated_branches[0].id,
       },
       select: {
         id: true,
@@ -1465,12 +1465,46 @@ export class DoctorService {
       },
     });
 
-    if (!site) {
+    if (!site || site.length === 0) {
       throw new NotFoundException('Site details not found');
     }
 
     return site;
   }
+  // async getSiteId(userId: string) {
+  //   const doctor = await this.prisma.doctor.findFirst({
+  //     where: {
+  //       user_id: userId,
+  //     },
+  //     select: {
+  //       site_id: true,
+  //     },
+  //   });
+
+  //   if (!doctor || !doctor.site_id) {
+  //     throw new NotFoundException('Site not found for the given doctor');
+  //   }
+
+  //   const site = await this.prisma.site.findUnique({
+  //     where: {
+  //       id: doctor.site_id,
+  //     },
+  //     select: {
+  //       id: true,
+  //       name: true,
+  //       description: true,
+  //       address: true,
+  //       countryCode: true,
+  //       vivalinkSiteId: true,
+  //     },
+  //   });
+
+  //   if (!site) {
+  //     throw new NotFoundException('Site details not found');
+  //   }
+
+  //   return site;
+  // }
 
   private async addDoctorToVlWebPortal(data: VivaLinkSyncDoctorDto) {
     const url = `${this.vlWebportalUrl}/users`;

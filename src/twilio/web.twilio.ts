@@ -1,13 +1,17 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { TwilioController } from './twilio.controller';
 import { TwilioService } from './twilio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { userSelectFields } from 'src/constant';
 import { query } from 'express';
+import { GetUser } from 'src/auth/decorators';
+import { UserRes } from '@types';
+import { AdminService } from 'src/admin/admin.service';
+import { JwtGuard } from 'src/auth/guards/jwt.guard';
 
 @Controller('web/sms')
 export class TwilioWebController extends TwilioController {
-  constructor(twilioService: TwilioService, private prisma: PrismaService) {
+  constructor(twilioService: TwilioService, private prisma: PrismaService, private adminService: AdminService) {
     super(twilioService);
   }
 
@@ -18,10 +22,13 @@ export class TwilioWebController extends TwilioController {
     return this.getTwilioService().sendSMS(body.to, body.message);
   }
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(JwtGuard)
   @Get('/')
-  public async getAllSms(@Query('page') page = 1, @Query('limit') limit = 10) {
-
-    return this.getTwilioService().getAllSms(+page, +limit);
+  public async getAllSms(@GetUser() user: UserRes, @Query('page') page = 1, @Query('limit') limit = 10) {
+    console.log(user, '========>>> user in getAllSms')
+    const branch = await this.adminService.getBranchId(user.id);
+    console.log(branch, '========>>> branch in getAllSms')
+    return this.getTwilioService().getAllSms(branch.id, +page, +limit);
   }
 
 
