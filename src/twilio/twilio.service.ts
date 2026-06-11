@@ -39,6 +39,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as Twilio from 'twilio';
 import { userSelectFields } from 'src/constant';
+import type { PaginatedResult } from '@types';
 
 @Injectable()
 export class TwilioService {
@@ -63,16 +64,17 @@ export class TwilioService {
       const message = await this.client.messages.create({ body, from: this.from, to });
       console.log('Message sent:', message.sid);
       return message;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending SMS:', error.message);
       throw error;
     }
   }
 
-  public async getAllSms(branchId: string, page: number, limit: number): Promise<any> {
+  public async getAllSms(branchId: string, page: number, limit: number): Promise<PaginatedResult<any>> {
     // for admin only
-    console.log('Fetching SMS for branchId:', branchId, 'page:', page, 'limit:', limit);
-    const skip = (page - 1) * limit;
+    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 10;
+    const requestedPage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+
     const where = {
       OR: [
         {
@@ -95,39 +97,48 @@ export class TwilioService {
         },
       ],
     };
-    const [messages, totalItems] = await this.prisma.$transaction([
-      this.prisma.sms.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: {
+    const totalItems = await this.prisma.sms.count({ where });
+    const totalPages = totalItems > 0 ? Math.ceil(totalItems / safeLimit) : 0;
+    const currentPage = totalPages > 0
+      ? Math.min(Math.max(requestedPage, 1), totalPages)
+      : 1;
+    const skip = (currentPage - 1) * safeLimit;
+
+    const messages = await this.prisma.sms.findMany({
+      where,
+      skip,
+      take: safeLimit,
+      orderBy: [
+        {
           created_at: 'desc',
         },
-        select: {
-          id: true,
-          to: true,
-          body: true,
-          created_at: true,
-          sender: { select: userSelectFields },
-          receiver: { select: userSelectFields },
+        {
+          id: 'desc',
         },
-      }),
-      this.prisma.sms.count(),
-    ]);
-    const totalPages = Math.ceil(totalItems / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
+      ],
+      select: {
+        id: true,
+        to: true,
+        body: true,
+        created_at: true,
+        sender: { select: userSelectFields },
+        receiver: { select: userSelectFields },
+      },
+    });
+
+    const hasNextPage = currentPage < totalPages;
+    const hasPrevPage = currentPage > 1;
     return {
       data: messages,
       pagination: {
         totalItems,
-        perPage: limit,
-        currentPage: page,
+        perPage: safeLimit,
+        currentPage,
         totalPages,
         hasNextPage,
         hasPrevPage,
-        nextPage: hasNextPage ? page + 1 : null,
-        prevPage: hasPrevPage ? page - 1 : null,
+        nextPage: hasNextPage ? currentPage + 1 : null,
+        prevPage: hasPrevPage ? currentPage - 1 : null,
       },
     };
   }
