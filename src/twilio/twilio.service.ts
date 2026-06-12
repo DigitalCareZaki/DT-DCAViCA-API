@@ -70,11 +70,10 @@ export class TwilioService {
     }
   }
 
-  public async getAllSms(branchId: string, page: number, limit: number): Promise<PaginatedResult<any>> {
+  public async getAllSms(branchId: string, page: number, limit: number): Promise<any> {
     // for admin only
-    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 10;
-    const requestedPage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
-
+    console.log('Fetching SMS for branchId:', branchId, 'page:', page, 'limit:', limit);
+    const skip = (page - 1) * limit;
     const where = {
       OR: [
         {
@@ -97,48 +96,39 @@ export class TwilioService {
         },
       ],
     };
-    const totalItems = await this.prisma.sms.count({ where });
-    const totalPages = totalItems > 0 ? Math.ceil(totalItems / safeLimit) : 0;
-    const currentPage = totalPages > 0
-      ? Math.min(Math.max(requestedPage, 1), totalPages)
-      : 1;
-    const skip = (currentPage - 1) * safeLimit;
-
-    const messages = await this.prisma.sms.findMany({
-      where,
-      skip,
-      take: safeLimit,
-      orderBy: [
-        {
+    const [messages, totalItems] = await this.prisma.$transaction([
+      this.prisma.sms.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
           created_at: 'desc',
         },
-        {
-          id: 'desc',
+        select: {
+          id: true,
+          to: true,
+          body: true,
+          created_at: true,
+          sender: { select: userSelectFields },
+          receiver: { select: userSelectFields },
         },
-      ],
-      select: {
-        id: true,
-        to: true,
-        body: true,
-        created_at: true,
-        sender: { select: userSelectFields },
-        receiver: { select: userSelectFields },
-      },
-    });
-
-    const hasNextPage = currentPage < totalPages;
-    const hasPrevPage = currentPage > 1;
+      }),
+      this.prisma.sms.count(),
+    ]);
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
     return {
       data: messages,
       pagination: {
         totalItems,
-        perPage: safeLimit,
-        currentPage,
+        perPage: limit,
+        currentPage: page,
         totalPages,
         hasNextPage,
         hasPrevPage,
-        nextPage: hasNextPage ? currentPage + 1 : null,
-        prevPage: hasPrevPage ? currentPage - 1 : null,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
       },
     };
   }
