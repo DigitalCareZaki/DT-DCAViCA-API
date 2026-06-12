@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, DefaultValuePipe, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common';
 import { TwilioController } from './twilio.controller';
 import { TwilioService } from './twilio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -25,14 +25,14 @@ export class TwilioWebController extends TwilioController {
   @UseGuards(JwtGuard)
   @Get('/')
   public async getAllSms(
-    @GetUser() user: UserRes, @Query('page') page: number,
-    @Query('limit') limit: number,
+    @GetUser() user: UserRes,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit = 10,
   ) {
     console.log(user, '========>>> user in getAllSms')
     const branch = await this.adminService.getBranchId(user.id);
     console.log(branch, '========>>> branch in getAllSms')
-    return this.getTwilioService().getAllSms(branch.id, page ? +page : 1,
-      limit ? +limit : 10,);
+    return this.getTwilioService().getAllSms(branch.id, page, limit);
   }
 
   //
