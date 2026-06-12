@@ -17,19 +17,26 @@ import { JwtGuard, RolesGuard } from 'src/auth/guards';
 
 import { CreateSiteDto, UpdateSiteDto } from './dto';
 import { SitesService } from './sites.service';
+import { AdminService } from 'src/admin/admin.service';
 
 @Controller('web/sites')
 @UseGuards(JwtGuard, RolesGuard)
 @RequirePermission(Role.ADMIN, Role.SUPERADMIN, Role.MASTER)
 export class SitesWebController {
-  constructor(private siteService: SitesService) { }
+  constructor(private siteService: SitesService, private adminService: AdminService) { }
 
   @Get()
-  getAllSites(
+  @UseGuards(JwtGuard)
+  async getAllSites(
+    @GetUser() user: UserRes,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('branchId') branchId?: string,
   ) {
+
+    if (!branchId) {
+      branchId = await this.adminService.getBranchId(user.id).then(branch => branch.id);
+    }
     return this.siteService.getAllSites(
       Number(page) || 1,
       Number(limit) || 10,

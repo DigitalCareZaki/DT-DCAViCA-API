@@ -95,6 +95,20 @@ export class SitesService {
         return sites;
     }
 
+    // async getSiteById(branchId: string): Promise<Site[]> {
+    //     const sites = await this.prisma.site.findMany({
+    //         where: {
+    //             branchId,
+    //         },
+    //     });
+
+    //     if (!sites.length) {
+    //         throw new NotFoundException('No sites found for this branch');
+    //     }
+
+    //     return sites;
+    // }
+
     async createSite(
         data: CreateSiteDto,
         userId: string,
