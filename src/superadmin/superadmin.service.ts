@@ -55,7 +55,7 @@ export class SuperadminService {
     });
 
     const branches = this.prisma.branch.count({
-      // where: { organization_id: organizationId },
+      where: { organization_id: organizationId },
     });
 
     const appointments = this.prisma.appointment.count({
