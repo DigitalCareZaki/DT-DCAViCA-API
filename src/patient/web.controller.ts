@@ -17,13 +17,22 @@ import { GetUser } from 'src/auth/decorators';
 import { PatientMedicationAlertDTO } from './dto';
 import { Role } from 'src/auth/enums/role.enum';
 import type { UserRes } from '@types';
-import type { PatientMedicationAlert } from './types';
+import type { AssignedCareTeam, PatientMedicationAlert } from './types';
 import { RequirePermission } from 'src/auth/decorators/role.decorator';
 
 @Controller('web/patient')
 export class PatientWebController extends PatientController {
   constructor(patientService: PatientService) {
     super(patientService);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/assigned-care-team')
+  @RequirePermission(Role.PATIENT)
+  public async getAssignedCareTeam(
+    @GetUser() user: UserRes,
+  ): Promise<AssignedCareTeam> {
+    return this.getPatientService().getAssignedCareTeam(user.id);
   }
 
   @HttpCode(HttpStatus.OK)

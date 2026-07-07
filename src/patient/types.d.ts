@@ -3,6 +3,7 @@ import type {
   Title,
   MedicationUnit,
   MedicationTaken,
+  Role,
   VivalinkSyncStatus,
 } from '@prisma/client';
 
@@ -71,4 +72,19 @@ export interface TriggerVivalinkSyncResult {
   success: boolean;
   error?: string;
   syncedAt?: Date;
+}
+
+export interface AssignedCareProvider {
+  id: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  title: Title;
+  role: Role;
+  uri: string | null;
+}
+
+export interface AssignedCareTeam {
+  primary_doctor: AssignedCareProvider | null;
+  primary_nurse: AssignedCareProvider | null;
 }

@@ -1,11 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import * as argon from 'argon2';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PatientMedicationAlertDTO, UpdateProfileDTO } from './dto';
 import { AddPatientDTO } from 'src/organization/dto/addPatient.dto';
 import puppeteer from 'puppeteer';
 import type { MedicationTaken } from '@prisma/client';
-import type { ProfileProps } from './types';
+import type { AssignedCareTeam, ProfileProps } from './types';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
 import { SendMailPayload } from '@types';
 import { SENDGRID_TEMPLATES } from 'src/constant';
@@ -416,6 +416,66 @@ export class PatientService {
         active: true,
       },
     });
+  }
+
+  public async getAssignedCareTeam(userId: string): Promise<AssignedCareTeam> {
+    const patient = await this.prisma.patient.findUnique({
+      where: {
+        user_id: userId,
+      },
+      select: {
+        doctors: {
+          take: 1,
+          orderBy: {
+            created_at: 'asc',
+          },
+          select: {
+            user: {
+              select: {
+                id: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+                title: true,
+                role: true,
+                uri: true,
+              },
+            },
+          },
+        },
+        nurses: {
+          take: 1,
+          orderBy: {
+            created_at: 'asc',
+          },
+          select: {
+            user: {
+              select: {
+                id: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+                title: true,
+                role: true,
+                uri: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!patient) {
+      throw new NotFoundException('Patient profile not found');
+    }
+
+    const doctor = patient.doctors[0];
+    const nurse = patient.nurses[0];
+
+    return {
+      primary_doctor: doctor?.user ?? null,
+      primary_nurse: nurse?.user ?? null,
+    };
   }
 
   public async updateProfle(userId: string, data: UpdateProfileDTO) {
