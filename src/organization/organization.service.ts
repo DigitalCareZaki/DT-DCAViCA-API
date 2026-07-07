@@ -506,6 +506,47 @@ export class OrganizationService {
               },
             },
 
+            nurses: {
+              select: {
+                id: true,
+                employee_id: true,
+                npi_number: true,
+                user: {
+                  select: {
+                    first_name: true,
+                    last_name: true,
+                    middle_name: true,
+                    gender: true,
+                    dob: true,
+                    location: {
+                      select: {
+                        address: true,
+                      },
+                    },
+                  },
+                },
+                site_id: true,
+                site: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+                departments: {
+                  select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                  },
+                },
+                specialities: {
+                  select: {
+                    title: true,
+                  },
+                },
+              },
+            },
+
             vivalink_sync_error: true,
             vivalink_synced: true,
             vivalink_synced_at: true,
@@ -793,6 +834,46 @@ export class OrganizationService {
                 avicardia_monitoring: true,
               },
             },
+            nurses: {
+              select: {
+                id: true,
+                employee_id: true,
+                npi_number: true,
+                user: {
+                  select: {
+                    first_name: true,
+                    last_name: true,
+                    middle_name: true,
+                    gender: true,
+                    dob: true,
+                    location: {
+                      select: {
+                        address: true,
+                      },
+                    },
+                  },
+                },
+                site_id: true,
+                site: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+                departments: {
+                  select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                  },
+                },
+                specialities: {
+                  select: {
+                    title: true,
+                  },
+                },
+              },
+            },
             vivalink_sync_error: true,
             vivalink_synced: true,
             vivalink_synced_at: true,
@@ -838,6 +919,13 @@ export class OrganizationService {
             ...doctor,
             ...(doctor.user || {}),
             address: doctor.user?.location?.address,
+            user: undefined,
+            location: undefined,
+          })),
+          nurses: (user.patient.nurses as any[])?.map((nurse) => ({
+            ...nurse,
+            ...(nurse.user || {}),
+            address: nurse.user?.location?.address,
             user: undefined,
             location: undefined,
           })),
