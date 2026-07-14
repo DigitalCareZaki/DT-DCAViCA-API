@@ -358,22 +358,23 @@ export class DoctorService {
     return await this.prisma.patient
       .findFirstOrThrow({
         where: {
-          OR: [
-            {
-              AND: [
-                {
-                  user_id: id,
-                },
-                {
-                  doctors: {
-                    some: {
-                      user_id: doctorId,
-                    },
-                  },
-                },
-              ],
-            },
-          ],
+          user_id: id
+          //   OR: [
+          //     {
+          //       AND: [
+          //         {
+          //           user_id: id,
+          //         },
+          //         {
+          //           // doctors: {
+          //           //   some: {
+          //           //     user_id: doctorId,
+          //           //   },
+          //           // },
+          //         },
+          //       ],
+          //     },
+          //   ],
         },
       })
       .user()

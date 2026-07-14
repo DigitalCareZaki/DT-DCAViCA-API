@@ -747,6 +747,67 @@ export class TelemedService {
 
   public async organizationAppointmentList(user: UserRes, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
+    // const [data, totalItems] = await this.prisma.$transaction([
+    //   this.prisma.appointmentParticipants.findMany({
+    //     where: {
+    //       user: {
+    //         organization_id: user.organization_id,
+    //       },
+    //     },
+    //     skip,
+    //     take: limit,
+    //     select: {
+    //       id: true,
+    //       status: true,
+    //       created_at: true,
+    //       appointment: {
+    //         select: {
+    //           id: true,
+    //           title: true,
+    //           description: true,
+    //           about: true,
+    //           type: true,
+    //           status: true,
+    //           start_date: true,
+    //           organizer: {
+    //             select: {
+    //               id: true,
+    //               first_name: true,
+    //               last_name: true,
+    //               middle_name: true,
+    //               role: true,
+    //             },
+    //           },
+    //           participants: {
+    //             select: {
+    //               id: true,
+    //               user: {
+    //                 select: {
+    //                   id: true,
+    //                   first_name: true,
+    //                   last_name: true,
+    //                   middle_name: true,
+    //                   role: true,
+    //                 },
+    //               },
+    //             },
+    //           },
+    //         },
+    //       },
+    //     },
+    //     orderBy: {
+    //       created_at: 'desc',
+    //     },
+    //   }),
+
+    //   this.prisma.appointmentParticipants.count({
+    //     where: {
+    //       user: {
+    //         organization_id: user.organization_id,
+    //       },
+    //     },
+    //   }),
+    // ]);
     const [data, totalItems] = await this.prisma.$transaction([
       this.prisma.appointmentParticipants.findMany({
 
