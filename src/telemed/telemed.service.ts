@@ -747,106 +747,45 @@ export class TelemedService {
 
   public async organizationAppointmentList(user: UserRes, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
-    // const [data, totalItems] = await this.prisma.$transaction([
-    //   this.prisma.appointmentParticipants.findMany({
-    //     where: {
-    //       user: {
-    //         organization_id: user.organization_id,
-    //       },
-    //     },
-    //     skip,
-    //     take: limit,
-    //     select: {
-    //       id: true,
-    //       status: true,
-    //       created_at: true,
-    //       appointment: {
-    //         select: {
-    //           id: true,
-    //           title: true,
-    //           description: true,
-    //           about: true,
-    //           type: true,
-    //           status: true,
-    //           start_date: true,
-    //           organizer: {
-    //             select: {
-    //               id: true,
-    //               first_name: true,
-    //               last_name: true,
-    //               middle_name: true,
-    //               role: true,
-    //             },
-    //           },
-    //           participants: {
-    //             select: {
-    //               id: true,
-    //               user: {
-    //                 select: {
-    //                   id: true,
-    //                   first_name: true,
-    //                   last_name: true,
-    //                   middle_name: true,
-    //                   role: true,
-    //                 },
-    //               },
-    //             },
-    //           },
-    //         },
-    //       },
-    //     },
-    //     orderBy: {
-    //       created_at: 'desc',
-    //     },
-    //   }),
 
-    //   this.prisma.appointmentParticipants.count({
-    //     where: {
-    //       user: {
-    //         organization_id: user.organization_id,
-    //       },
-    //     },
-    //   }),
-    // ]);
     const [data, totalItems] = await this.prisma.$transaction([
-      this.prisma.appointmentParticipants.findMany({
+      this.prisma.appointment.findMany({
+        where: {
+          organizer: {
+            organization_id: user.organization_id,
 
+          },
+        },
         skip,
         take: limit,
         select: {
           id: true,
+          title: true,
+          description: true,
+          about: true,
+          type: true,
           status: true,
+          start_date: true,
           created_at: true,
-          appointment: {
+          organizer: {
             select: {
               id: true,
-              title: true,
-              description: true,
-              about: true,
-              type: true,
-              status: true,
-              start_date: true,
-              organizer: {
+              first_name: true,
+              last_name: true,
+              middle_name: true,
+              role: true,
+            },
+          },
+          participants: {
+            select: {
+              id: true,
+              user: {
                 select: {
                   id: true,
                   first_name: true,
                   last_name: true,
                   middle_name: true,
                   role: true,
-                },
-              },
-              participants: {
-                select: {
-                  id: true,
-                  user: {
-                    select: {
-                      id: true,
-                      first_name: true,
-                      last_name: true,
-                      middle_name: true,
-                      role: true,
-                    },
-                  },
                 },
               },
             },
@@ -856,25 +795,80 @@ export class TelemedService {
           created_at: 'desc', // optional now, frontend will sort
         },
       }),
-      this.prisma.appointmentParticipants.count()
+      // this.prisma.appointmentParticipants.findMany({
+
+      //   skip,
+      //   take: limit,
+      //   select: {
+      //     id: true,
+      //     status: true,
+      //     created_at: true,
+      //     appointment: {
+      //       select: {
+      //         id: true,
+      //         title: true,
+      //         description: true,
+      //         about: true,
+      //         type: true,
+      //         status: true,
+      //         start_date: true,
+      //         organizer: {
+      //           select: {
+      //             id: true,
+      //             first_name: true,
+      //             last_name: true,
+      //             middle_name: true,
+      //             role: true,
+      //           },
+      //         },
+      //         participants: {
+      //           select: {
+      //             id: true,
+      //             user: {
+      //               select: {
+      //                 id: true,
+      //                 first_name: true,
+      //                 last_name: true,
+      //                 middle_name: true,
+      //                 role: true,
+      //               },
+      //             },
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      //   orderBy: {
+      //     created_at: 'desc', // optional now, frontend will sort
+      //   },
+      // }),
+      // this.prisma.appointmentParticipants.count({ where: { user_id: user.id } }),
+      this.prisma.appointment.count({
+        where: {
+          organizer: {
+            organization_id: user.organization_id,
+
+          },
+        },
+      },)
 
     ])
 
     let appointmentList = data.map(item => {
-      const doctor = item.appointment.participants.find(p => p.user.role === 'DOCTOR')?.user;
+      const doctor = item.participants.find(p => p.user.role === 'DOCTOR')?.user;
 
       return {
-        id: item.appointment.id,
+        id: item.id,
         status: item.status,
-        title: item.appointment.title,
-        description: item.appointment.description,
-        about: item.appointment.about,
-        type: item.appointment.type,
-        patientId: item.appointment.organizer.id,
-        patient_name: `${item.appointment.organizer.first_name} ${item.appointment.organizer.last_name}`,
+        title: item.title,
+        description: item.description,
+        about: item.about,
+        type: item.type,
+        patientId: item.organizer.id,
+        patient_name: `${item.organizer.first_name} ${item.organizer.last_name}`,
         doctorid: doctor?.id || null,
         doctor_name: doctor ? `${doctor.first_name} ${doctor.last_name}` : null,
-        AppointmetDate: item.appointment.start_date,
+        AppointmetDate: item.start_date,
       };
     });
 

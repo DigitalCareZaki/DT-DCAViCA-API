@@ -112,6 +112,12 @@ export class UsersService {
                         departments: true,
                     },
                 },
+                nurse: {
+                    include: {
+                        specialities: true,
+                        departments: true,
+                    },
+                },
                 created_at: true,
                 updated_at: true,
                 active: true,
