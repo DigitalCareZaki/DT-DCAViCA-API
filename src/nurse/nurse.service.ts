@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpStatus, BadRequestException } from '@nestjs/common';
 
 import * as argon from 'argon2';
 
@@ -354,6 +354,79 @@ export class NurseService {
       });
   }
 
+  public async getAppNursePatients(userId: string) {
+    const nurse = await this.prisma.nurse.findFirst({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+    });
+
+    if (nurse?.id === undefined) {
+      throw new BadRequestException('Nurse not found');
+    }
+    return await this.prisma.patient.findMany({
+      where: {
+        nurses: {
+          some: { id: nurse.id },
+        },
+      },
+      select: {
+        id: true,
+        emr: true,
+        weight: true,
+        height: true,
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            middle_name: true,
+            last_name: true,
+            dob: true,
+            uri: true,
+            role: true,
+            gender: true,
+            title: true,
+            email: true,
+            phone_number: true,
+            username: true,
+            created_at: true,
+            updated_at: true,
+
+          },
+        },
+        nurses: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                id: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+              }
+            }
+          },
+        },
+        doctors: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                id: true,
+                first_name: true,
+                middle_name: true,
+                last_name: true,
+              }
+            }
+          },
+        },
+        created_at: true,
+        updated_at: true,
+      },
+    });
+  }
   public async getPatientsNurses(
     id: string,
     nurseId: string,

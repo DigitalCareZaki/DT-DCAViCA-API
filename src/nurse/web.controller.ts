@@ -105,6 +105,13 @@ export class NurseWebController extends NurseController {
   ): Promise<PatientNurses[]> {
     return this.getNurseService().getPatientsNurses(id, user.id, search || '');
   }
+  @HttpCode(HttpStatus.OK)
+  @Get('/patients')
+  public async getAppNursePatients(
+    @GetUser() user: UserRes,
+  ): Promise<PatientNurses[]> {
+    return this.getNurseService().getAppNursePatients(user.id);
+  }
 
   @HttpCode(HttpStatus.OK)
   @Get('/stats')
