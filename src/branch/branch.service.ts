@@ -6,7 +6,7 @@ import { AddBranchDTO } from './dto/addBranch.dto';
 
 @Injectable()
 export class BranchService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   public async getBranches(
     organizationId: string,
@@ -53,6 +53,11 @@ export class BranchService {
         name: true,
         email: true,
         phone_number: true,
+        orgnatization: {
+          select: {
+            name: true
+          },
+        },
         location: {
           select: {
             address: true,
