@@ -4,8 +4,10 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 import { AppError } from 'src/errors';
 
-import type { UserRole } from '@types';
+import type { UserRes, UserRole } from '@types';
 import type { PatientRag } from './types';
+import { Role } from 'src/auth/enums/role.enum';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class RagService {
@@ -123,23 +125,53 @@ export class RagService {
     return await this.formatResults(null, null, result);
   }
 
-  public async getMeasurementsCountByDoctorId(doctorId: string) {
+  public async getMeasurementsCountByDoctorId(user: UserRes) {
+    const patientFilter =
+      user.role === Role.DOCTOR
+        ? {
+          doctors: {
+            some: {
+              user_id: user.id,
+            },
+          },
+        }
+        : {
+          nurses: {
+            some: {
+              user_id: user.id,
+            },
+          },
+        };
+
     const result = await this.prisma.measurement.groupBy({
       by: ['type', 'status'],
       where: {
-        patient: {
-          doctors: {
-            some: {
-              user_id: doctorId,
-            },
-          },
-        },
+        patient: patientFilter,
       },
-      _count: { _all: true },
+      _count: {
+        _all: true,
+      },
     });
 
-    return await this.formatResults(null, null, result);
+    return this.formatResults(null, null, result);
   }
+  // public async getMeasurementsCountByDoctorId(doctorId: string) {
+  //   const result = await this.prisma.measurement.groupBy({
+  //     by: ['type', 'status'],
+  //     where: {
+  //       patient: {
+  //         doctors: {
+  //           some: {
+  //             user_id: doctorId,
+  //           },
+  //         },
+  //       },
+  //     },
+  //     _count: { _all: true },
+  //   });
+
+  //   return await this.formatResults(null, null, result);
+  // }
 
   private validateDates(start_date: string, end_date: string): [string, string] {
     // start_date not provided and end_date provided
@@ -216,7 +248,7 @@ export class RagService {
     return readingTypes;
   }
 
-  public async getPatientLatestReadingsForDoctor(doctorId: string) {
+  public async getPatientLatestReadingsForDoctor(user: UserRes) {
     const readingTypes = {
       ecg: {},
       spo2: {},
@@ -226,16 +258,28 @@ export class RagService {
     };
 
     // Get all measurements for the patient ordered by created_at descending
-    const measurements = await this.prisma.measurement.findMany({
-      where: {
-        patient: {
-          doctors: {
-            some: {
-              user_id: doctorId,
-            },
+    let where: Prisma.MeasurementWhereInput = {};
+
+    if (user.role === Role.DOCTOR) {
+      where.patient = {
+        doctors: {
+          some: {
+            user_id: user.id,
           },
         },
-      },
+      };
+    } else if (user.role === Role.NURSE) {
+      where.patient = {
+        nurses: {
+          some: {
+            user_id: user.id,
+          },
+        },
+      };
+    }
+
+    const measurements = await this.prisma.measurement.findMany({
+      where,
       orderBy: {
         created_at: 'desc',
       },
@@ -251,4 +295,39 @@ export class RagService {
 
     return readingTypes;
   }
+  // public async getPatientLatestReadingsForDoctor(doctorId: string) {
+  //   const readingTypes = {
+  //     ecg: {},
+  //     spo2: {},
+  //     bloodpressure: {},
+  //     bloodglucose: {},
+  //     temperature: {},
+  //   };
+
+  //   // Get all measurements for the patient ordered by created_at descending
+  //   const measurements = await this.prisma.measurement.findMany({
+  //     where: {
+  //       patient: {
+  //         doctors: {
+  //           some: {
+  //             user_id: doctorId,
+  //           },
+  //         },
+  //       },
+  //     },
+  //     orderBy: {
+  //       created_at: 'desc',
+  //     },
+  //   });
+
+  //   // Loop through the measurements and assign the first (latest) instance for each type
+  //   for (const measurement of measurements) {
+  //     const type = measurement.type.toLowerCase();
+  //     if (readingTypes.hasOwnProperty(type) && Object.keys(readingTypes[type]).length === 0) {
+  //       readingTypes[type] = measurement;
+  //     }
+  //   }
+
+  //   return readingTypes;
+  // }
 }

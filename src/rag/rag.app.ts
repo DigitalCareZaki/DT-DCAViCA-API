@@ -31,12 +31,12 @@ export class RagAppController {
   }
 
   @UseGuards(JwtGuard, RolesGuard)
-  @RequirePermission(Role.DOCTOR)
+  @RequirePermission(Role.DOCTOR, Role.NURSE,)
   @HttpCode(HttpStatus.OK)
   @Get('/analytic')
   public async getMeasurementsAnalyticForDoctor(@GetUser() user: UserRes) {
-    const analytic = await this.ragService.getMeasurementsCountByDoctorId(user.id);
-    const latestReadings = await this.ragService.getPatientLatestReadingsForDoctor(user.id);
+    const analytic = await this.ragService.getMeasurementsCountByDoctorId(user);
+    const latestReadings = await this.ragService.getPatientLatestReadingsForDoctor(user);
 
     return { analytic, latestReadings };
   }
