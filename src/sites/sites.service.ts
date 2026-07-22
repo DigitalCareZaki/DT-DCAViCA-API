@@ -4,6 +4,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
 
 import { CreateSiteDto, UpdateSiteDto } from './dto';
+import { UserRes } from '@types';
+import { Role } from 'src/auth/enums/role.enum';
 
 export interface PaginationMeta {
     totalItems: number;
@@ -37,28 +39,84 @@ export class SitesService {
         return this.vlTokenService.getToken();
     }
 
+    // async getAllSites(
+    //     page: number = 1,
+    //     limit: number = 10,
+    //     targetId?: string,
+    //     role?: string
+    // ): Promise<PaginatedResponse<Site>> {
+    //     const skip = (page - 1) * limit;
+    //     const where: Prisma.SiteWhereInput = targetId?.trim()
+    //         ? { branchId: targetId.trim() }
+    //         : {};
+
+    //     const [data, totalItems] = await Promise.all([
+    //         this.prisma.site.findMany({
+    //             skip,
+    //             take: limit,
+    //             where,
+    //             include: { branch: true },
+    //         }),
+    //         this.prisma.site.count({ where }),
+    //     ]);
+    //     const totalPages = Math.ceil(totalItems / limit);
+    //     const hasNextPage = page < totalPages;
+    //     const hasPrevPage = page > 1;
+
+    //     return {
+    //         data,
+    //         pagination: {
+    //             totalItems,
+    //             perPage: limit,
+    //             currentPage: page,
+    //             totalPages,
+    //             hasNextPage,
+    //             hasPrevPage,
+    //             nextPage: hasNextPage ? page + 1 : null,
+    //             prevPage: hasPrevPage ? page - 1 : null,
+    //         },
+    //     };
+    // }
+
     async getAllSites(
-        page: number = 1,
-        limit: number = 10,
+        user: UserRes,
+        page = 1,
+        limit = 10,
         branchId?: string,
     ): Promise<PaginatedResponse<Site>> {
         const skip = (page - 1) * limit;
-        const where: Prisma.SiteWhereInput = branchId?.trim()
-            ? { branchId: branchId.trim() }
-            : {};
+
+        let where: Prisma.SiteWhereInput = {};
+
+        if (user.role === Role.SUPERADMIN) {
+            // Super Admin: all sites in the organization
+            where = {
+                branch: {
+                    organization_id: user.organization_id,
+                },
+            };
+
+
+        } else {
+            // Branch Admin
+
+
+            where = {
+                branchId: branchId,
+            };
+        }
 
         const [data, totalItems] = await Promise.all([
             this.prisma.site.findMany({
                 skip,
                 take: limit,
                 where,
-                include: { branch: true },
+                include: {
+                    branch: true,
+                },
             }),
             this.prisma.site.count({ where }),
         ]);
-        const totalPages = Math.ceil(totalItems / limit);
-        const hasNextPage = page < totalPages;
-        const hasPrevPage = page > 1;
 
         return {
             data,
@@ -66,20 +124,14 @@ export class SitesService {
                 totalItems,
                 perPage: limit,
                 currentPage: page,
-                totalPages,
-                hasNextPage,
-                hasPrevPage,
-                nextPage: hasNextPage ? page + 1 : null,
-                prevPage: hasPrevPage ? page - 1 : null,
+                totalPages: Math.ceil(totalItems / limit),
+                hasNextPage: page < Math.ceil(totalItems / limit),
+                hasPrevPage: page > 1,
+                nextPage: page < Math.ceil(totalItems / limit) ? page + 1 : null,
+                prevPage: page > 1 ? page - 1 : null,
             },
         };
     }
-
-    // async getSiteById(id: string): Promise<Site> {
-    //     const site = await this.prisma.site.findUnique({ where: { id } });
-    //     if (!site) throw new NotFoundException('Site not found');
-    //     return site;
-    // }
 
     async getSiteById(branchId: string): Promise<Site[]> {
         const sites = await this.prisma.site.findMany({

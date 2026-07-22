@@ -34,10 +34,11 @@ export class SitesWebController {
     @Query('branchId') branchId?: string,
   ) {
 
-    if (!branchId) {
+    if (!branchId && user.role !== Role.SUPERADMIN) {
       branchId = await this.adminService.getBranchId(user.id).then(branch => branch.id);
     }
     return this.siteService.getAllSites(
+      user,
       Number(page) || 1,
       Number(limit) || 10,
       branchId,

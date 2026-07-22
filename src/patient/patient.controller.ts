@@ -20,7 +20,7 @@ import type { ProfileProps } from './types';
 
 @Controller('patient')
 @UseGuards(JwtGuard, RolesGuard)
-@RequirePermission(Role.PATIENT, Role.DOCTOR)
+@RequirePermission(Role.PATIENT, Role.DOCTOR, Role.NURSE)
 export class PatientController {
   constructor(private patientService: PatientService) { }
 
