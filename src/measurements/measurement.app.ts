@@ -21,7 +21,7 @@ export class MeasurementAppController {
 
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard, RolesGuard)
-  @RequirePermission(Role.DOCTOR)
+  @RequirePermission(Role.DOCTOR, Role.NURSE)
   @Get('/rag')
   public async getRagForDoctor(@GetUser() user: UserRes, @Query('type') type?: string) {
     const data = await this.measurementService.getAppMeasurementsOfAllPatients(
