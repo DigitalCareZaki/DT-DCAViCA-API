@@ -33,7 +33,7 @@
 //     }
 //   }
 // }
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -66,7 +66,7 @@ export class TwilioService {
       return message;
     } catch (error: any) {
       console.error('Error sending SMS:', error.message);
-      throw error;
+      throw new BadRequestException(error.message);
     }
   }
 
