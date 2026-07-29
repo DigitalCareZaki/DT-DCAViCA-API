@@ -70,6 +70,25 @@ export class AuthService {
             // employee_id: true,
           },
         },
+        nurse: {
+          select: {
+            specialities: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+            departments: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+            // npi_number: true,
+            // pmdc_number: true,
+            // employee_id: true,
+          },
+        },
       }
     });
     console.log(user, '============>>>user')
@@ -79,6 +98,12 @@ export class AuthService {
     }
     if (user.doctor && user.doctor.departments && user.doctor.departments.length > 0) {
       user.departments = user.doctor.departments[0].title;
+    }
+    if (user.nurse && user.nurse.specialities && user.nurse.specialities.length > 0) {
+      user.speciality = user.nurse.specialities[0].title;
+    }
+    if (user.nurse && user.nurse.departments && user.nurse.departments.length > 0) {
+      user.departments = user.nurse.departments[0].title;
     }
 
     if (!user.active) {
@@ -103,6 +128,7 @@ export class AuthService {
     delete user.doctor;
     delete user.password;
     delete user.pincode;
+    delete user.nurse;
 
     // if (!user.fcmToken) {
     //   await this.prisma.user.update({
