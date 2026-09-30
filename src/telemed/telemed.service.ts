@@ -121,21 +121,166 @@ export class TelemedService {
     return new Date(d.getTime() - (5 * 60 * 60 * 1000));
   }
 
-  public async createAppointment(user: UserRes, dto: TelemedCreateDTO) {
+  // public async createAppointment(user: UserRes, dto: TelemedCreateDTO) {
 
+  //   const startDate = new Date(dto.start_date);
+  //   const endDate = new Date(dto.end_date);
+
+  //   console.log('Service====>>Creating telemed appointment with data:', dto);
+
+  //   const appointment = await this.prisma.appointment.create({
+  //     data: {
+  //       title: dto.title,
+  //       description: dto.description,
+  //       start_date: startDate,
+  //       end_date: endDate,
+  //       type: dto.type,
+  //       about: dto.about,
+  //       organizer_id: user.id,  // patient id
+  //     },
+  //   });
+
+  //   console.log('appointment >>>>>>>>>>>', appointment.id);
+
+  //   await this.prisma.appointmentParticipants.create({
+  //     data: {
+  //       status: 'PENDING',
+  //       user_id: user.id,
+  //       appointment_id: appointment.id,
+  //     },
+  //   });
+
+  //   // dto.users is doctor id
+  //   if (dto.users.length > 0) {
+  //     dto.users.forEach(async (user) => {
+  //       console.log(user, '===========>>>user')
+  //       await this.prisma.appointmentParticipants.create({
+  //         data: {
+  //           status: 'PENDING',
+  //           user_id: user,
+  //           appointment_id: appointment.id,
+  //         },
+  //       });
+
+  //     });
+
+  //     // await this.prisma.$transaction(records);
+  //   }
+  //   await this.prisma.room.create({
+  //     data: {
+  //       appointment_id: appointment.id,
+  //       users: { connect: dto.users.map((user) => ({ id: user })) },
+  //     },
+  //   });
+
+  //   const doctors = await this.prisma.user.findMany({
+  //     where: {
+  //       id: { in: dto.users }
+  //       // role: 'DOCTOR',
+  //     },
+  //     select: { id: true, email: true, username: true, phone_number: true },
+  //   });
+
+  //   console.log('doctor >>>>>>>>>>>', doctors);
+
+  //   if (doctors.length > 0) {
+  //     doctors.forEach(async (doctor) => {
+
+  //       // send sms to doctor via Twilio
+  //       const message = `New appointment request. Please check AViCA`;
+  //       await this.sms.sendSMS(doctor.phone_number, message);
+
+  //       // Save the SMS log to the database
+  //       await this.prisma.sms.create({
+  //         data: {
+  //           receiver_id: doctor.id,
+  //           sender_id: user.id,
+  //           to: doctor.phone_number,
+  //           body: message,
+  //         },
+  //       });
+
+  //       // send email to doctor via Sendgrid
+  //       const mailPayload = {
+  //         to: [doctor.email],
+  //         // to: [doctor.email],
+  //         data: {
+  //           subject: 'Appointment Invitation',
+  //           doctorName: doctor.username,
+  //           patientName: user.username,
+  //           patientEmail: user.email,
+  //           patientPhone: user.phone_number,
+  //           patientComment: dto.description,
+  //           link: `https://avica.health/doctor/telemed`
+  //           // link: `https://avica-frontend.vercel.app/patient/telemed/meetings/view/${appointment.id}`
+  //         },
+  //         templateId: SENDGRID_TEMPLATES.APPOINTMENT_INVITATION,
+  //       } satisfies SendMailPayload;
+
+  //       await this.mail.sendSgMail(mailPayload);
+  //     });
+  //   }
+
+  //   return appointment;
+  // }
+
+  public async createAppointment(user: UserRes, dto: TelemedCreateDTO) {
     const startDate = new Date(dto.start_date);
     const endDate = new Date(dto.end_date);
-    const appointment = await this.prisma.appointment.create({
-      data: {
+
+    console.log(
+      'Service====>>Creating telemed appointment with data:',
+      dto,
+    );
+
+    let appointment;
+
+    try {
+      console.log('Attempting to create appointment...');
+      console.log('Appointment data:', {
         title: dto.title,
         description: dto.description,
         start_date: startDate,
         end_date: endDate,
         type: dto.type,
         about: dto.about,
-        organizer_id: user.id,  // patient id
-      },
-    });
+        organizer_id: user.id,
+      });
+
+      appointment = await this.prisma.appointment.create({
+        data: {
+          title: dto.title,
+          description: dto.description,
+          start_date: startDate,
+          end_date: endDate,
+          type: dto.type,
+          about: dto.about,
+          organizer_id: user.id, // patient id
+        },
+      });
+
+      console.log(
+        'Appointment created successfully >>>>>>>>>>>',
+        appointment,
+      );
+    } catch (error: any) {
+      console.error(
+        '================ APPOINTMENT CREATE ERROR ================',
+      );
+
+      console.error('Error:', error);
+      console.error('Error name:', error?.name);
+      console.error('Error message:', error?.message);
+      console.error('Prisma error code:', error?.code);
+      console.error('Prisma error meta:', error?.meta);
+
+      console.error(
+        '==========================================================',
+      );
+
+      // Re-throw so NestJS knows appointment creation failed
+      throw error;
+    }
 
     console.log('appointment >>>>>>>>>>>', appointment.id);
 
@@ -150,7 +295,8 @@ export class TelemedService {
     // dto.users is doctor id
     if (dto.users.length > 0) {
       dto.users.forEach(async (user) => {
-        console.log(user, '===========>>>user')
+        console.log(user, '===========>>>user');
+
         await this.prisma.appointmentParticipants.create({
           data: {
             status: 'PENDING',
@@ -158,34 +304,49 @@ export class TelemedService {
             appointment_id: appointment.id,
           },
         });
-
       });
 
       // await this.prisma.$transaction(records);
     }
+
     await this.prisma.room.create({
       data: {
         appointment_id: appointment.id,
-        users: { connect: dto.users.map((user) => ({ id: user })) },
+        users: {
+          connect: dto.users.map((user) => ({
+            id: user,
+          })),
+        },
       },
     });
 
     const doctors = await this.prisma.user.findMany({
       where: {
-        id: { in: dto.users }
+        id: {
+          in: dto.users,
+        },
         // role: 'DOCTOR',
       },
-      select: { id: true, email: true, username: true, phone_number: true },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        phone_number: true,
+      },
     });
 
     console.log('doctor >>>>>>>>>>>', doctors);
 
     if (doctors.length > 0) {
       doctors.forEach(async (doctor) => {
-
         // send sms to doctor via Twilio
-        const message = `New appointment request. Please check AViCA`;
-        await this.sms.sendSMS(doctor.phone_number, message);
+        const message =
+          'New appointment request. Please check AViCA';
+
+        await this.sms.sendSMS(
+          doctor.phone_number,
+          message,
+        );
 
         // Save the SMS log to the database
         await this.prisma.sms.create({
@@ -200,7 +361,6 @@ export class TelemedService {
         // send email to doctor via Sendgrid
         const mailPayload = {
           to: [doctor.email],
-          // to: [doctor.email],
           data: {
             subject: 'Appointment Invitation',
             doctorName: doctor.username,
@@ -208,10 +368,10 @@ export class TelemedService {
             patientEmail: user.email,
             patientPhone: user.phone_number,
             patientComment: dto.description,
-            link: `https://avica.health/doctor/telemed`
-            // link: `https://avica-frontend.vercel.app/patient/telemed/meetings/view/${appointment.id}`
+            link: 'https://avica.health/doctor/telemed',
           },
-          templateId: SENDGRID_TEMPLATES.APPOINTMENT_INVITATION,
+          templateId:
+            SENDGRID_TEMPLATES.APPOINTMENT_INVITATION,
         } satisfies SendMailPayload;
 
         await this.mail.sendSgMail(mailPayload);
@@ -1122,6 +1282,11 @@ export class TelemedService {
     [data, totalItems] = await this.prisma.$transaction([
       this.prisma.appointmentParticipants.findMany({
         where: { user_id: user.id },
+        orderBy: {
+          appointment: {
+            start_date: 'desc',
+          },
+        },
         skip,
         take: limit,
         select: {
