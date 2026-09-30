@@ -82,6 +82,7 @@ export class TelemedWebController {
   @UseGuards(RolesGuard)
   @RequirePermission(Role.DOCTOR, Role.NURSE, Role.PATIENT)
   public async createTelemed(@Body() data: TelemedCreateDTO, @GetUser() user: UserRes) {
+    console.log('Controller====>>Creating telemed appointment with data:', data);
     return this.telemedService.createAppointment(user, data);
   }
 
