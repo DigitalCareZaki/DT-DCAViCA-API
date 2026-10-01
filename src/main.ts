@@ -3,7 +3,7 @@ dotenv.config(); // Load .env file
 import { writeFileSync } from 'fs';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import * as express from 'express';
 import { join } from 'path';
 
@@ -12,6 +12,33 @@ import { ResponseInterceptor } from './interceptor/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      exceptionFactory: (errors) => {
+        console.log(
+          '========== DTO VALIDATION ERROR ==========',
+        );
+
+        errors.forEach((error) => {
+          console.log('Field:', error.property);
+          console.log('Received value:', error.value);
+          console.log('Errors:', error.constraints);
+          console.log('------------------------------------------');
+        });
+
+        console.log(
+          '==========================================',
+        );
+
+        return new BadRequestException(
+          errors.flatMap((error) =>
+            Object.values(error.constraints ?? {}),
+          ),
+        );
+      },
+    }),
+  );
 
   // Enable CORS to allow all origins
   app.enableCors();

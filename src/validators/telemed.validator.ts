@@ -51,6 +51,12 @@ export class ValidateTelemedAbout implements ValidatorConstraintInterface {
 @ValidatorConstraint({ name: 'allowedUserId' })
 export class ValidateUserId implements ValidatorConstraintInterface {
   validate(value: string[]): boolean | Promise<boolean> {
+
+    console.log('========== ValidateUserId ==========');
+    console.log('users received:', value);
+    console.log('type:', typeof value);
+    console.log('isArray:', Array.isArray(value));
+    console.log('====================================');
     try {
       if (!value?.length) return false;
 
