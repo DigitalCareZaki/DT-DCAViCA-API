@@ -617,51 +617,229 @@ export class TelemedService {
   //   });
   // }
 
-  public async requested(user: UserRes, isPending: boolean): Promise<RequestedAppointmentProps[]> {
-    this.markPastAppointmentsCompleted();
-    return this.prisma.appointmentParticipants.findMany({
-      where: isPending
-        ? { AND: [{ user_id: user.id }, { status: 'PENDING' }] }
-        : { AND: [{ user_id: user.id }, { NOT: { status: 'PENDING' } }] },
-      select: {
-        status: true,
-        id: true,
-        appointment: {
-          select: {
-            id: true,
-            about: true,
-            type: true,
-            title: true,
-            start_date: true,
-            end_date: true,
-            description: true,
-            organizer: {
-              select: {
-                id: true,
-                first_name: true,
-                last_name: true,
-                middle_name: true,
-                uri: true,
-                role: true,
+  public async requested(
+    user: UserRes,
+    isPending: boolean,
+    search?: string,
+    date?: string,
+
+  ): Promise<RequestedAppointmentProps[]> {
+    console.log('requested appointments query parameters:', { isPending, search, date })
+
+    try {
+      this.markPastAppointmentsCompleted();
+      console.log('try appointments query parameters:', { isPending, search, date })
+      const appointmentDateFilter: any = {};
+
+      if (date) {
+        appointmentDateFilter.gte = new Date(
+          `${date}T00:00:00.000Z`,
+        );
+
+        appointmentDateFilter.lte = new Date(
+          `${date}T23:59:59.999Z`,
+        );
+      }
+
+      const searchText = search?.trim();
+
+      return this.prisma.appointmentParticipants.findMany({
+        where: {
+          user_id: user.id,
+
+          // Pending / non-pending filter
+          ...(isPending
+            ? {
+              status: 'PENDING',
+            }
+            : {
+              NOT: {
+                status: 'PENDING',
               },
-            },
-            participants: {
-              select: {
-                id: true,
-              },
-            },
-            created_at: true,
-            updated_at: true,
+            }),
+
+          appointment: {
+            // Single date filter
+            ...(date
+              ? {
+                start_date: appointmentDateFilter,
+              }
+              : {}),
+
+            // Search filter
+            ...(searchText
+              ? {
+                OR: [
+                  {
+                    title: {
+                      contains: searchText,
+                      mode: 'insensitive',
+                    },
+                  },
+
+                  {
+                    description: {
+                      contains: searchText,
+                      mode: 'insensitive',
+                    },
+                  },
+
+                  // Organizer name
+                  {
+                    organizer: {
+                      first_name: {
+                        contains: searchText,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                  {
+                    organizer: {
+                      middle_name: {
+                        contains: searchText,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                  {
+                    organizer: {
+                      last_name: {
+                        contains: searchText,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+
+                  // Participant name
+                  {
+                    participants: {
+                      some: {
+                        user: {
+                          OR: [
+                            {
+                              first_name: {
+                                contains: searchText,
+                                mode: 'insensitive',
+                              },
+                            },
+                            {
+                              middle_name: {
+                                contains: searchText,
+                                mode: 'insensitive',
+                              },
+                            },
+                            {
+                              last_name: {
+                                contains: searchText,
+                                mode: 'insensitive',
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                ],
+              }
+              : {}),
           },
         },
-      },
-      orderBy: {
-        appointment: {
-          updated_at: 'desc'  // Order by the most recently updated appointment
-        }
-      }
-    });
+
+        select: {
+          status: true,
+          id: true,
+
+          appointment: {
+            select: {
+              id: true,
+              about: true,
+              type: true,
+              title: true,
+              start_date: true,
+              end_date: true,
+              description: true,
+
+              organizer: {
+                select: {
+                  id: true,
+                  first_name: true,
+                  last_name: true,
+                  middle_name: true,
+                  uri: true,
+                  role: true,
+                },
+              },
+
+              participants: {
+                select: {
+                  id: true,
+                },
+              },
+
+              created_at: true,
+              updated_at: true,
+            },
+          },
+        },
+
+        orderBy: {
+          appointment: {
+            updated_at: 'desc',
+          },
+        },
+      });
+    } catch (err) {
+      console.error('Error fetching requested appointments:', err);
+      throw new BadRequestException('Failed to fetch requested appointments');
+    }
+
+
   }
+  // public async requested(user: UserRes, isPending: boolean): Promise<RequestedAppointmentProps[]> {
+  //   this.markPastAppointmentsCompleted();
+  //   return this.prisma.appointmentParticipants.findMany({
+  //     where: isPending
+  //       ? { AND: [{ user_id: user.id }, { status: 'PENDING' }] }
+  //       : { AND: [{ user_id: user.id }, { NOT: { status: 'PENDING' } }] },
+  //     select: {
+  //       status: true,
+  //       id: true,
+  //       appointment: {
+  //         select: {
+  //           id: true,
+  //           about: true,
+  //           type: true,
+  //           title: true,
+  //           start_date: true,
+  //           end_date: true,
+  //           description: true,
+  //           organizer: {
+  //             select: {
+  //               id: true,
+  //               first_name: true,
+  //               last_name: true,
+  //               middle_name: true,
+  //               uri: true,
+  //               role: true,
+  //             },
+  //           },
+  //           participants: {
+  //             select: {
+  //               id: true,
+  //             },
+  //           },
+  //           created_at: true,
+  //           updated_at: true,
+  //         },
+  //       },
+  //     },
+  //     orderBy: {
+  //       appointment: {
+  //         updated_at: 'desc'  // Order by the most recently updated appointment
+  //       }
+  //     }
+  //   });
+  // }
 
 
 
@@ -1274,24 +1452,144 @@ export class TelemedService {
 
   }
 
-  public async appointmentList(user: UserRes, page = 1, limit = 10) {
-    const skip = (page - 1) * limit;
-    let data: any[] = [];
-    let totalItems = 0;
+  public async appointmentList(
+    user: UserRes,
+    page = 1,
+    limit = 10,
+    search?: string,
+    date?: string,
 
-    [data, totalItems] = await this.prisma.$transaction([
+  ) {
+    const skip = (page - 1) * limit;
+
+    const appointmentDateFilter: any = {};
+
+    if (date) {
+      appointmentDateFilter.gte = new Date(
+        `${date}T00:00:00.000Z`,
+      );
+
+      appointmentDateFilter.lte = new Date(
+        `${date}T23:59:59.999Z`,
+      );
+    }
+
+    // Remove unnecessary spaces from search
+    const searchText = search?.trim();
+
+    const where: any = {
+      user_id: user.id,
+
+      appointment: {
+        // Date filter
+        ...(date
+          ? {
+            start_date: appointmentDateFilter,
+          }
+          : {}),
+
+        // Search filter
+        ...(searchText
+          ? {
+            OR: [
+              // Appointment title
+              {
+                title: {
+                  contains: searchText,
+                  mode: 'insensitive',
+                },
+              },
+
+              // Appointment description
+              {
+                description: {
+                  contains: searchText,
+                  mode: 'insensitive',
+                },
+              },
+
+              // Organizer first name
+              {
+                organizer: {
+                  first_name: {
+                    contains: searchText,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+
+              // Organizer middle name
+              {
+                organizer: {
+                  middle_name: {
+                    contains: searchText,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+
+              // Organizer last name
+              {
+                organizer: {
+                  last_name: {
+                    contains: searchText,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+
+              // Participant first/middle/last name
+              {
+                participants: {
+                  some: {
+                    user: {
+                      OR: [
+                        {
+                          first_name: {
+                            contains: searchText,
+                            mode: 'insensitive',
+                          },
+                        },
+                        {
+                          middle_name: {
+                            contains: searchText,
+                            mode: 'insensitive',
+                          },
+                        },
+                        {
+                          last_name: {
+                            contains: searchText,
+                            mode: 'insensitive',
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            ],
+          }
+          : {}),
+      },
+    };
+
+    const [data, totalItems] = await this.prisma.$transaction([
       this.prisma.appointmentParticipants.findMany({
-        where: { user_id: user.id },
+        where,
+
         orderBy: {
           appointment: {
             start_date: 'desc',
           },
         },
+
         skip,
         take: limit,
+
         select: {
           id: true,
           status: true,
+
           appointment: {
             select: {
               id: true,
@@ -1302,6 +1600,7 @@ export class TelemedService {
               type: true,
               status: true,
               start_date: true,
+
               organizer: {
                 select: {
                   id: true,
@@ -1311,6 +1610,7 @@ export class TelemedService {
                   role: true,
                 },
               },
+
               participants: {
                 select: {
                   id: true,
@@ -1325,6 +1625,7 @@ export class TelemedService {
                   },
                 },
               },
+
               appointmentObservation: {
                 select: {
                   id: true,
@@ -1339,7 +1640,10 @@ export class TelemedService {
           },
         },
       }),
-      this.prisma.appointmentParticipants.count({ where: { user_id: user.id } }),
+
+      this.prisma.appointmentParticipants.count({
+        where,
+      }),
     ]);
 
     const totalPages = Math.ceil(totalItems / limit);
@@ -1358,6 +1662,91 @@ export class TelemedService {
       },
     };
   }
+
+  // public async appointmentList(user: UserRes, page = 1, limit = 10) {
+  //   const skip = (page - 1) * limit;
+  //   let data: any[] = [];
+  //   let totalItems = 0;
+
+  //   [data, totalItems] = await this.prisma.$transaction([
+  //     this.prisma.appointmentParticipants.findMany({
+  //       where: { user_id: user.id },
+  //       orderBy: {
+  //         appointment: {
+  //           start_date: 'desc',
+  //         },
+  //       },
+  //       skip,
+  //       take: limit,
+  //       select: {
+  //         id: true,
+  //         status: true,
+  //         appointment: {
+  //           select: {
+  //             id: true,
+  //             title: true,
+  //             description: true,
+  //             about: true,
+  //             rating: true,
+  //             type: true,
+  //             status: true,
+  //             start_date: true,
+  //             organizer: {
+  //               select: {
+  //                 id: true,
+  //                 first_name: true,
+  //                 last_name: true,
+  //                 middle_name: true,
+  //                 role: true,
+  //               },
+  //             },
+  //             participants: {
+  //               select: {
+  //                 id: true,
+  //                 user: {
+  //                   select: {
+  //                     id: true,
+  //                     first_name: true,
+  //                     last_name: true,
+  //                     middle_name: true,
+  //                     role: true,
+  //                   },
+  //                 },
+  //               },
+  //             },
+  //             appointmentObservation: {
+  //               select: {
+  //                 id: true,
+  //                 observations: true,
+  //                 diagnosis: true,
+  //                 medications: true,
+  //                 procedure: true,
+  //                 follow_up_date: true,
+  //               },
+  //             },
+  //           },
+  //         },
+  //       },
+  //     }),
+  //     this.prisma.appointmentParticipants.count({ where: { user_id: user.id } }),
+  //   ]);
+
+  //   const totalPages = Math.ceil(totalItems / limit);
+
+  //   return {
+  //     data,
+  //     pagination: {
+  //       totalItems,
+  //       totalPages,
+  //       currentPage: page,
+  //       perPage: limit,
+  //       hasNextPage: page < totalPages,
+  //       hasPrevPage: page > 1,
+  //       nextPage: page < totalPages ? page + 1 : null,
+  //       prevPage: page > 1 ? page - 1 : null,
+  //     },
+  //   };
+  // }
 
   public async appointmentAnalyticsGroup(user: UserRes) {
     const statusLabels: Record<string, string> = {

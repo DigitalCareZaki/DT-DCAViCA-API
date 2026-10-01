@@ -97,11 +97,31 @@ export class TelemedWebController {
   }
 
 
+  // @HttpCode(HttpStatus.OK)
+  // @Get('/requested')
+  // public async requested(@GetUser() user: UserRes, @Query('pending') pending: boolean): Promise<RequestedAppointmentProps[]> {
+  //   const isPending = pending ? true : false; // Convert string to boolean
+  //   return this.telemedService.requested(user, isPending);
+  // }
   @HttpCode(HttpStatus.OK)
   @Get('/requested')
-  public async requested(@GetUser() user: UserRes, @Query('pending') pending: boolean): Promise<RequestedAppointmentProps[]> {
-    const isPending = pending ? true : false; // Convert string to boolean
-    return this.telemedService.requested(user, isPending);
+  public async requested(
+    @GetUser() user: UserRes,
+    @Query('pending') pending: string,
+    @Query('search') search?: string,
+    @Query('date') date?: string,
+
+  ): Promise<RequestedAppointmentProps[]> {
+
+    const isPending = pending === 'true';
+
+    return this.telemedService.requested(
+      user,
+      isPending,
+      search,
+      date,
+
+    );
   }
 
   @HttpCode(HttpStatus.OK)
@@ -128,10 +148,30 @@ export class TelemedWebController {
     return this.telemedService.appointmentAnalytics(user, +page, +limit);
   }
 
+  // @HttpCode(HttpStatus.OK)
+  // @Get('/appointment-list')
+  // public async appointmentList(@GetUser() user: UserRes, @Query('page') page = 1, @Query('limit') limit = 10) {
+  //   return this.telemedService.appointmentList(user, +page, +limit);
+  // }
+
   @HttpCode(HttpStatus.OK)
   @Get('/appointment-list')
-  public async appointmentList(@GetUser() user: UserRes, @Query('page') page = 1, @Query('limit') limit = 10) {
-    return this.telemedService.appointmentList(user, +page, +limit);
+  public async appointmentList(
+    @GetUser() user: UserRes,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('search') search?: string,
+    @Query('date') date?: string,
+
+  ) {
+    return this.telemedService.appointmentList(
+      user,
+      +page,
+      +limit,
+      search,
+      date,
+
+    );
   }
 
   @HttpCode(HttpStatus.OK)
