@@ -13,32 +13,32 @@ import { ResponseInterceptor } from './interceptor/response.interceptor';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      exceptionFactory: (errors) => {
-        console.log(
-          '========== DTO VALIDATION ERROR ==========',
-        );
+  // app.useGlobalPipes(
+  //   new ValidationPipe({
+  //     exceptionFactory: (errors) => {
+  //       console.log(
+  //         '========== DTO VALIDATION ERROR ==========',
+  //       );
 
-        errors.forEach((error) => {
-          console.log('Field:', error.property);
-          console.log('Received value:', error.value);
-          console.log('Errors:', error.constraints);
-          console.log('------------------------------------------');
-        });
+  //       errors.forEach((error) => {
+  //         console.log('Field:', error.property);
+  //         console.log('Received value:', error.value);
+  //         console.log('Errors:', error.constraints);
+  //         console.log('------------------------------------------');
+  //       });
 
-        console.log(
-          '==========================================',
-        );
+  //       console.log(
+  //         '==========================================',
+  //       );
 
-        return new BadRequestException(
-          errors.flatMap((error) =>
-            Object.values(error.constraints ?? {}),
-          ),
-        );
-      },
-    }),
-  );
+  //       return new BadRequestException(
+  //         errors.flatMap((error) =>
+  //           Object.values(error.constraints ?? {}),
+  //         ),
+  //       );
+  //     },
+  //   }),
+  // );
 
   // Enable CORS to allow all origins
   app.enableCors();
