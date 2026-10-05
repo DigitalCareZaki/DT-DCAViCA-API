@@ -77,39 +77,39 @@ export class OrganizationService {
     ] = await Promise.all([
       email
         ? this.prisma.user.findUnique({
-            where: { email },
-            select: { id: true },
-          })
+          where: { email },
+          select: { id: true },
+        })
         : null,
       phoneNumber
         ? this.prisma.user.findUnique({
-            where: { phone_number: phoneNumber },
-            select: { id: true },
-          })
+          where: { phone_number: phoneNumber },
+          select: { id: true },
+        })
         : null,
       username
         ? this.prisma.user.findUnique({
-            where: { username },
-            select: { id: true },
-          })
+          where: { username },
+          select: { id: true },
+        })
         : null,
       shouldCheckDoctorNpi
         ? this.prisma.doctor.findUnique({
-            where: { npi_number: npiNumber },
-            select: { id: true },
-          })
+          where: { npi_number: npiNumber },
+          select: { id: true },
+        })
         : null,
       shouldCheckNurseNpi
         ? this.prisma.nurse.findUnique({
-            where: { npi_number: npiNumber },
-            select: { id: true },
-          })
+          where: { npi_number: npiNumber },
+          select: { id: true },
+        })
         : null,
       shouldCheckPmdcNumber
         ? this.prisma.doctor.findUnique({
-            where: { pmdc_number: pmdcNumber },
-            select: { id: true },
-          })
+          where: { pmdc_number: pmdcNumber },
+          select: { id: true },
+        })
         : null,
     ]);
 
@@ -1035,6 +1035,7 @@ export class OrganizationService {
       const whereCondition: any = isSuperAdmin
         ? {
           role: 'NURSE',
+          organization_id: targetId,
 
         }
         : {
