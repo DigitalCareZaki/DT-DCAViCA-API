@@ -72,18 +72,6 @@ export class TelemedService {
     ));
   }
 
-  // private applyDate(base: Date, target: Date): Date {
-  //   console.log('Applying date=============>>>>>', base, target);
-  //   return new Date(
-  //     target.getFullYear(),
-  //     target.getMonth(),
-  //     target.getDate(),
-  //     base.getHours(),
-  //     base.getMinutes(),
-  //     base.getSeconds(),
-  //     base.getMilliseconds()
-  //   );
-  // }
 
   startOfDay(date: Date) {
     const d = new Date(date);
@@ -2023,21 +2011,32 @@ export class TelemedService {
 
       console.log('Appointments ====>>>', appointments);
       console.log('normalizedSlots ====>>>', normalizedSlots);
+      const PKT_OFFSET = 5 * 60 * 60 * 1000;
+      const now = new Date(Date.now() + PKT_OFFSET);
 
       // STEP 4 — Filter Out Booked Slots (UTC → UTC compare)
       const availableSlots = normalizedSlots.filter(slot => {
+        const slotStart = slot.startTime.getTime();
+        const slotEnd = slot.endTime.getTime();
+        console.log('Now UTC:', now.toISOString());
+        console.log('Slot UTC:', slot.startTime.toISOString());
+        // STEP 4.1 — Remove past slots
+        if (slotStart < now.getTime()) {
+          return false;
+        }
+
         if (!appointments || appointments.length === 0) return true;
 
         return !appointments.some(appt => {
-          const PKT_OFFSET = 5 * 60 * 60 * 1000;
+
 
           const apptStartPKT = new Date(appt.start_date.getTime() + PKT_OFFSET);
           const apptEndPKT = new Date(appt.end_date.getTime() + PKT_OFFSET);
 
           const apptStart = apptStartPKT.getTime();
           const apptEnd = apptEndPKT.getTime();
-          const slotStart = slot.startTime.getTime();
-          const slotEnd = slot.endTime.getTime();
+          // const slotStart = slot.startTime.getTime();
+          // const slotEnd = slot.endTime.getTime();
 
           return this.isOverlapping(slotStart, slotEnd, apptStart, apptEnd);
         });
