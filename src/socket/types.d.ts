@@ -10,6 +10,11 @@ export interface AppointmentProps {
   microphone: boolean;
 }
 
+export interface AppointmentUpdateProps {
+  appointment_id: string;
+  action: 'CREATED';
+}
+
 export interface MeetingChatProps {
   message: string;
   user_id: string;

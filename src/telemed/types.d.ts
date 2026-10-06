@@ -1,6 +1,15 @@
 import { UserRole } from '@types';
+import type { UserRes } from '@types';
 
 export type { Appointment } from 'prisma/prisma-client';
+
+export type AppointmentCreatedEvent = {
+  appointmentId: string;
+  title: string;
+  organizer: Pick<UserRes, 'id' | 'first_name' | 'middle_name' | 'last_name'>;
+  // invited users, excluding the organizer
+  participantIds: string[];
+};
 
 export type GetAppointmentsType = {
   id: string;

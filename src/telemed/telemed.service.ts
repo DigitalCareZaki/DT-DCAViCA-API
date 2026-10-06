@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TelemedCreateDTO } from './dto';
 import { TelemedActionDTO, TelemedRatingDTO } from './dto/action.dto';
@@ -20,6 +21,7 @@ import type {
   GetMeetingChatsProps,
   SlotParent,
   AppointmentReport,
+  AppointmentCreatedEvent,
 } from './types';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
 import { SENDGRID_TEMPLATES } from 'src/constant';
@@ -30,7 +32,12 @@ import { userInfo } from 'os';
 
 @Injectable()
 export class TelemedService {
-  constructor(private prisma: PrismaService, private mail: SendgridService, private sms: TwilioService) { }
+  constructor(
+    private prisma: PrismaService,
+    private mail: SendgridService,
+    private sms: TwilioService,
+    private eventEmitter: EventEmitter2,
+  ) { }
 
 
 
@@ -281,20 +288,15 @@ export class TelemedService {
     });
 
     // dto.users is doctor id
+    // Awaited so the rows exist before participants are notified and refetch
     if (dto.users.length > 0) {
-      dto.users.forEach(async (user) => {
-        console.log(user, '===========>>>user');
-
-        await this.prisma.appointmentParticipants.create({
-          data: {
-            status: 'PENDING',
-            user_id: user,
-            appointment_id: appointment.id,
-          },
-        });
+      await this.prisma.appointmentParticipants.createMany({
+        data: dto.users.map((userId) => ({
+          status: 'PENDING',
+          user_id: userId,
+          appointment_id: appointment.id,
+        })),
       });
-
-      // await this.prisma.$transaction(records);
     }
 
     await this.prisma.room.create({
@@ -307,6 +309,19 @@ export class TelemedService {
         },
       },
     });
+
+    // Realtime + in-app notification for invited users (handled by TelemedListener)
+    this.eventEmitter.emit('appointment.created', {
+      appointmentId: appointment.id,
+      title: appointment.title,
+      organizer: {
+        id: user.id,
+        first_name: user.first_name,
+        middle_name: user.middle_name,
+        last_name: user.last_name,
+      },
+      participantIds: dto.users.filter((userId) => userId !== user.id),
+    } satisfies AppointmentCreatedEvent);
 
     const doctors = await this.prisma.user.findMany({
       where: {
