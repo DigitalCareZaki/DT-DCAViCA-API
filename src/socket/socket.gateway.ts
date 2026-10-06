@@ -11,7 +11,11 @@ import { Socket, Server } from 'socket.io';
 import { SocketService } from './socket.service';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import type { AppointmentProps, MeetingChatProps } from './types';
+import type {
+  AppointmentProps,
+  AppointmentUpdateProps,
+  MeetingChatProps,
+} from './types';
 import { ChatService } from './chat.service';
 import { NotificationService } from './notification.service';
 
@@ -190,6 +194,14 @@ export class SocketGateway
 
   public emitRealtimeNotification(recieverId: string, notification: any): void {
     this.server.emit(`${recieverId}:recieve_notification`, notification);
+  }
+
+  // Lightweight signal so the user's open telemed dashboard refetches its appointments
+  public emitAppointmentUpdate(
+    userId: string,
+    payload: AppointmentUpdateProps,
+  ): void {
+    this.server.emit(`${userId}:appointment_update`, payload);
   }
 
   private emitTotalParticipants(participants: any, appointment_id: string) {
