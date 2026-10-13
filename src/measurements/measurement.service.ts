@@ -837,71 +837,71 @@ export class MeasurementService {
       });
 
 
-      let message = '';
+      // let message = '';
 
-      if (measurement.values.length > 1) {
-        message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
+      // if (measurement.values.length > 1) {
+      //   message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
 
-      } else {
-        message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
+      // } else {
+      //   message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
 
-      }
-      console.log(user.phone_number, 'userphone_number  ======>>>>>');
-      await this.sms.sendSMS(user.phone_number, message);
+      // }
+      // console.log(user.phone_number, 'userphone_number  ======>>>>>');
+      // await this.sms.sendSMS(user.phone_number, message);
 
-      // Save the SMS log to the database
-      await this.prisma.sms.create({
-        data: {
-          receiver_id: user.id,
-          sender_id: measurement.patient.user.id,
-          to: user.phone_number,
-          body: message,
-        },
-      });
+      // // Save the SMS log to the database
+      // await this.prisma.sms.create({
+      //   data: {
+      //     receiver_id: user.id,
+      //     sender_id: measurement.patient.user.id,
+      //     to: user.phone_number,
+      //     body: message,
+      //   },
+      // });
 
 
 
-      const contacts = await this.prisma.contacts.findMany({
-        where: {
-          user: {
-            id: measurement.patient.user.id,
-          }
-        },
-        select: {
-          id: true,
-          number: true,
-          user: {
-            select: {
-              id: true,
-            },
-          },
-        },
-      });
+      // const contacts = await this.prisma.contacts.findMany({
+      //   where: {
+      //     user: {
+      //       id: measurement.patient.user.id,
+      //     }
+      //   },
+      //   select: {
+      //     id: true,
+      //     number: true,
+      //     user: {
+      //       select: {
+      //         id: true,
+      //       },
+      //     },
+      //   },
+      // });
 
-      if (contacts.length > 0) {
-        contacts.forEach(async (contact) => {
-          if (measurement.values.length > 1) {
-            message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
+      // if (contacts.length > 0) {
+      //   contacts.forEach(async (contact) => {
+      //     if (measurement.values.length > 1) {
+      //       message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
 
-          } else {
-            message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
+      //     } else {
+      //       message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
 
-          }
+      //     }
 
-          await this.sms.sendSMS(contact.number, message);
-          console.log(contact, '=========>contact after sms');
-          // Save the SMS log to the database
-          await this.prisma.sms.create({
-            data: {
-              receiver_id: contact.user.id,
-              sender_id: user.id,
-              to: contact.number,
-              body: message,
-            },
-          });
+      //     await this.sms.sendSMS(contact.number, message);
+      //     console.log(contact, '=========>contact after sms');
+      //     // Save the SMS log to the database
+      //     await this.prisma.sms.create({
+      //       data: {
+      //         receiver_id: contact.user.id,
+      //         sender_id: user.id,
+      //         to: contact.number,
+      //         body: message,
+      //       },
+      //     });
 
-        });
-      }
+      //   });
+      // }
 
 
     } else {
