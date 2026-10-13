@@ -61,14 +61,57 @@ export class EventListener {
       }
       if (payload.doctorId) {
         console.log('doctorId in Doctor:======>>>', payload.doctorId);
-        await this.prisma.measurement.update({
+        const measurement = await this.prisma.measurement.update({
           where: {
             id: payload.measurement.id,
           },
           data: {
             status: category,
           },
+          include: {
+            patient: {
+              include: {
+                user: true,
+              },
+            },
+            doctor: {
+              include: {
+                user: true,
+              },
+            },
+
+          },
         });
+
+        const hasValues = measurement.values.length === 1 || measurement.values.length === 2;
+        if ((category !== 'HIGH' && category !== 'LOW') || !hasValues) {
+          return;
+        }
+
+        let message = '';
+
+        if (measurement.values.length > 1) {
+          message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}/${measurement.values[1]}`;
+
+        } else {
+          message = `Your patient ${measurement.patient.user.first_name} has an alert for ${measurement.type} of ${measurement.values[0]}`;
+
+        }
+        console.log(measurement.doctor.user.phone_number, 'userphone_number  ======>>>>>');
+        await this.sms.sendSMS(measurement.doctor.user.phone_number, message);
+
+        // Save the SMS log to the database
+        await this.prisma.sms.create({
+          data: {
+            receiver_id: measurement.doctor.user.id,
+            sender_id: measurement.patient.user.id,
+            to: measurement.doctor.user.phone_number,
+            body: message,
+          },
+        });
+
+
+
       } else {
 
         const doctor = await this.prisma.doctor.findFirst({
@@ -105,6 +148,10 @@ export class EventListener {
         });
 
         console.log('measurement after update:======>>>', measurement);
+        const hasValues = measurement.values.length === 1 || measurement.values.length === 2;
+        if ((category !== 'HIGH' && category !== 'LOW') || !hasValues) {
+          return;
+        }
         if (measurement) {
           let message = '';
           if (measurement.values.length > 1) {
