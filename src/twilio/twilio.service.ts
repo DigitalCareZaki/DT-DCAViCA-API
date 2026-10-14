@@ -63,6 +63,7 @@ export class TwilioService {
     try {
       const message = await this.client.messages.create({ body, from: this.from, to });
       console.log('Message sent:', message.sid);
+      console.log('Message sent:', message);
       return message;
     } catch (error: any) {
       console.error('Error sending SMS:', error.message);
