@@ -2155,7 +2155,8 @@ export class TelemedService {
           diagnosis: data.diagnosis,
           medications: data.medications,
           procedure: data.procedure,
-          follow_up_date: new Date(data.follow_up_date),
+          // Optional: new Date(undefined) is an Invalid Date, which Prisma rejects
+          follow_up_date: data.follow_up_date ? new Date(data.follow_up_date) : undefined,
         },
       });
     } else {
