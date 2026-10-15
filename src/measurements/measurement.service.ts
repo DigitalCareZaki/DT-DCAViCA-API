@@ -1713,7 +1713,7 @@ export class MeasurementService {
         user_id: userId,
       },
     };
-
+    // measurement type is provided, filter by type, otherwise get all measurements for the patient
     if (type) {
       // Doctor and Nurse with specific measurement type
       if (role === 'DOCTOR' || role === 'NURSE') {
