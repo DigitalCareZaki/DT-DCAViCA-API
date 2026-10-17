@@ -75,9 +75,22 @@ export class SocketGateway
 
   @SubscribeMessage('appointment')
   handleMeeting(client: Socket, payload: AppointmentProps): void {
-    if (!payload.appointment_id) return;
+    console.log('[socket] appointment connect payload', {
+      socket_id: client.id,
+      handshake_user_id: client.handshake.query?.id,
+      payload,
+    });
+
+    if (!payload?.appointment_id) {
+      console.log('[socket] appointment connect ignored: missing appointment_id', {
+        socket_id: client.id,
+        payload,
+      });
+      return;
+    }
 
     const participants = this.socketService.onAppointmentJoin(payload);
+
 
     this.emitTotalParticipants(participants, payload.appointment_id);
 
@@ -192,7 +205,12 @@ export class SocketGateway
   }
 
   private emitTotalParticipants(participants: any, appointment_id: string) {
-    console.log('emitting: ', `${appointment_id}:totalParticiapnts`);
+    console.log('[socket] emitting total participants', {
+      appointment_id,
+      event: `${appointment_id}:totalParticiapnts`,
+      participants_count: participants?.length ?? 0,
+      participants,
+    });
     this.server.emit(`${appointment_id}:totalParticiapnts`, participants);
   }
 

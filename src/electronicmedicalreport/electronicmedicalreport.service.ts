@@ -105,6 +105,7 @@ export class ElectronicmedicalreportService {
           },
         },
       }),
+
       this.prisma.electronicMedicalReport.count({
         where: whereCondition,
       }),
