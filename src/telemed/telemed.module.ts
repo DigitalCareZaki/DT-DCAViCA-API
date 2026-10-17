@@ -7,16 +7,20 @@ import { TwilioService } from 'src/twilio/twilio.service';
 import { AdminService } from 'src/admin/admin.service';
 import { SocketModule } from 'src/socket/socket.module';
 import { TelemedListener } from './telemed.listener';
+import { UploaderService } from 'src/uploader/uploader.service';
+import { CloudinaryProvider } from 'src/uploader/cloudinary.provider';
 
 @Module({
   imports: [SocketModule],
-  controllers: [TelemedWebController, TelemedAppController],
+  controllers: [TelemedWebController, TelemedAppController,],
   providers: [
     TelemedService,
     TelemedListener,
     SendgridService,
     TwilioService,
     AdminService,
+    UploaderService,
+    CloudinaryProvider
   ],
 })
 export class TelemedModule { }

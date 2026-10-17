@@ -742,6 +742,8 @@ model AppointmentObservation {
 
     appointment Appointment? @relation(name: "appointmentObservation")
 
+    consultation_pdf_url String?
+
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt
 }

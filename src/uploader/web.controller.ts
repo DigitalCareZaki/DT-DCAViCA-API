@@ -45,6 +45,12 @@ export class UploaderWebController extends UploaderController {
   async upload(@UploadedFile() file: Express.Multer.File) {
     return this.getUploaderService().uploadToS3(file);
   }
+  @HttpCode(HttpStatus.OK)
+  @Post('/uploadpdf')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadPdf(pdfBuffer: Buffer, appointmentId: string) {
+    return this.getUploaderService().uploadPdfToS3(pdfBuffer, appointmentId);
+  }
 
   // @HttpCode(HttpStatus.OK)
   // @Post('/uploads3')

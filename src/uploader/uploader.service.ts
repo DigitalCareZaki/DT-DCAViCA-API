@@ -60,10 +60,37 @@ export class UploaderService {
     }
     catch (err) {
       console.error('Error uploading file to S3:', err);
-      throw new Error('Error uploading file to S3');
+      throw err;
     }
 
   }
+
+  async uploadPdfToS3(
+    pdfBuffer: Buffer,
+    appointmentId: string,
+  ): Promise<{ key: string; url: string }> {
+    const fileName = `consultations/${appointmentId}/consultation-${Date.now()}.pdf`;
+
+    try {
+      await this.s3.send(
+        new PutObjectCommand({
+          Bucket: this.avicaBucket,
+          Key: fileName,
+          Body: pdfBuffer,
+          ContentType: 'application/pdf',
+        }),
+      );
+
+      return {
+        key: fileName,
+        url: `https://${this.avicaBucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`,
+      };
+    } catch (err) {
+      console.error('Error uploading consultation PDF:', err);
+      throw err;
+    }
+  }
+
   public async streamToBuffer(stream: Readable): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
@@ -114,7 +141,7 @@ export class UploaderService {
       };
     } catch (error) {
       console.error(" Transfer failed:", error);
-      return { error: "No file found in source bucket" };
+      throw error;
     }
   }
 

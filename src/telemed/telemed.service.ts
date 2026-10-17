@@ -5,6 +5,7 @@ import { TelemedCreateDTO } from './dto';
 import { TelemedActionDTO, TelemedRatingDTO } from './dto/action.dto';
 import { SendMailPayload } from '@types';
 import type { UserRes } from '@types';
+import PDFDocument = require('pdfkit');
 import { Cron } from '@nestjs/schedule';
 
 import type {
@@ -29,6 +30,7 @@ import { TwilioService } from 'src/twilio/twilio.service';
 import { Role } from '@prisma/client';
 import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 import { userInfo } from 'os';
+import { UploaderService } from 'src/uploader/uploader.service';
 
 @Injectable()
 export class TelemedService {
@@ -37,6 +39,7 @@ export class TelemedService {
     private mail: SendgridService,
     private sms: TwilioService,
     private eventEmitter: EventEmitter2,
+    private uploaderService: UploaderService,
   ) { }
 
 
@@ -974,6 +977,17 @@ export class TelemedService {
                     },
                   },
                 },
+                appointmentObservation: {
+                  select: {
+                    id: true,
+                    observations: true,
+                    diagnosis: true,
+                    medications: true,
+                    procedure: true,
+                    consultation_pdf_url: true,
+                    follow_up_date: true,
+                  },
+                },
               },
             },
           },
@@ -1270,6 +1284,17 @@ export class TelemedService {
                     role: true,
                   },
                 },
+              },
+            },
+            appointmentObservation: {
+              select: {
+                id: true,
+                observations: true,
+                diagnosis: true,
+                medications: true,
+                procedure: true,
+                consultation_pdf_url: true,
+                follow_up_date: true,
               },
             },
           },
@@ -1636,6 +1661,7 @@ export class TelemedService {
                   diagnosis: true,
                   medications: true,
                   procedure: true,
+                  consultation_pdf_url: true,
                   follow_up_date: true,
                 },
               },
@@ -2132,62 +2158,244 @@ export class TelemedService {
     user: UserRes,
     data: AppointmentReport,
   ): Promise<AppointmentReport> {
-    // Fetch the appointment with existing observation (if any)
-    const existingAppointment = await this.prisma.appointment.findUnique({
-      where: { id: data.appointmentId },
-      include: {
-        appointmentObservation: true,
-      },
-    });
-
-    if (!existingAppointment) {
-      throw new Error(`Appointment with ID ${data.appointmentId} does not exist.`);
-    }
-
-    let observation;
-
-    // If observation exists, update it
-    if (existingAppointment.appointmentObservation) {
-      observation = await this.prisma.appointmentObservation.update({
-        where: { id: existingAppointment.appointmentObservation.id },
-        data: {
-          observations: data.observations,
-          diagnosis: data.diagnosis,
-          medications: data.medications,
-          procedure: data.procedure,
-          // Optional: new Date(undefined) is an Invalid Date, which Prisma rejects
-          follow_up_date: data.follow_up_date ? new Date(data.follow_up_date) : undefined,
-        },
-      });
-    } else {
-      //  If no observation exists, create one and link it
-      observation = await this.prisma.appointmentObservation.create({
-        data: {
-          observations: data.observations,
-          diagnosis: data.diagnosis,
-          medications: data.medications,
-          procedure: data.procedure,
-          follow_up_date: data.follow_up_date,
-          appointment: {
-            connect: { id: data.appointmentId },
-          },
-        },
-      });
-
-      // Link the new observation to the appointment
-      await this.prisma.appointment.update({
+    try {
+      // Fetch the appointment with existing observation (if any)
+      const existingAppointment = await this.prisma.appointment.findUnique({
         where: { id: data.appointmentId },
-        data: {
-          appointmentObservation_id: observation.id,
+        include: {
+          appointmentObservation: true,
         },
       });
-    }
 
-    // Return the final observation
-    return {
-      ...data,
-      id: observation.id,
-    };
+      if (!existingAppointment) {
+        throw new Error(`Appointment with ID ${data.appointmentId} does not exist.`);
+      }
+
+      let observation;
+
+      // If observation exists, update it
+      if (existingAppointment.appointmentObservation) {
+
+        observation = await this.prisma.appointmentObservation.update({
+          where: { id: existingAppointment.appointmentObservation.id },
+          data: {
+            observations: data.observations,
+            diagnosis: data.diagnosis,
+            medications: data.medications,
+            procedure: data.procedure,
+            // Optional: new Date(undefined) is an Invalid Date, which Prisma rejects
+            follow_up_date: data.follow_up_date ? new Date(data.follow_up_date) : undefined,
+          },
+        });
+      } else {
+        console.log("data=============>>>sdfasdf", data);
+        //  If no observation exists, create one and link it
+        observation = await this.prisma.appointmentObservation.create({
+          data: {
+            observations: data.observations,
+            diagnosis: data.diagnosis,
+            medications: data.medications,
+            procedure: data.procedure,
+            follow_up_date: data.follow_up_date,
+            appointment: {
+              connect: { id: data.appointmentId },
+            },
+          },
+        });
+        console.log("observation=============>>>", observation);
+        // Link the new observation to the appointment
+        await this.prisma.appointment.update({
+          where: { id: data.appointmentId },
+          data: {
+            appointmentObservation_id: observation.id,
+          },
+        });
+      }
+
+
+
+      // Generate and upload the PDF after saving the report.
+
+      const pdfBuffer = await this.generateConsultationPdf({
+        appointmentId: data.appointmentId,
+        observations: observation.observations,
+        diagnosis: observation.diagnosis,
+        medications: observation.medications,
+        procedure: observation.procedure,
+        follow_up_date: observation.follow_up_date,
+      });
+
+      const uploadResult = await this.uploaderService.uploadPdfToS3(
+        pdfBuffer,
+        data.appointmentId,
+      );
+
+      observation = await this.prisma.appointmentObservation.update({
+        where: { id: observation.id },
+        data: {
+          consultation_pdf_url: uploadResult.url,
+        },
+      });
+
+
+      // Return the final observation
+      return {
+        ...data,
+        id: observation.id,
+      };
+
+    } catch (error) {
+      // The report is already saved. Log the PDF failure for retry.
+      console.error(
+        `Consultation PDF generation/upload failed for appointment ${data.appointmentId}:`,
+        error,
+      );
+    }
+  }
+
+  private generateConsultationPdf(report: {
+    appointmentId: string;
+    observations: string | null;
+    diagnosis: string | null;
+    medications: string | null;
+    procedure: string | null;
+    follow_up_date: Date | null;
+  }): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 50, bottom: 50, left: 45, right: 45 },
+        bufferPages: true,
+      });
+
+      const chunks: Buffer[] = [];
+
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      const pageWidth = doc.page.width;
+      const left = 45;
+      const tableWidth = pageWidth - 90;
+      const labelWidth = 150;
+      const valueWidth = tableWidth - labelWidth;
+
+      // Report title
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(20)
+        .text('Meeting Consultation Report', {
+          align: 'center',
+        });
+
+      doc.moveDown(0.5);
+
+      doc
+        .font('Helvetica')
+        .fontSize(10)
+        .text(`Appointment ID: ${report.appointmentId}`, left);
+
+      doc.text(`Report Date: ${new Date().toLocaleDateString()}`, left);
+
+      doc.moveDown(1);
+
+      // Table heading
+      doc.font('Helvetica-Bold').fontSize(12);
+      doc.text('Consultation Details', left, doc.y);
+
+      doc.moveDown(0.5);
+
+      const rows = [
+        ['Observations', report.observations || 'Not provided'],
+        ['Diagnosis', report.diagnosis || 'Not provided'],
+        ['Medications', report.medications || 'Not provided'],
+        ['Procedure', report.procedure || 'Not provided'],
+        [
+          'Follow-up Date',
+          report.follow_up_date
+            ? report.follow_up_date.toISOString().slice(0, 10)
+            : 'Not scheduled',
+        ],
+      ];
+
+      const padding = 8;
+      const minRowHeight = 34;
+
+      const drawTableHeader = () => {
+        const y = doc.y;
+
+        doc.rect(left, y, labelWidth, 28).fillAndStroke('#E8EEF5', '#AAB4C0');
+        doc.rect(left + labelWidth, y, valueWidth, 28)
+          .fillAndStroke('#E8EEF5', '#AAB4C0');
+
+        doc.fillColor('#000000').font('Helvetica-Bold').fontSize(10);
+
+        doc.text('Field', left + padding, y + 9, {
+          width: labelWidth - padding * 2,
+        });
+
+        doc.text('Details', left + labelWidth + padding, y + 9, {
+          width: valueWidth - padding * 2,
+        });
+
+        doc.y = y + 28;
+      };
+
+      drawTableHeader();
+
+      for (const [label, value] of rows) {
+        doc.font('Helvetica').fontSize(10);
+
+        const valueHeight = doc.heightOfString(value, {
+          width: valueWidth - padding * 2,
+        });
+
+        const rowHeight = Math.max(
+          minRowHeight,
+          valueHeight + padding * 2,
+        );
+
+        // Add a new page when the row does not fit.
+        if (doc.y + rowHeight > doc.page.height - 50) {
+          doc.addPage();
+          drawTableHeader();
+        }
+
+        const y = doc.y;
+
+        // Draw the two table cells.
+        doc.rect(left, y, labelWidth, rowHeight)
+          .fillAndStroke('#F5F7FA', '#AAB4C0');
+
+        doc.rect(left + labelWidth, y, valueWidth, rowHeight)
+          .fillAndStroke('#FFFFFF', '#AAB4C0');
+
+        // Draw cell text.
+        doc.fillColor('#000000');
+
+        doc.font('Helvetica-Bold').fontSize(10).text(
+          label,
+          left + padding,
+          y + padding,
+          {
+            width: labelWidth - padding * 2,
+          },
+        );
+
+        doc.font('Helvetica').fontSize(10).text(
+          value,
+          left + labelWidth + padding,
+          y + padding,
+          {
+            width: valueWidth - padding * 2,
+          },
+        );
+
+        doc.y = y + rowHeight;
+      }
+
+      doc.end();
+    });
   }
 
   // public async updateCalendar(
