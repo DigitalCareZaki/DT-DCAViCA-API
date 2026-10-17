@@ -1315,6 +1315,7 @@ export class TelemedService {
         description: item.appointment.description,
         about: item.appointment.about,
         type: item.appointment.type,
+        report_url: item.appointment.appointmentObservation?.consultation_pdf_url || null,
         patientId: item.appointment.organizer.id,
         patient_name: `${item.appointment.organizer.first_name} ${item.appointment.organizer.last_name}`,
         doctorid: doctor?.id || null,
