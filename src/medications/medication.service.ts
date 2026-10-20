@@ -578,7 +578,7 @@ export class MedicationService {
         alert_time: true,
         taken: true,
       },
-      // orderBy: { alert_time: 'asc' },
+      orderBy: { alert_time: 'desc' },
     });
 
 
