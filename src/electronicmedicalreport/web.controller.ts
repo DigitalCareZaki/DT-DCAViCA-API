@@ -33,12 +33,21 @@ export class EMRWebController {
     return report;
   }
 
-  @Get('/')
+  @Get('/reports') // for app
   public async getPatientRecords(@Query('patient_id') patient_id: string, @Query('search') search: string, @Query('page') page = 1, @Query('limit') limit = 10) {
     console.log('getting records');
     console.log({ patient_id, search });
     return this.service.getPatientRecords(patient_id, search ?? '', +page, +limit);
   }
+  @Get('/') // for app
+  public async getAppPatientRecords(@Query('patient_id') patient_id: string, @Query('search') search: string) {
+    console.log('getting records');
+    console.log({ patient_id, search });
+    return this.service.getAppPatientRecords(patient_id, search ?? '');
+  }
+
+
+
 
   @HttpCode(HttpStatus.OK)
   @Delete('/:id') // :id -> contact_id

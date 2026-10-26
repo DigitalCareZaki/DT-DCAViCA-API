@@ -118,7 +118,7 @@ export class ElectronicmedicalreportService {
       ...r,
       type: r.type === 'RECORD' ? 'LAB_REPORT' : r.type,
     }));
-
+    console.log('transformedReports===>>>', totalPages, transformedReports);
     return {
       data: transformedReports,
       pagination: {
@@ -129,6 +129,76 @@ export class ElectronicmedicalreportService {
         hasNextPage: page < totalPages,
         hasPrevPage: page > 1,
       },
+    };
+  }
+
+  public async getAppPatientRecords(
+    patient_id: string,
+    search: string = '',
+
+  ) {
+
+
+    const patient = await this.prisma.patient.findFirstOrThrow({
+      where: { user_id: patient_id },
+      select: { id: true },
+    });
+
+    const whereCondition: Prisma.ElectronicMedicalReportWhereInput =
+      search.trim()
+        ? {
+          patient_id: patient.id,
+          OR: [
+            { title: { contains: search, mode: Prisma.QueryMode.insensitive } },
+            {
+              description: {
+                contains: search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          ],
+        }
+        : { patient_id: patient.id };
+
+
+    const reports = await this.prisma.electronicMedicalReport.findMany({
+      where: whereCondition,
+
+      orderBy: { created: 'desc' },
+      select: {
+        title: true,
+        uri: true,
+        created: true,
+        description: true,
+        type: true,
+        patient: {
+          select: {
+            user: {
+              select: {
+                first_name: true,
+                last_name: true,
+                middle_name: true,
+                uri: true,
+                id: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+
+
+
+
+    // **** Transform "record" => "LAB_REPORT"
+    const transformedReports = reports.map((r) => ({
+      ...r,
+      type: r.type === 'RECORD' ? 'LAB_REPORT' : r.type,
+    }));
+
+    return {
+      data: transformedReports,
     };
   }
 

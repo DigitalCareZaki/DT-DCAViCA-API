@@ -37,8 +37,8 @@ const vivalinkConfig = {
 function hasVivalinkConfig(): boolean {
   return Boolean(
     vivalinkConfig.baseUrl &&
-      vivalinkConfig.adminEmail &&
-      vivalinkConfig.adminPassword,
+    vivalinkConfig.adminEmail &&
+    vivalinkConfig.adminPassword,
   );
 }
 
@@ -371,7 +371,7 @@ async function createAdmin() {
 }
 
 async function createMaster() {
-  const encPassword = await argon.hash('Avica@123');
+  const encPassword = await argon.hash('VentureMS@123');
 
   const city = await prisma.city.findFirstOrThrow({
     orderBy: { created_at: 'desc' },
@@ -546,12 +546,12 @@ async function createDoctor(siteId?: string) {
     },
     ...(siteId
       ? {
-          site: {
-            connect: {
-              id: siteId,
-            },
+        site: {
+          connect: {
+            id: siteId,
           },
-        }
+        },
+      }
       : {}),
   });
 
