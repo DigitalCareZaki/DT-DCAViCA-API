@@ -878,7 +878,7 @@ export class DoctorService {
       };
 
       const vlResponse = await this.addDoctorToVlWebPortal(vlPayload);
-
+      console.log('Vivalink API Response======>>>>:', vlResponse);
       const vivalinkDoctors = await this.getAllDoctorsFromVl();
       const matchedDoctor = vivalinkDoctors.find(
         (doc) => doc.email === doctor.user.email,

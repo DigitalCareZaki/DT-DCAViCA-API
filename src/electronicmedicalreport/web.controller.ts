@@ -33,7 +33,7 @@ export class EMRWebController {
     return report;
   }
 
-  @Get('/reports') // for app
+  @Get('/reports') // for web
   public async getPatientRecords(@Query('patient_id') patient_id: string, @Query('search') search: string, @Query('page') page = 1, @Query('limit') limit = 10) {
     console.log('getting records');
     console.log({ patient_id, search });

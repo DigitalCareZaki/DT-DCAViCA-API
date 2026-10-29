@@ -254,7 +254,8 @@ export class PatientService {
         height: patientData.height,
         weight: patientData.weight,
         site: vivalinkSiteId,
-        monitoringProtocol: "6865f38fa347336ebcc57ecb",
+        monitoringProtocol: "6569478ce6cc700b3fa2343c", // Default Monitoring Protocol
+        // monitoringProtocol: "6865f38fa347336ebcc57ecb", // South City Monitoring Protocol
         assignedPhysician: assignedPhysicianVivalinkId,
         physician: assignedPhysicianVivalinkId,
         reportForThirdParty: false,
