@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import * as argon from 'argon2';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PatientMedicationAlertDTO, UpdateProfileDTO } from './dto';
@@ -7,11 +7,12 @@ import puppeteer from 'puppeteer';
 import type { MedicationTaken } from '@prisma/client';
 import type { AssignedCareTeam, ProfileProps } from './types';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
-import { SendMailPayload } from '@types';
+import { SendMailPayload, UserRes } from '@types';
 import { SENDGRID_TEMPLATES } from 'src/constant';
 import { VivalinkSyncStatus } from '@prisma/client';
 import { AddPatientResult, VivalinkSyncResult, TriggerVivalinkSyncResult } from './types';
 import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
+import AppError from 'src/errors/AppError';
 
 export interface VivalinkPatientAddDTO {
   firstName: string
@@ -152,7 +153,7 @@ export class PatientService {
       });
 
       if (cardiacMonitoring === VivalinkSyncStatus.YES) {
-        vivalinkResult = await this.syncPatientToVivalink(patient.id);
+        vivalinkResult = await this.syncPatientToVivalink(patient.id, data.monitring_protocol_id);
 
         if (!vivalinkResult.success) {
           const syncError =
@@ -194,12 +195,47 @@ export class PatientService {
   }
 
 
+  public async getProtocols(user: UserRes) {
+    try {
+      // https://webportal.vivalink.com/api/backend/patients?$skip=0&$limit=10&queryValue=hk-patient-dev-01&isManage=true
+      //https://webportal.vivalink.com/api/backend/monitoringProtocols?$sort[score]=-1&$skip=0&$limit=10000&sortBy=score&order=-1
+      const url = `${this.vlWebportalUrl}/monitoringProtocols?$sort[score]=-1&$skip=0&$limit=10000&sortBy=score&order=-1`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.vlWebportalToken}`,
+        },
+      });
+
+
+      // console.log('getProtocols from VL -> result >>>>>>>> ', response);
+
+      if (response.status !== 200) {
+        throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
+      }
+
+      const result = await response.json();
+      const protocols = result.data.map(({ _id, name }) => ({
+        _id,
+        name,
+      }));
+      console.log('getProtocols from VL -> result >>>>>>>> ', protocols);
+      return protocols ?? {};
+    } catch (err) {
+      console.error('getProtocols -> Error fetching protocols', err);
+      throw err; // ⬅️ IMPORTANT
+    }
+  }
+
+
 
   /**
    * Sync a patient to Vivalink portal
    * @param patientId AViCA Patient ID
+   * @param monitoringProtocolId Monitoring Protocol ID
    */
-  async syncPatientToVivalink(patientId: string): Promise<VivalinkSyncResult> {
+  async syncPatientToVivalink(patientId: string, monitoringProtocolId?: string): Promise<VivalinkSyncResult> {
     try {
       const patientData = await this.prisma.patient.findUnique({
         where: { id: patientId },
@@ -254,12 +290,12 @@ export class PatientService {
         height: patientData.height,
         weight: patientData.weight,
         site: vivalinkSiteId,
-        monitoringProtocol: "6569478ce6cc700b3fa2343c", // Default Monitoring Protocol
+        monitoringProtocol: monitoringProtocolId, // Default Monitoring Protocol
         // monitoringProtocol: "6865f38fa347336ebcc57ecb", // South City Monitoring Protocol
         assignedPhysician: assignedPhysicianVivalinkId,
         physician: assignedPhysicianVivalinkId,
         reportForThirdParty: false,
-        isRTRPMPatient: false,
+        isRTRPMPatient: true,
       };
 
       console.log('Syncing patient to Vivalink with payload:', vivalinkPayload);

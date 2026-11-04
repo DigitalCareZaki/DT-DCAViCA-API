@@ -217,7 +217,7 @@ export class DeviceWebController extends DeviceController {
   @Delete('/:deviceId')
   public async deleteDevice(
     @GetUser() user: UserRes,
-    @Param('deviceId') deviceId: string,
+    @Param('deviceId') deviceId: string, //this should be VL deviceId
   ): Promise<any> {
     return await this.getDeviceService().deleteDevice(
       user.id,

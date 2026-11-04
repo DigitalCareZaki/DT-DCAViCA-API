@@ -5,7 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import type { VLAllPatients } from './types';
 import { Role } from 'src/auth/enums/role.enum';
 import { UserRes } from '@types';
-import { console } from 'inspector';
+
 import { UsersService } from 'src/users/users.service';
 
 @Injectable()
@@ -324,6 +324,7 @@ export class VivalinkService {
       throw err; // ⬅️ IMPORTANT
     }
   }
+
   public async getVlPatients(doctorId: string): Promise<VLAllPatients> {
     try {
       const request = new Request(
@@ -463,30 +464,34 @@ export class VivalinkService {
     // return result?.data?.mappings ?? {};
   }
 
-  public async getPatientData(patchSn: string, duration: string) {
-    console.log('duration >>>>>>>> ', duration);
-    console.log('patchSn >>>>>>>> ', patchSn);
+
+
+  public async getPatientDataBySubjectId(subId: string, duration: string) {
+    console.log('duration >>>>>>>> ')
+    console.log('subjectId >>>>>>>> ', subId);
+
     const durationInMinutes = parseInt(duration.split(' ')[0]);
     const durationInMs = durationInMinutes * 60 * 1000 - 1000; // 1000 ms is subtracted to avoid fetching data from the next minute
 
     const mainRes = await fetch(
       this.vlCredentails.baseUrl +
-      `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&topOne=true&order=descending`,
+      `/tenants/${this.vlCredentails.tenantId}/data?subjectId=${subId}&type=EcgRaw&topOne=true&order=descending`,
       {
         headers: {
-          Authorization: this.vlCredentails.token,
-          'Access-Control-Allow-Origin': '*',
+          Authorization: this.vlCredentails.token
+          // 'Access-Control-Allow-Origin': '*',
         },
       },
     );
+
     if (mainRes.status !== 200) {
       throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
     }
     const mainResult = await mainRes.json();
-
+    console.log('mainResult >>>>>>>> ', mainResult);
     const res = await fetch(
       this.vlCredentails.baseUrl +
-      `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&startTime=${mainResult.data.start - durationInMs}&endTime=${mainResult.data.start}&denoise=true`,
+      `/tenants/${this.vlCredentails.tenantId}/data?subjectId=${subId}&type=EcgRaw&startTime=${mainResult.data.start - durationInMs}&endTime=${mainResult.data.start}&denoise=true`,
       {
         headers: {
           Authorization: this.vlCredentails.token,
@@ -494,6 +499,8 @@ export class VivalinkService {
         },
       },
     );
+
+    console.log('res >>>>>>>> ', res);
     if (res.status !== 200) {
       throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
     }
@@ -527,4 +534,74 @@ export class VivalinkService {
       otherAttributes: result?.data?.list[0]
     };
   }
+
+  // public async getPatientData(patchSn: string, duration: string) {
+  //   console.log('duration >>>>>>>> ', duration);
+  //   console.log('patchSn >>>>>>>> ', patchSn);
+  //   const durationInMinutes = parseInt(duration.split(' ')[0]);
+  //   const durationInMs = durationInMinutes * 60 * 1000 - 1000; // 1000 ms is subtracted to avoid fetching data from the next minute
+
+  //   const mainRes = await fetch(
+  //     this.vlCredentails.baseUrl +
+  //     `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&topOne=true&order=descending`,
+  //     {
+  //       headers: {
+  //         Authorization: this.vlCredentails.token,
+  //         'Access-Control-Allow-Origin': '*',
+  //       },
+  //     },
+  //   );
+
+
+  //   if (mainRes.status !== 200) {
+  //     throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
+  //   }
+  //   const mainResult = await mainRes.json();
+  //   console.log('mainResult >>>>>>>> ', mainResult);
+  //   const res = await fetch(
+  //     this.vlCredentails.baseUrl +
+  //     `/tenants/${this.vlCredentails.tenantId}/data?patchSn=${patchSn}&startTime=${mainResult.data.start - durationInMs}&endTime=${mainResult.data.start}&denoise=true`,
+  //     {
+  //       headers: {
+  //         Authorization: this.vlCredentails.token,
+  //         'Access-Control-Allow-Origin': '*',
+  //       },
+  //     },
+  //   );
+  //   console.log('res >>>>>>>> ', res);
+  //   if (res.status !== 200) {
+  //     throw new AppError('API Error', HttpStatus.SERVICE_UNAVAILABLE);
+  //   }
+  //   const result = await res.json();
+
+  //   console.log('result >>>>>>>> ', result);
+
+  //   // old code
+  //   const ecgData = result?.data?.list.map((v) => v.vitals.ecg);
+
+  //   const magnification = result?.data?.list[0]?.vitals?.magnification || 1000;
+  //   const samplingFrequency = result?.data?.list[0]?.vitals?.sf || 128;
+  //   const timePerPoint = 1000 / samplingFrequency; // 7.8125 ms
+  //   // For a 1-second recording with 128 points, the time values would be:
+  //   // Point 0: 0 * 7.8125 = 0 ms
+  //   // Point 1: 1 * 7.8125 = 7.8125 ms
+  //   // Point 2: 2 * 7.8125 = 15.625 ms
+  //   // ...
+  //   // Point 127: 127 * 7.8125 = 992.1875 ms
+  //   const processedEcg = ecgData.map((value, index) => {
+  //     return value.map((v2, i2) => ({
+  //       time: (i2 * timePerPoint) / 1000 + index,
+  //       mv: v2 / magnification,
+  //     }));
+  //   });
+
+  //   return {
+  //     ecg: processedEcg,
+  //     samplingFrequency,
+  //     timePerPoint,
+  //     otherAttributes: result?.data?.list[0]
+  //   };
+  // }
 }
+
+

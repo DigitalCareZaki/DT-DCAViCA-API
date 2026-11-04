@@ -27,4 +27,7 @@ export class AddPatientDTO extends AddUserBaseDTO {
   @IsOptional()
   @IsString()
   site_id?: string;
+  @IsOptional()
+  @IsString()
+  monitring_protocol_id?: string;
 }

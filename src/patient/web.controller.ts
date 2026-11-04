@@ -22,7 +22,7 @@ import { RequirePermission } from 'src/auth/decorators/role.decorator';
 
 @Controller('web/patient')
 export class PatientWebController extends PatientController {
-  constructor(patientService: PatientService) {
+  constructor(patientService: PatientService,) {
     super(patientService);
   }
 
@@ -79,6 +79,15 @@ export class PatientWebController extends PatientController {
   @Get('/assign-doctors/all/:id')
   public async fetchAllAssignedDoctors(@GetUser() user: any, @Param('id') id: string) {
     return this.getPatientService().fetchAllAssignedDoctors(id);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('protocols') // VL protocols
+  public async getProtocols(
+    @GetUser() user: UserRes,
+  ) {
+
+    return await this.getPatientService().getProtocols(user);
   }
 
 

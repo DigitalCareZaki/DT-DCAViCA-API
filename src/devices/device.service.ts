@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -18,6 +18,7 @@ import type {
 import { DeviceSuperAdminDTO } from './dto/deviceSuperadmin.dto';
 import { VivalinkWebPortalTokenService } from 'src/vivalink/vivalink-webportal-token.service';
 import { AppError } from 'src/errors';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
 interface VivalinkPortalDeviceDto {
     type: number;
@@ -1604,75 +1605,115 @@ export class DeviceService {
         role: UserRole,
         deviceId: string,
     ) {
-        if (role === 'SUPERADMIN') {
-            const validDevice = await this.prisma.device.findFirst({
-                where: {
-                    id: deviceId,
-                    created_by: {
-                        organization_id: organizationId,
-                    },
-                },
-                select: {
-                    id: true,
-                },
-            });
+        try {
+            let validDevice: {
+                id: string;
+                vivalinkId: string | null;
+            } | null = null;
 
-            if (!validDevice) {
-                throw new Error(
-                    'Either device does not exist or is not in your organization',
-                );
-            }
-        } else {
-            // For ADMIN, DOCTOR and NURSE
-            const res = await this.prisma.user.findUniqueOrThrow({
-                where: { id: userId },
-                select: {
-                    associated_branches: {
-                        select: {
-                            id: true,
+            // 1. Validate device access
+            if (role === 'SUPERADMIN') {
+                validDevice = await this.prisma.device.findFirst({
+                    where: {
+                        id: deviceId,
+                        // created_by: {
+                        //     organization_id: organizationId,
+                        // },
+                    },
+                    select: {
+                        id: true,
+                        vivalinkId: true,
+                    },
+                });
+            } else {
+                const user = await this.prisma.user.findUnique({
+                    where: { id: userId },
+                    select: {
+                        associated_branches: {
+                            select: { id: true },
                         },
                     },
-                },
-            });
+                });
 
-            const validDevice = await this.prisma.device.findFirst({
-                where: {
-                    id: deviceId,
-                    created_by: {
-                        OR: [
-                            {
-                                organization_id: organizationId,
-                            },
-                            {
-                                associated_branches: {
-                                    some: {
-                                        id: res.associated_branches[0]?.id,
-                                    },
-                                },
-                            },
-                        ],
+                if (!user) {
+                    throw new NotFoundException('User not found');
+                }
+
+                const branchIds = user.associated_branches.map(
+                    (branch) => branch.id,
+                );
+
+                validDevice = await this.prisma.device.findFirst({
+                    where: {
+                        id: deviceId,
+                        // created_by: {
+                        //     OR: [
+                        //         { organization_id: organizationId },
+                        //         {
+                        //             associated_branches: {
+                        //                 some: {
+                        //                     id: { in: branchIds },
+                        //                 },
+                        //             },
+                        //         },
+                        //     ],
+                        // },
                     },
-                },
-                select: {
-                    id: true,
-                },
-            });
+                    select: {
+                        id: true,
+                        vivalinkId: true,
+                    },
+                });
+            }
 
             if (!validDevice) {
-                throw new Error(
-                    'Either device does not exist or is not in your organization/branch',
+                throw new NotFoundException(
+                    'Device does not exist or you do not have permission to delete it.',
                 );
             }
-        }
+            console.log(validDevice, '=======>>Valid Device')
+            // 2. Delete from Vivalink if synced
+            if (validDevice.vivalinkId) {
+                const syncResponse =
+                    await this.deleteDeviceToVivalinkPortal(
+                        validDevice.vivalinkId,
+                    );
 
-        return await this.prisma.device.delete({
-            where: {
-                id: deviceId,
-            },
-            select: {
-                id: true,
-            },
-        });
+                if (!syncResponse || syncResponse.code !== 0) {
+                    return {
+                        attempted: true,
+                        success: false,
+                        message:
+                            syncResponse?.message ||
+                            'Device is associated with a patient in Vivalink portal. Please unassign the device from the patient first.',
+                    };
+                }
+            }
+
+            // 3. Delete from AVICA
+            await this.prisma.device.delete({
+                where: {
+                    id: validDevice.id,
+                },
+            });
+
+            return {
+                attempted: true,
+                success: true,
+                message: 'Device deleted successfully',
+            };
+
+        } catch (error) {
+            if (error instanceof HttpException) {
+                throw error;
+            }
+
+            console.error('Delete device error:', error);
+
+            throw new InternalServerErrorException(
+                'Unable to delete device. Please try again later.',
+            );
+        }
     }
 
     async addDeviceToVivalinkPortal(device: VivalinkDeviceSyncResult) {
@@ -1687,6 +1728,29 @@ export class DeviceService {
         });
 
         const result = await response.json();
+        return result;
+    }
+    async deleteDeviceToVivalinkPortal(deviceId: string) {
+        const url = `${this.vlWebportalUrl}/devices/${deviceId}`;
+        console.log(url, '=======>>Delete Device URL form VL');
+
+        // https://webportal.vivalink.com/api/backend/devices/6a611be270bc3fac3f696cdd
+        // https://webportal.vivalink.com/api/backend/devices/6a292f37b8c698a4250e5ab7
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${this.vlWebportalToken}`,
+            },
+        });
+
+        const result = await response.json();
+        console.log(result, '=======>>Delete Device Result form VL');
+        if (!response.ok) {
+            throw new BadRequestException(
+                result?.message || 'Failed to delete device from Vivalink',
+            );
+        }
+
         return result;
     }
 

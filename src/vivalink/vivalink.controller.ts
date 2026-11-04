@@ -43,19 +43,29 @@ export class VivalinkController {
 
     return await this.vivalinkService.getPatients(user);
   }
+
   @HttpCode(HttpStatus.OK)
   @Get('appPatients')
   public async getAppPatients(): Promise<VLAllPatients> {
     return this.vivalinkService.getAppPatients();
   }
 
+  // @HttpCode(HttpStatus.OK)
+  // @Get('patients/:patchSn')
+  // public async getPatientData(
+  //   @Param('patchSn') patchSn: string,
+  //   @Query('duration') duration: string = '1 minute',
+  // ): Promise<VLSinglePatientECGData> {
+  //   return this.vivalinkService.getPatientData(patchSn, duration);
+  // }
+
   @HttpCode(HttpStatus.OK)
-  @Get('patients/:patchSn')
+  @Get('patients/:subjectId')
   public async getPatientData(
-    @Param('patchSn') patchSn: string,
+    @Param('subjectId') subjectId: string,
     @Query('duration') duration: string = '1 minute',
   ): Promise<VLSinglePatientECGData> {
-    return this.vivalinkService.getPatientData(patchSn, duration);
+    return this.vivalinkService.getPatientDataBySubjectId(subjectId, duration);
   }
 
   public getVivalinkService(): VivalinkService {
