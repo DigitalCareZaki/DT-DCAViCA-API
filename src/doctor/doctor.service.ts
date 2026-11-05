@@ -1521,7 +1521,7 @@ export class DoctorService {
     return result;
   }
 
-  private async getAllDoctorsFromVl() {
+  public async getAllDoctorsFromVl() {
     const url = `${this.vlWebportalUrl}/users?$skip=0&$limit=100`;
 
     const response = await fetch(url, {

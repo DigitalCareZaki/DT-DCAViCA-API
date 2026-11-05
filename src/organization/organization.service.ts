@@ -16,13 +16,15 @@ import { allowedQueryRoles, SENDGRID_TEMPLATES } from 'src/constant';
 import { Role } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SendgridService } from 'src/sendGrid/sendgrid.service';
+import { DoctorService } from 'src/doctor/doctor.service';
 
 @Injectable()
 export class OrganizationService {
   constructor(
     private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
-    private readonly sendgridService: SendgridService
+    private readonly sendgridService: SendgridService,
+    private readonly doctorService: DoctorService,
   ) { }
 
   public async getOrganization(userId: string): Promise<CurrentOrganization> {
@@ -43,6 +45,7 @@ export class OrganizationService {
       },
     });
   }
+
 
   public async checkUniqueFields(
     data: CheckOrganizationUserUniqueDTO,
@@ -74,6 +77,7 @@ export class OrganizationService {
       doctorNpi,
       nurseNpi,
       doctorPmdc,
+      vivalinkDoctors,
     ] = await Promise.all([
       email
         ? this.prisma.user.findUnique({
@@ -81,59 +85,81 @@ export class OrganizationService {
           select: { id: true },
         })
         : null,
+
       phoneNumber
         ? this.prisma.user.findUnique({
           where: { phone_number: phoneNumber },
           select: { id: true },
         })
         : null,
+
       username
         ? this.prisma.user.findUnique({
           where: { username },
           select: { id: true },
         })
         : null,
+
       shouldCheckDoctorNpi
         ? this.prisma.doctor.findUnique({
           where: { npi_number: npiNumber },
           select: { id: true },
         })
         : null,
+
       shouldCheckNurseNpi
         ? this.prisma.nurse.findUnique({
           where: { npi_number: npiNumber },
           select: { id: true },
         })
         : null,
+
       shouldCheckPmdcNumber
         ? this.prisma.doctor.findUnique({
           where: { pmdc_number: pmdcNumber },
           select: { id: true },
         })
         : null,
+
+      email && role === Role.DOCTOR
+        ? this.doctorService.getAllDoctorsFromVl()
+        : [],
     ]);
+
+    // Check email in Vivalink only for doctors
+    const vivalinkEmailExists = Boolean(
+      email &&
+      vivalinkDoctors?.some(
+        (doc) =>
+          this.normalizeUniqueCheckValue(doc.email) === email,
+      ),
+    );
 
     const fields = {
       email: this.getUniqueCheckField(
         Boolean(email),
-        Boolean(emailUser),
+        Boolean(emailUser) || vivalinkEmailExists,
         'Email',
       ),
+
       phone_number: this.getUniqueCheckField(
         Boolean(phoneNumber),
         Boolean(phoneUser),
         'Phone number',
       ),
+
       username: this.getUniqueCheckField(
         Boolean(username),
         Boolean(usernameUser),
         'Username',
       ),
+
       npi_number: this.getUniqueCheckField(
         shouldCheckDoctorNpi || shouldCheckNurseNpi,
         Boolean(doctorNpi || nurseNpi),
         'NPI number',
       ),
+
       pmdc_number: this.getUniqueCheckField(
         shouldCheckPmdcNumber,
         Boolean(doctorPmdc),
@@ -146,6 +172,111 @@ export class OrganizationService {
       fields,
     };
   }
+
+  // public async checkUniqueFields(
+  //   data: CheckOrganizationUserUniqueDTO,
+  // ): Promise<OrganizationUniqueCheckResult> {
+  //   const email = this.normalizeUniqueCheckValue(data.email);
+  //   const phoneNumber = this.normalizeUniqueCheckValue(data.phone_number);
+  //   const username = this.normalizeUniqueCheckValue(data.username);
+  //   const npiNumber = this.normalizeUniqueCheckValue(data.npi_number);
+  //   const pmdcNumber = this.normalizeUniqueCheckValue(data.pmdc_number);
+  //   const role = data.role;
+
+  //   if (!email && !phoneNumber && !username && !npiNumber && !pmdcNumber) {
+  //     throw new BadRequestException(
+  //       'At least one field is required to check uniqueness',
+  //     );
+  //   }
+
+  //   const shouldCheckDoctorNpi =
+  //     Boolean(npiNumber) && (!role || role === Role.DOCTOR);
+  //   const shouldCheckNurseNpi =
+  //     Boolean(npiNumber) && (!role || role === Role.NURSE);
+  //   const shouldCheckPmdcNumber =
+  //     Boolean(pmdcNumber) && (!role || role === Role.DOCTOR);
+
+  //   const [
+  //     emailUser,
+  //     phoneUser,
+  //     usernameUser,
+  //     doctorNpi,
+  //     nurseNpi,
+  //     doctorPmdc,
+  //   ] = await Promise.all([
+  //     email
+  //       ? this.prisma.user.findUnique({
+  //         where: { email },
+  //         select: { id: true },
+  //       })
+  //       : null,
+  //     phoneNumber
+  //       ? this.prisma.user.findUnique({
+  //         where: { phone_number: phoneNumber },
+  //         select: { id: true },
+  //       })
+  //       : null,
+  //     username
+  //       ? this.prisma.user.findUnique({
+  //         where: { username },
+  //         select: { id: true },
+  //       })
+  //       : null,
+  //     shouldCheckDoctorNpi
+  //       ? this.prisma.doctor.findUnique({
+  //         where: { npi_number: npiNumber },
+  //         select: { id: true },
+  //       })
+  //       : null,
+  //     shouldCheckNurseNpi
+  //       ? this.prisma.nurse.findUnique({
+  //         where: { npi_number: npiNumber },
+  //         select: { id: true },
+  //       })
+  //       : null,
+  //     shouldCheckPmdcNumber
+  //       ? this.prisma.doctor.findUnique({
+  //         where: { pmdc_number: pmdcNumber },
+  //         select: { id: true },
+  //       })
+  //       : null,
+  //   ]);
+
+
+
+  //   const fields = {
+  //     email: this.getUniqueCheckField(
+  //       Boolean(email),
+  //       Boolean(emailUser),
+  //       'Email',
+  //     ),
+  //     phone_number: this.getUniqueCheckField(
+  //       Boolean(phoneNumber),
+  //       Boolean(phoneUser),
+  //       'Phone number',
+  //     ),
+  //     username: this.getUniqueCheckField(
+  //       Boolean(username),
+  //       Boolean(usernameUser),
+  //       'Username',
+  //     ),
+  //     npi_number: this.getUniqueCheckField(
+  //       shouldCheckDoctorNpi || shouldCheckNurseNpi,
+  //       Boolean(doctorNpi || nurseNpi),
+  //       'NPI number',
+  //     ),
+  //     pmdc_number: this.getUniqueCheckField(
+  //       shouldCheckPmdcNumber,
+  //       Boolean(doctorPmdc),
+  //       'PMDC number',
+  //     ),
+  //   };
+
+  //   return {
+  //     available: !Object.values(fields).some((field) => field.exists),
+  //     fields,
+  //   };
+  // }
 
   private normalizeUniqueCheckValue(value?: string): string | undefined {
     const trimmedValue = value?.trim();
