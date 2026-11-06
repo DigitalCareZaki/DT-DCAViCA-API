@@ -296,6 +296,7 @@ export class PatientService {
         physician: assignedPhysicianVivalinkId,
         reportForThirdParty: false,
         isRTRPMPatient: true,
+        isRpm: true, //isRpm-true for RPM patients, false for non-RPM patients
       };
 
       console.log('Syncing patient to Vivalink with payload:', vivalinkPayload);
